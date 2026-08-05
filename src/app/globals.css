@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+/* Tokens from DESIGN.md. Every color/font utility used in components should
+   trace back to one of these — no ad hoc hex or font-family in component
+   code. */
+@theme {
+  --color-wall: #241f2e;
+  --color-shelf: #e9dfcc;
+  --color-ink: #231b22;
+  --color-paper: #f3ece0;
+  --color-marigold: #e8a33d;
+  --color-marigold-text: #a66b1e; /* darkened for AA text-on-marigold-fill */
+  --color-jade: #2f8f7a;
+  --color-berry: #a15361;
+
+  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-golos), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, "SF Mono", monospace;
+
+  /* --- spotly design language (Figma frame 391-680) --- */
+  /* Raw hex from Figma (no named variables existed in the file). */
+  --color-spotly-ink: #151515; /* section header text */
+  --color-spotly-accent: #e94f7a; /* "See all" / links */
+  --color-spotly-bg: #ffffff; /* page/card background */
+  --font-header: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-condensed: var(--font-pt-narrow), "SF Pro Condensed", ui-sans-serif,
+    system-ui, sans-serif;
+  --font-watermark: var(--font-oswald), ui-sans-serif, system-ui, sans-serif;
+
+  /* --- lapis design language (Figma frame 694-12989) --- */
+  --font-inter: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-malt: var(--font-mont-alt), ui-sans-serif, system-ui, sans-serif;
+  --font-mont: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-wall);
+    color: var(--color-paper);
+    font-family: var(--font-body);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-marigold);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  /* --- spotly dashboard motion --- */
+
+  /* Shimmer skeleton: a light sweep over a neutral block, used for search /
+     extraction loading placeholders. */
+  .skeleton {
+    background-color: rgba(0, 0, 0, 0.06);
+    background-image: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.05) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: spotly-shimmer 1.3s ease-in-out infinite;
+  }
+  @keyframes spotly-shimmer {
+    0% {
+      background-position: -100% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* Soft entrance for sections / newly revealed panels. */
+  .animate-fade-up {
+    animation: spotly-fade-up 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes spotly-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Panel that expands in (add-forms, editors). */
+  .animate-pop {
+    animation: spotly-pop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes spotly-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.97) translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton {
+      animation: none;
+    }
+    .animate-fade-up,
+    .animate-pop {
+      animation: none;
+    }
+  }
+}
