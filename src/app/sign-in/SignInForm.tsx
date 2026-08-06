@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Label, TextInput, Hint } from "@/components/ui/Field";
@@ -141,6 +142,15 @@ export function SignInForm({
             ? "Бүртгүүлэх"
             : "Нэвтрэх"}
       </Button>
+
+      {mode === "signin" ? (
+        <Link
+          href="/forgot-password"
+          className="text-center font-body text-[13px] font-medium text-paper/55 underline"
+        >
+          Нууц үг мартсан уу?
+        </Link>
+      ) : null}
     </form>
   );
 }

@@ -8,6 +8,8 @@ import { z } from "zod";
 const RESERVED = new Set([
   "dashboard",
   "sign-in",
+  "forgot-password",
+  "reset-password",
   "onboarding",
   "auth",
   "api",
