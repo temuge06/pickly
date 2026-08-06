@@ -1,7 +1,9 @@
-export default function Home() {
-  return (
-    <main>
-      <p>Pickly — scaffold only. Public profile UI lands after design sign-off.</p>
-    </main>
-  );
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth/session";
+
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const user = await getSessionUser();
+  redirect(user ? "/dashboard" : "/sign-in");
 }

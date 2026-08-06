@@ -39,7 +39,7 @@ export default async function SignInPage({
       <div className="mb-8 text-center">
         <h1 className="font-display text-[26px] font-bold text-paper">Pickly</h1>
         <p className="mt-2 font-body text-[14.5px] text-paper/70">
-          Өөрийн хуудсаа үүсгэхийн тулд нэвтэрнэ үү.
+          Имэйл, нууц үгээрээ шууд нэвтэрч эсвэл бүртгүүлээрэй.
         </p>
       </div>
       <SignInForm next={next} initialError={error} />

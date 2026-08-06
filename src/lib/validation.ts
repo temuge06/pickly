@@ -36,6 +36,18 @@ export const displayNameSchema = z
 
 export const bioSchema = z.string().trim().max(160).optional();
 
+/** Auth: email + password. Supabase hashes with bcrypt (72-byte input cap). */
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Имэйл хаяг буруу байна.");
+
+export const passwordSchema = z
+  .string()
+  .min(6, "Нууц үг дор хаяж 6 тэмдэгт байх ёстой.")
+  .max(72, "Нууц үг хэтэрхий урт байна.");
+
 export function isValidHandle(handle: string): boolean {
   return handleSchema.safeParse(handle).success;
 }
