@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Canvas } from "@/components/ui/Canvas";
+import { AuthShell, AuthHeader } from "@/components/auth/AuthShell";
 import { dashboardEnabled } from "@/lib/env";
 import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
 import { OnboardingForm } from "./OnboardingForm";
@@ -17,16 +17,12 @@ export default async function OnboardingPage() {
   if (existing) redirect("/dashboard");
 
   return (
-    <Canvas className="flex flex-col justify-center px-6">
-      <div className="mb-7">
-        <h1 className="font-display text-[24px] font-bold text-paper">
-          Хуудсаа үүсгэе
-        </h1>
-        <p className="mt-2 font-body text-[14.5px] leading-relaxed text-paper/70">
-          Дараа нь бүгдийг өөрчилж болно. Одоо гурван зүйл л хэрэгтэй.
-        </p>
-      </div>
+    <AuthShell>
+      <AuthHeader
+        title="Хуудсаа үүсгэе"
+        subtitle="Дараа нь бүгдийг өөрчилж болно. Одоо цөөн зүйл л хэрэгтэй."
+      />
       <OnboardingForm />
-    </Canvas>
+    </AuthShell>
   );
 }

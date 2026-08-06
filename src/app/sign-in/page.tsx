@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Canvas } from "@/components/ui/Canvas";
+import { redirect } from "next/navigation";
+import { AuthShell, AuthHeader } from "@/components/auth/AuthShell";
 import { dashboardEnabled } from "@/lib/env";
 import { getSessionUser } from "@/lib/auth/session";
-import { redirect } from "next/navigation";
 import { SignInForm } from "./SignInForm";
 
 export const metadata = { title: "Sign in — Pickly" };
@@ -16,17 +16,19 @@ export default async function SignInPage({
 
   if (!dashboardEnabled) {
     return (
-      <Canvas className="flex flex-col items-center justify-center px-6 text-center">
-        <h1 className="font-display text-[22px] font-bold text-paper">Pickly</h1>
-        <p className="mt-3 max-w-[300px] font-body text-[14.5px] leading-relaxed text-paper/70">
-          Нэвтрэх хэсэг идэвхжээгүй байна. Supabase тохируулсны дараа энд
-          нэвтэрнэ. Одоогоор нийтийн профайлыг{" "}
-          <Link href="/sarnai" className="text-marigold underline">
+      <AuthShell>
+        <AuthHeader
+          title="Тавтай морил"
+          subtitle="Нэвтрэх хэсэг идэвхжээгүй байна. Supabase тохируулсны дараа энд нэвтэрнэ."
+        />
+        <p className="text-center font-inter text-[13.5px] text-[#feedd5]/50">
+          Одоогоор нийтийн профайлыг{" "}
+          <Link href="/sarnai" className="text-[#fe7f42] underline">
             /sarnai
           </Link>{" "}
           дээр үзэж болно.
         </p>
-      </Canvas>
+      </AuthShell>
     );
   }
 
@@ -35,14 +37,12 @@ export default async function SignInPage({
   if (user) redirect(next ?? "/dashboard");
 
   return (
-    <Canvas className="flex flex-col justify-center px-6">
-      <div className="mb-8 text-center">
-        <h1 className="font-display text-[26px] font-bold text-paper">Pickly</h1>
-        <p className="mt-2 font-body text-[14.5px] text-paper/70">
-          Имэйл, нууц үгээрээ шууд нэвтэрч эсвэл бүртгүүлээрэй.
-        </p>
-      </div>
+    <AuthShell>
+      <AuthHeader
+        title="Тавтай морил"
+        subtitle="Имэйл, нууц үгээрээ шууд нэвтэрч эсвэл бүртгүүлээрэй."
+      />
       <SignInForm next={next} initialError={error} />
-    </Canvas>
+    </AuthShell>
   );
 }

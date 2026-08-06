@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Label, TextInput, Hint } from "@/components/ui/Field";
+import { LButton, LInput, LLabel, Hint } from "@/components/dashboard/lapis/ui";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Phase = "checking" | "ready" | "invalid";
@@ -82,7 +81,7 @@ export function ResetPasswordForm() {
 
   if (phase === "checking") {
     return (
-      <p className="py-10 text-center font-body text-[14px] text-paper/60">
+      <p className="py-10 text-center font-malt text-[14px] text-[#feedd5]/55">
         Түр хүлээнэ үү…
       </p>
     );
@@ -91,16 +90,16 @@ export function ResetPasswordForm() {
   if (phase === "invalid") {
     return (
       <div className="text-center">
-        <h1 className="font-display text-[22px] font-bold text-paper">
+        <h1 className="font-malt text-[22px] font-extrabold text-white">
           Холбоос хүчингүй байна
         </h1>
-        <p className="mt-3 font-body text-[14.5px] leading-relaxed text-paper/70">
+        <p className="mt-3 font-inter text-[14px] leading-relaxed text-[#feedd5]/60">
           Нууц үг сэргээх холбоосын хугацаа дууссан эсвэл ашиглагдсан байна. Дахин
           хүсэлт гаргана уу.
         </p>
         <Link
           href="/forgot-password"
-          className="mt-5 inline-block font-body text-[14px] font-medium text-marigold underline"
+          className="mt-5 inline-block font-malt text-[14px] font-medium text-[#fe7f42] underline"
         >
           Дахин сэргээх холбоос авах
         </Link>
@@ -111,17 +110,17 @@ export function ResetPasswordForm() {
   return (
     <>
       <div className="mb-8 text-center">
-        <h1 className="font-display text-[24px] font-bold text-paper">
+        <h1 className="font-malt text-[24px] font-extrabold text-white">
           Шинэ нууц үг
         </h1>
-        <p className="mt-2 font-body text-[14.5px] leading-relaxed text-paper/70">
+        <p className="mt-2 font-inter text-[14px] leading-relaxed text-[#feedd5]/60">
           Шинэ нууц үгээ оруулаад үргэлжлүүлээрэй.
         </p>
       </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <div>
-          <Label htmlFor="password">Шинэ нууц үг</Label>
-          <TextInput
+          <LLabel htmlFor="password">Шинэ нууц үг</LLabel>
+          <LInput
             id="password"
             name="password"
             type="password"
@@ -135,8 +134,8 @@ export function ResetPasswordForm() {
           <Hint>Дор хаяж 6 тэмдэгт.</Hint>
         </div>
         <div>
-          <Label htmlFor="confirm">Нууц үг давтах</Label>
-          <TextInput
+          <LLabel htmlFor="confirm">Нууц үг давтах</LLabel>
+          <LInput
             id="confirm"
             name="confirm"
             type="password"
@@ -149,13 +148,13 @@ export function ResetPasswordForm() {
           />
           {error ? (
             <Hint>
-              <span className="text-berry">{error}</span>
+              <span className="text-[#ff9a8a]">{error}</span>
             </Hint>
           ) : null}
         </div>
-        <Button type="submit" disabled={busy}>
-          {busy ? "Хадгалж байна…" : "Нууц үг шинэчлэх"}
-        </Button>
+        <LButton type="submit" loading={busy} className="w-full">
+          Нууц үг шинэчлэх
+        </LButton>
       </form>
     </>
   );

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Canvas } from "@/components/ui/Canvas";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { dashboardEnabled } from "@/lib/env";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 
@@ -12,8 +12,11 @@ export default function ResetPasswordPage() {
   // The recovery session is established client-side from the token in the URL,
   // so the form itself decides whether the link is valid.
   return (
-    <Canvas className="flex flex-col justify-center px-6">
+    <AuthShell>
+      <p className="mb-6 text-center font-malt text-[15px] font-extrabold text-[#fe7f42]">
+        Pickly
+      </p>
       <ResetPasswordForm />
-    </Canvas>
+    </AuthShell>
   );
 }

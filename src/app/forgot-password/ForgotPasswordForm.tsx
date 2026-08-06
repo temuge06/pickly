@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Label, TextInput, Hint } from "@/components/ui/Field";
+import { LButton, LInput, LLabel, Hint } from "@/components/dashboard/lapis/ui";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function ForgotPasswordForm() {
@@ -18,9 +17,8 @@ export function ForgotPasswordForm() {
     setState("sending");
 
     const supabase = createSupabaseBrowserClient();
-    // Land directly on /reset-password. The browser client there detects the
-    // recovery token in the URL (either the #fragment or ?code form) and
-    // establishes the recovery session client-side.
+    // Land directly on /reset-password. The browser client there establishes
+    // the recovery session from the token in the URL.
     const redirectTo = `${window.location.origin}/reset-password`;
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
@@ -31,24 +29,22 @@ export function ForgotPasswordForm() {
       setState("idle");
       return;
     }
-    // Always show success (don't reveal whether the email is registered).
     setState("sent");
   }
 
   if (state === "sent") {
     return (
-      <div className="rounded-3xl bg-shelf p-6 text-center">
-        <p className="font-display text-[17px] font-bold text-paper">
+      <div className="rounded-[18px] bg-white/[0.05] p-6 text-center">
+        <p className="font-malt text-[17px] font-extrabold text-white">
           Имэйлээ шалгана уу
         </p>
-        <p className="mt-2 font-body text-[14px] leading-relaxed text-paper/70">
-          Хэрэв <span className="font-medium">{email}</span> хаяг бүртгэлтэй бол
-          нууц үг сэргээх холбоос очлоо. Холбоос дээр дарж шинэ нууц үгээ
-          оруулаарай.
+        <p className="mt-2 font-inter text-[14px] leading-relaxed text-[#feedd5]/70">
+          Хэрэв <span className="font-medium text-[#feedd5]">{email}</span> хаяг
+          бүртгэлтэй бол нууц үг сэргээх холбоос очлоо.
         </p>
         <Link
           href="/sign-in"
-          className="mt-4 inline-block font-body text-[13.5px] font-medium text-marigold underline"
+          className="mt-4 inline-block font-malt text-[13.5px] font-medium text-[#fe7f42] underline"
         >
           Нэвтрэх рүү буцах
         </Link>
@@ -59,8 +55,8 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <Label htmlFor="email">Имэйл хаяг</Label>
-        <TextInput
+        <LLabel htmlFor="email">Имэйл хаяг</LLabel>
+        <LInput
           id="email"
           name="email"
           type="email"
@@ -73,18 +69,18 @@ export function ForgotPasswordForm() {
         />
         {error ? (
           <Hint>
-            <span className="text-berry">{error}</span>
+            <span className="text-[#ff9a8a]">{error}</span>
           </Hint>
         ) : (
           <Hint>Бүртгэлтэй хаяг руу сэргээх холбоос илгээнэ.</Hint>
         )}
       </div>
-      <Button type="submit" disabled={state === "sending"}>
-        {state === "sending" ? "Илгээж байна…" : "Сэргээх холбоос авах"}
-      </Button>
+      <LButton type="submit" loading={state === "sending"} className="w-full">
+        Сэргээх холбоос авах
+      </LButton>
       <Link
         href="/sign-in"
-        className="text-center font-body text-[13.5px] font-medium text-paper/60 underline"
+        className="text-center font-malt text-[13px] font-medium text-[#feedd5]/55 underline"
       >
         Нэвтрэх рүү буцах
       </Link>

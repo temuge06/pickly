@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Label, TextInput, Hint } from "@/components/ui/Field";
+import { LButton, LInput, LLabel, Hint } from "@/components/dashboard/lapis/ui";
 import { signUpInstant } from "@/lib/auth/password-auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -34,7 +33,6 @@ export function SignInForm({
 
     try {
       if (mode === "signup") {
-        // Create the account (already confirmed), then sign in for a session.
         const res = await signUpInstant(email, password);
         if ("error" in res) {
           setError(res.error);
@@ -51,12 +49,10 @@ export function SignInForm({
           setBusy(false);
           return;
         }
-        // New account → send straight to onboarding (handle + name).
         window.location.assign("/onboarding");
         return;
       }
 
-      // Sign in.
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -76,7 +72,7 @@ export function SignInForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       {/* Mode toggle */}
-      <div className="flex rounded-full bg-shelf p-1">
+      <div className="flex gap-1 rounded-[16px] bg-white/[0.06] p-1">
         {(["signin", "signup"] as const).map((m) => (
           <button
             key={m}
@@ -85,8 +81,10 @@ export function SignInForm({
               setMode(m);
               setError("");
             }}
-            className={`flex-1 rounded-full py-2 font-display text-[13.5px] font-bold transition-colors ${
-              mode === m ? "bg-marigold text-ink" : "text-paper/60"
+            className={`flex-1 rounded-[12px] py-2.5 font-malt text-[13.5px] font-bold transition-colors ${
+              mode === m
+                ? "bg-[#fe7f42] text-[#3a1310]"
+                : "text-[#feedd5]/55"
             }`}
           >
             {m === "signin" ? "Нэвтрэх" : "Бүртгүүлэх"}
@@ -95,8 +93,8 @@ export function SignInForm({
       </div>
 
       <div>
-        <Label htmlFor="email">Имэйл хаяг</Label>
-        <TextInput
+        <LLabel htmlFor="email">Имэйл хаяг</LLabel>
+        <LInput
           id="email"
           name="email"
           type="email"
@@ -110,8 +108,8 @@ export function SignInForm({
       </div>
 
       <div>
-        <Label htmlFor="password">Нууц үг</Label>
-        <TextInput
+        <LLabel htmlFor="password">Нууц үг</LLabel>
+        <LInput
           id="password"
           name="password"
           type="password"
@@ -124,7 +122,7 @@ export function SignInForm({
         />
         {error ? (
           <Hint>
-            <span className="text-berry">{error}</span>
+            <span className="text-[#ff9a8a]">{error}</span>
           </Hint>
         ) : (
           <Hint>
@@ -135,18 +133,14 @@ export function SignInForm({
         )}
       </div>
 
-      <Button type="submit" disabled={busy}>
-        {busy
-          ? "Түр хүлээнэ үү…"
-          : mode === "signup"
-            ? "Бүртгүүлэх"
-            : "Нэвтрэх"}
-      </Button>
+      <LButton type="submit" loading={busy} className="w-full">
+        {mode === "signup" ? "Бүртгүүлэх" : "Нэвтрэх"}
+      </LButton>
 
       {mode === "signin" ? (
         <Link
           href="/forgot-password"
-          className="text-center font-body text-[13px] font-medium text-paper/55 underline"
+          className="text-center font-malt text-[13px] font-medium text-[#feedd5]/55 underline"
         >
           Нууц үг мартсан уу?
         </Link>
