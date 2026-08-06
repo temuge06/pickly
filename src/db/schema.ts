@@ -270,6 +270,36 @@ export const link = pgTable("link", {
   ),
 }));
 
+/**
+ * Wishlist — things the creator WANTS but doesn't own yet (distinct from
+ * `pick`, which is stuff they use/recommend). Populated via the same paste-a-
+ * URL extraction flow as picks. `url` is where a tap sends people (the product
+ * page); non-MNT source prices are kept raw in `meta` and never converted.
+ */
+export const wishlistItem = pgTable("wishlist_item", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profile.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  imageUrl: text("image_url"),
+  priceMnt: bigint("price_mnt", { mode: "number" }),
+  url: text("url"),
+  note: text("note"),
+  meta: jsonb("meta").$type<Record<string, unknown>>().default({}),
+  position: integer("position").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  profileActivePositionIdx: index("wishlist_item_profile_active_position_idx").on(
+    table.profileId,
+    table.isActive,
+    table.position,
+  ),
+}));
+
 export const askMessage = pgTable("ask_message", {
   id: uuid("id").primaryKey().defaultRandom(),
   profileId: uuid("profile_id")
@@ -336,8 +366,16 @@ export const profileRelations = relations(profile, ({ many }) => ({
   collections: many(collection),
   picks: many(pick),
   links: many(link),
+  wishlistItems: many(wishlistItem),
   askMessages: many(askMessage),
   askBlocks: many(askBlock),
+}));
+
+export const wishlistItemRelations = relations(wishlistItem, ({ one }) => ({
+  profile: one(profile, {
+    fields: [wishlistItem.profileId],
+    references: [profile.id],
+  }),
 }));
 
 export const connectionRelations = relations(connection, ({ one }) => ({

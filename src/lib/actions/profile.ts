@@ -29,12 +29,15 @@ export async function updateProfile(
   }
 
   const db = getDb();
+  // NOTE: avatar_url is intentionally NOT set here. The avatar is managed by
+  // its own flow (uploadAvatar / removeAvatar); including it in this update
+  // would wipe an uploaded picture whenever name/bio/socials are saved, since
+  // this form has no avatar field.
   await db
     .update(profile)
     .set({
       displayName: name.data,
       bio: bio.data?.trim() || null,
-      avatarUrl: (formData.get("avatarUrl") as string | null)?.trim() || null,
       accentColor:
         (formData.get("accentColor") as string | null)?.trim() || null,
       socials,

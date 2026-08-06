@@ -7,6 +7,7 @@ import {
   connection,
   link,
   pick,
+  wishlistItem,
 } from "@/db/schema";
 
 type Profile = { id: string };
@@ -18,7 +19,7 @@ type Profile = { id: string };
  */
 export async function getDashboardData(profile: Profile) {
   const db = getDb();
-  const [collections, picks, links, connections, activity, asks] =
+  const [collections, picks, links, wishlist, connections, activity, asks] =
     await Promise.all([
       db
         .select()
@@ -35,6 +36,11 @@ export async function getDashboardData(profile: Profile) {
         .from(link)
         .where(eq(link.profileId, profile.id))
         .orderBy(link.position),
+      db
+        .select()
+        .from(wishlistItem)
+        .where(eq(wishlistItem.profileId, profile.id))
+        .orderBy(wishlistItem.position),
       db.select().from(connection).where(eq(connection.profileId, profile.id)),
       db
         .select()
@@ -52,6 +58,7 @@ export async function getDashboardData(profile: Profile) {
     collections,
     picks,
     links,
+    wishlist,
     connections,
     films: activity.filter((a) => a.kind === "film"),
     books: activity.filter((a) => a.kind === "book"),

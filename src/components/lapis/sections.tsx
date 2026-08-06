@@ -1,13 +1,22 @@
 /* eslint-disable @next/next/no-img-element */
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import type { askMessage, link, pick, profile } from "@/db/schema";
+import type {
+  askMessage,
+  collection,
+  link,
+  pick,
+  profile,
+  wishlistItem,
+} from "@/db/schema";
 import { ProductImage } from "@/components/ui/ProductImage";
 
 type Profile = typeof profile.$inferSelect;
 type Pick = typeof pick.$inferSelect;
+type Collection = typeof collection.$inferSelect;
 type LinkRow = typeof link.$inferSelect;
 type Ask = typeof askMessage.$inferSelect;
+type WishlistItem = typeof wishlistItem.$inferSelect;
 
 // --- Status bar ------------------------------------------------------------
 
@@ -31,18 +40,21 @@ export function LapisHeader({ profile }: { profile: Profile }) {
       <div className="flex flex-col gap-[8px]">
         <div className="flex items-center gap-[23px]">
           <Avatar name={profile.displayName} url={profile.avatarUrl} />
-          <div className="flex min-w-0 flex-col gap-[10px]">
+          <div className="flex min-w-0 flex-col gap-[6px]">
             <p className="font-inter text-[19px] font-semibold leading-none tracking-[-0.38px] text-white">
               {profile.displayName}
             </p>
-            <p className="font-inter text-[14px] tracking-[-0.28px] text-[#a2a9b4]">
-              {profile.bio ?? `@${profile.handle}`}
+            <p className="font-inter text-[14px] leading-none tracking-[-0.28px] text-[#a2a9b4]">
+              @{profile.handle}
             </p>
           </div>
         </div>
-        <p className="font-inter text-[14px] tracking-[-0.28px] text-white">
-          {profile.displayName} in da Pickly
-        </p>
+        {/* Bio: real profile.bio only — no placeholder, renders nothing when empty. */}
+        {profile.bio?.trim() ? (
+          <p className="font-inter text-[14px] leading-[18px] tracking-[-0.28px] text-[#feedd5]">
+            {profile.bio}
+          </p>
+        ) : null}
       </div>
       <div className="flex items-center gap-[25px]">
         <button className="h-[32px] w-[123px] rounded-[6px] bg-white font-inter text-[14px] font-semibold tracking-[-0.28px] text-[#0a0a0a]">
@@ -100,7 +112,7 @@ function SectionTitle({ children }: { children: string }) {
   );
 }
 
-// --- Top Picks -------------------------------------------------------------
+// --- Pick card (shared by Top Picks / My Picks / Not For Me) ---------------
 
 const STATUS_TOGGLE: Record<string, "on" | "off" | "mid"> = {
   recommend: "on",
@@ -109,40 +121,20 @@ const STATUS_TOGGLE: Record<string, "on" | "off" | "mid"> = {
   testing: "mid",
 };
 
-export function LapisTopPicks({ picks }: { picks: Pick[] }) {
-  if (picks.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[#323232] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
-      <SectionTitle>TOP PICKS</SectionTitle>
-      <div className="no-scrollbar flex items-stretch gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
-        {picks.map((p) => (
-          <TopPickCard key={p.id} pick={p} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TopPickCard({ pick }: { pick: Pick }) {
+function PickCard({ pick, muted = false }: { pick: Pick; muted?: boolean }) {
   const source = hostOf(pick.outboundUrl ?? pick.sourceUrl);
   const toggle = STATUS_TOGGLE[pick.status] ?? "mid";
   return (
     <div className="flex min-h-[319px] w-[168px] shrink-0 items-start rounded-[14px] bg-[#b22c20] px-[10px] py-[12px]">
       <div className="flex w-[149px] flex-col gap-[26px]">
         <div className="flex flex-col gap-[8px]">
-          <div className="relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)]">
-            {pick.imageUrl ? (
-              <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" />
-            ) : null}
+          <div className={`relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${muted ? "opacity-70 grayscale-[45%]" : ""}`}>
+            {pick.imageUrl ? <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" /> : null}
           </div>
           <div className="flex flex-col gap-[8px] text-white">
-            <p className="min-h-[26px] text-[14px] font-bold uppercase leading-[13px]">
-              {pick.title}
-            </p>
+            <p className="min-h-[26px] text-[14px] font-bold uppercase leading-[13px]">{pick.title}</p>
             {pick.note ? (
-              <p className="line-clamp-4 min-h-[48px] text-[14px] font-light leading-[12px] tracking-[-0.28px]">
-                {pick.note}
-              </p>
+              <p className="line-clamp-4 min-h-[48px] text-[14px] font-light leading-[12px] tracking-[-0.28px]">{pick.note}</p>
             ) : (
               <div className="min-h-[48px]" />
             )}
@@ -150,12 +142,7 @@ function TopPickCard({ pick }: { pick: Pick }) {
         </div>
         <div className="flex flex-wrap items-center gap-x-[28px] gap-y-1">
           {pick.outboundUrl ? (
-            <a
-              href={pick.outboundUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-[58px] items-center justify-center rounded-[10px] bg-black px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px] text-white"
-            >
+            <a href={pick.outboundUrl} target="_blank" rel="noopener noreferrer" className="flex w-[58px] items-center justify-center rounded-[10px] bg-black px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px] text-white">
               үзэх<span className="ml-0.5 text-[9px]">↗</span>
             </a>
           ) : null}
@@ -175,16 +162,114 @@ function TopPickCard({ pick }: { pick: Pick }) {
 function Toggle({ state }: { state: "on" | "off" | "mid" }) {
   return (
     <span className="flex h-[22px] w-[46px] items-center rounded-full bg-black/40 p-[2px]">
-      <span
-        className={`h-[18px] w-[18px] rounded-full bg-white transition-all ${
-          state === "on" ? "ml-auto" : state === "mid" ? "mx-auto" : "mr-auto"
-        }`}
-      />
+      <span className={`h-[18px] w-[18px] rounded-full bg-white transition-all ${state === "on" ? "ml-auto" : state === "mid" ? "mx-auto" : "mr-auto"}`} />
     </span>
   );
 }
 
-// --- Links -----------------------------------------------------------------
+function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
+  return (
+    <div className="no-scrollbar flex items-stretch gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+      {picks.map((p) => (
+        <PickCard key={p.id} pick={p} muted={muted} />
+      ))}
+    </div>
+  );
+}
+
+// --- Top Picks: ungrouped, non-wont_rebuy picks ----------------------------
+
+export function LapisTopPicks({ picks }: { picks: Pick[] }) {
+  if (picks.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[#323232] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
+      <SectionTitle>TOP PICKS</SectionTitle>
+      <PickRow picks={picks} />
+    </div>
+  );
+}
+
+// --- My Picks: picks grouped by collection ---------------------------------
+
+export function LapisMyPicks({
+  collections,
+  picksByCollection,
+}: {
+  collections: Collection[];
+  picksByCollection: Record<string, Pick[]>;
+}) {
+  const groups = collections.filter((c) => (picksByCollection[c.id]?.length ?? 0) > 0);
+  if (groups.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
+      <SectionTitle>MY PICKS</SectionTitle>
+      <div className="flex flex-col gap-[20px]">
+        {groups.map((c) => (
+          <div key={c.id} className="flex flex-col gap-[10px]">
+            <p className="pr-[10px] font-malt text-[14px] font-bold text-[#fe7f42]">{c.title}</p>
+            <PickRow picks={picksByCollection[c.id]!} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Not For Me: wont_rebuy picks ------------------------------------------
+
+export function LapisNotForMe({ picks }: { picks: Pick[] }) {
+  if (picks.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
+      <SectionTitle>NOT FOR ME</SectionTitle>
+      <PickRow picks={picks} muted />
+    </div>
+  );
+}
+
+// --- Wishlist --------------------------------------------------------------
+
+export function LapisWishlist({ items }: { items: WishlistItem[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
+      <SectionTitle>WISHLIST</SectionTitle>
+      <div className="no-scrollbar flex gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+        {items.map((w) => {
+          const source = hostOf(w.url);
+          return (
+            <div key={w.id} className="flex h-[144px] w-[314px] shrink-0 items-start gap-[3px] rounded-[14px] bg-[#b22c20] p-[10px]">
+              <div className="relative h-[120px] w-[120px] shrink-0 overflow-hidden rounded-[12px] bg-black/10">
+                {w.imageUrl ? <ProductImage src={w.imageUrl} alt={w.title} sizes="120px" /> : null}
+              </div>
+              <div className="relative flex h-full flex-1 flex-col pl-[12px]">
+                <p className="text-[14px] font-bold uppercase leading-[15px] text-white">{w.title}</p>
+                {w.note ? (
+                  <p className="mt-[8px] line-clamp-3 text-[13px] font-light leading-[13px] tracking-[-0.28px] text-white/95">{w.note}</p>
+                ) : null}
+                <div className="mt-auto flex items-center gap-[10px]">
+                  {w.url ? (
+                    <a href={w.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center rounded-[10px] bg-black px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px] text-white">
+                      үзэх<span className="ml-0.5 text-[9px]">↗</span>
+                    </a>
+                  ) : null}
+                  {source ? (
+                    <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-white">
+                      <span className="h-[6px] w-[6px] rounded-full bg-white" />
+                      {source}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// --- Links (kept for reference; no longer rendered on the public profile) ---
 
 export function LapisLinks({ links }: { links: LinkRow[] }) {
   if (links.length === 0) return null;
@@ -313,32 +398,44 @@ export function LapisSimilar({ creators }: { creators: Creator[] }) {
 
 export function LapisBottomNav() {
   const items = [
-    { label: "Нүүр", icon: <IcoHome />, active: true },
-    { label: "Discover", icon: <IcoCompass />, active: false },
-    { label: "Saved", icon: <IcoBookmark />, active: false },
-    { label: "Профайл", icon: <IcoUser />, active: false },
+    { label: "Нүүр", icon: <IcoHome />, active: true, href: undefined as string | undefined },
+    { label: "Discover", icon: <IcoCompass />, active: false, href: undefined },
+    { label: "Saved", icon: <IcoBookmark />, active: false, href: undefined },
+    // The creator's own management area. A visitor who isn't signed in is
+    // routed to /sign-in by middleware; the creator lands on their dashboard.
+    { label: "Профайл", icon: <IcoUser />, active: false, href: "/dashboard" },
   ];
   return (
     <div className="sticky bottom-0 left-0 right-0 flex h-[86px] items-start bg-[#0b1014] px-[5px] py-[10px]">
       <div className="flex h-[68px] w-full items-center rounded-[23px] border-[1.111px] border-white/[0.13] bg-[rgba(4,4,4,0.94)] p-px shadow-[0px_3px_16px_0px_rgba(176,24,61,0.1)]">
-        {items.map((it) => (
-          <div
-            key={it.label}
-            className="relative flex flex-1 flex-col items-center justify-center gap-[3px]"
-          >
-            {it.active ? (
-              <span className="absolute inset-x-[6px] inset-y-[3px] rounded-[14px] bg-[#fe7f42] opacity-10" />
-            ) : null}
-            <span className={it.active ? "text-[#fe7f42]" : "text-white"}>{it.icon}</span>
-            <span
-              className={`font-inter text-[10px] ${
-                it.active ? "text-[#fe7f42]" : "font-medium text-white"
-              }`}
-            >
-              {it.label}
-            </span>
-          </div>
-        ))}
+        {items.map((it) => {
+          const inner = (
+            <>
+              {it.active ? (
+                <span className="absolute inset-x-[6px] inset-y-[3px] rounded-[14px] bg-[#fe7f42] opacity-10" />
+              ) : null}
+              <span className={it.active ? "text-[#fe7f42]" : "text-white"}>{it.icon}</span>
+              <span
+                className={`font-inter text-[10px] ${
+                  it.active ? "text-[#fe7f42]" : "font-medium text-white"
+                }`}
+              >
+                {it.label}
+              </span>
+            </>
+          );
+          const cls =
+            "relative flex flex-1 flex-col items-center justify-center gap-[3px] transition-transform active:scale-95";
+          return it.href ? (
+            <Link key={it.label} href={it.href} className={cls}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={it.label} className={cls}>
+              {inner}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -400,4 +497,7 @@ const SOCIAL_GLYPHS: Record<string, React.ReactNode> = {
   instagram: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" /></svg>,
   tiktok: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.4 2.2 1.9 3.6 4 3.9v2.8c-1.5 0-2.9-.4-4-1.2v6.4c0 3.4-2.5 5.7-5.6 5.7-2.9 0-5.4-2.2-5.4-5.4 0-3.1 2.5-5.4 5.6-5.4.4 0 .8 0 1.2.1v2.9a2.6 2.6 0 1 0 1.5 2.4V3h2.7Z" /></svg>,
   youtube: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M22 8.2a2.6 2.6 0 0 0-1.8-1.8C18.5 6 12 6 12 6s-6.5 0-8.2.4A2.6 2.6 0 0 0 2 8.2 27 27 0 0 0 1.6 12 27 27 0 0 0 2 15.8a2.6 2.6 0 0 0 1.8 1.8C5.5 18 12 18 12 18s6.5 0 8.2-.4a2.6 2.6 0 0 0 1.8-1.8A27 27 0 0 0 22.4 12 27 27 0 0 0 22 8.2ZM10 15V9l5 3-5 3Z" /></svg>,
+  x: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 3h3l-6.6 7.5L21.5 21h-5.9l-4.2-5.4L6.5 21H3.4l7-8L2.9 3h6l3.8 5 4.8-5Zm-1 16h1.6L8.1 4.7H6.3L16.5 19Z" /></svg>,
+  twitter: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 3h3l-6.6 7.5L21.5 21h-5.9l-4.2-5.4L6.5 21H3.4l7-8L2.9 3h6l3.8 5 4.8-5Zm-1 16h1.6L8.1 4.7H6.3L16.5 19Z" /></svg>,
+  linkedin: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.9 8.5H4V21h2.9V8.5ZM5.4 4a1.7 1.7 0 1 0 0 3.4 1.7 1.7 0 0 0 0-3.4ZM21 21h-2.9v-6.5c0-1.6-.6-2.5-1.9-2.5-1 0-1.6.7-1.9 1.4V21H11.5V8.5h2.8v1.6c.5-.9 1.6-1.6 3-1.6 2.2 0 3.7 1.4 3.7 4.3V21Z" /></svg>,
 };

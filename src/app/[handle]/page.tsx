@@ -4,10 +4,12 @@ import {
   LapisAsk,
   LapisBottomNav,
   LapisHeader,
-  LapisLinks,
+  LapisMyPicks,
+  LapisNotForMe,
   LapisSimilar,
   LapisStatusBar,
   LapisTopPicks,
+  LapisWishlist,
 } from "@/components/lapis/sections";
 import { getOtherCreators, getPublicProfile } from "@/lib/data/public-profile";
 
@@ -22,8 +24,20 @@ export default async function ProfilePage({
   const data = await getPublicProfile(handle);
   if (!data) notFound();
 
-  const { profile, picks, tracks, films, books, links, askMessages } = data;
+  const { profile, collections, picks, tracks, films, books, wishlist, askMessages } = data;
   const creators = await getOtherCreators(profile.id);
+
+  // Split picks into the profile's three product sections:
+  //   Not For Me   = status wont_rebuy
+  //   My Picks     = the rest, grouped by collection
+  //   Top Picks    = the rest, ungrouped (no collection)
+  const notForMe = picks.filter((p) => p.status === "wont_rebuy");
+  const keep = picks.filter((p) => p.status !== "wont_rebuy");
+  const topPicks = keep.filter((p) => p.collectionId === null);
+  const picksByCollection: Record<string, typeof picks> = {};
+  for (const p of keep) {
+    if (p.collectionId) (picksByCollection[p.collectionId] ??= []).push(p);
+  }
 
   return (
     <div className="min-h-dvh bg-neutral-800 sm:py-8">
@@ -32,8 +46,10 @@ export default async function ProfilePage({
           <LapisStatusBar />
           <LapisHeader profile={profile} />
           <LapisMusic tracks={tracks} films={films} books={books} />
-          <LapisTopPicks picks={picks} />
-          <LapisLinks links={links} />
+          <LapisTopPicks picks={topPicks} />
+          <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
+          <LapisWishlist items={wishlist} />
+          <LapisNotForMe picks={notForMe} />
           <LapisAsk
             handle={profile.handle}
             askEnabled={profile.askEnabled}

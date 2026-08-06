@@ -34,6 +34,7 @@ ALTER TABLE public.activity_item  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.collection     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pick           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.link           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wishlist_item  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ask_message    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ask_block      ENABLE ROW LEVEL SECURITY;
 
@@ -123,6 +124,19 @@ CREATE POLICY link_anon_read ON public.link
 
 DROP POLICY IF EXISTS link_owner_all ON public.link;
 CREATE POLICY link_owner_all ON public.link
+  FOR ALL TO authenticated
+  USING (profile_id IN (SELECT public.owned_profile_ids()))
+  WITH CHECK (profile_id IN (SELECT public.owned_profile_ids()));
+
+-- ---------------------------------------------------------------------------
+-- wishlist_item — anon sees active items only; owner has full access.
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS wishlist_item_anon_read ON public.wishlist_item;
+CREATE POLICY wishlist_item_anon_read ON public.wishlist_item
+  FOR SELECT TO anon USING (is_active = true);
+
+DROP POLICY IF EXISTS wishlist_item_owner_all ON public.wishlist_item;
+CREATE POLICY wishlist_item_owner_all ON public.wishlist_item
   FOR ALL TO authenticated
   USING (profile_id IN (SELECT public.owned_profile_ids()))
   WITH CHECK (profile_id IN (SELECT public.owned_profile_ids()));

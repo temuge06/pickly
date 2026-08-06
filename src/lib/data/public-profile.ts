@@ -8,6 +8,7 @@ import {
   link,
   pick,
   profile,
+  wishlistItem,
 } from "@/db/schema";
 import { env } from "@/lib/env";
 import {
@@ -28,6 +29,7 @@ type ActivityItem = typeof activityItem.$inferSelect;
 type Link = typeof link.$inferSelect;
 type AskMessage = typeof askMessage.$inferSelect;
 type Connection = typeof connection.$inferSelect;
+type WishlistItem = typeof wishlistItem.$inferSelect;
 
 export type PublicProfileData = {
   profile: Profile;
@@ -37,6 +39,7 @@ export type PublicProfileData = {
   films: ActivityItem[];
   books: ActivityItem[];
   links: Link[];
+  wishlist: WishlistItem[];
   askMessages: AskMessage[];
 };
 
@@ -60,6 +63,7 @@ export async function getPublicProfile(
           films: demoFilms,
           books: demoBooks,
           links: demoLinks,
+          wishlist: [],
           askMessages: demoAskMessages,
         }
       : null;
@@ -74,7 +78,7 @@ export async function getPublicProfile(
   const p = rows[0];
   if (!p) return null;
 
-  const [collections, picks, links, connections, activity, asks] =
+  const [collections, picks, links, wishlist, connections, activity, asks] =
     await Promise.all([
       db
         .select()
@@ -91,6 +95,11 @@ export async function getPublicProfile(
         .from(link)
         .where(eq(link.profileId, p.id))
         .orderBy(link.position),
+      db
+        .select()
+        .from(wishlistItem)
+        .where(and(eq(wishlistItem.profileId, p.id), eq(wishlistItem.isActive, true)))
+        .orderBy(wishlistItem.position),
       db.select().from(connection).where(eq(connection.profileId, p.id)),
       db
         .select()
@@ -126,6 +135,7 @@ export async function getPublicProfile(
     collections,
     picks,
     links,
+    wishlist,
     tracks: visibleActivity.filter((a: ActivityItem) => a.kind === "track"),
     films: visibleActivity.filter((a: ActivityItem) => a.kind === "film"),
     books: visibleActivity.filter((a: ActivityItem) => a.kind === "book"),
