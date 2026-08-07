@@ -54,6 +54,11 @@ export function LapisPicks({
       }
     >
       {adding ? <AddPick collections={collections} onDone={() => setAdding(false)} /> : null}
+      {!adding && picks.length > 0 ? (
+        <Hint>
+          Төлөвийг «Дахин авахгүй» болговол пик профайл дээрх «Not For Me» хэсэгт орно.
+        </Hint>
+      ) : null}
       {picks.length === 0 && !adding ? (
         <Empty>Эхний пикээ нэмээрэй. Барааны холбоос тавихад л болно.</Empty>
       ) : null}

@@ -15,11 +15,24 @@ function slugify(title: string): string {
   return base || `collection-${Date.now()}`;
 }
 
+/** My Picks shows at most three collection boxes. */
+export const MAX_COLLECTIONS = 3;
+
 export async function createCollection(title: string, description?: string) {
   const profile = await requireCurrentProfile();
   const t = title.trim();
   if (!t) throw new Error("Гарчиг заавал.");
   const db = getDb();
+
+  // Cap at three — the public My Picks section only renders three boxes.
+  const existingCount = await db
+    .select({ id: collection.id })
+    .from(collection)
+    .where(eq(collection.profileId, profile.id));
+  if (existingCount.length >= MAX_COLLECTIONS) {
+    throw new Error("Хамгийн ихдээ 3 цуглуулга үүсгэж болно.");
+  }
+
   const posRows = await db
     .select({ maxPos: max(collection.position) })
     .from(collection)

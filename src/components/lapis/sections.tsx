@@ -189,7 +189,70 @@ export function LapisTopPicks({ picks }: { picks: Pick[] }) {
   );
 }
 
-// --- My Picks: picks grouped by collection ---------------------------------
+// --- My Picks: up to 3 collections as a responsive box grid ----------------
+// 1 collection → one full-width box; 2 → two equal boxes; 3 → one tall box on
+// the left + two stacked on the right (per the Spotly design).
+
+const CATEGORY_BG = [
+  "bg-[#e23d65]",
+  "bg-[#ff5f5f]",
+  "bg-gradient-to-b from-[#fdd566] to-[#e23d65]",
+];
+
+function Polaroids({ images, tall }: { images: string[]; tall: boolean }) {
+  const shots = images.slice(0, 2);
+  if (shots.length === 0) return null;
+  const size = tall ? "h-[92px] w-[92px]" : "h-[52px] w-[52px]";
+  const wrap = tall
+    ? "pointer-events-none absolute inset-x-0 bottom-[30px] flex items-end justify-center"
+    : "pointer-events-none absolute bottom-[8px] right-[8px] flex items-end justify-end";
+  return (
+    <div className={wrap}>
+      {shots.map((src, i) => (
+        <div
+          key={i}
+          className={`relative ${size} shrink-0 overflow-hidden rounded-[16px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] ${
+            i === 0 ? "-rotate-[16deg]" : "-ml-4 rotate-[8deg]"
+          }`}
+        >
+          <ProductImage src={src} alt="" sizes={tall ? "92px" : "52px"} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CategoryCard({
+  title,
+  count,
+  images,
+  colorIndex,
+  tall,
+  spanRows,
+}: {
+  title: string;
+  count: number;
+  images: string[];
+  colorIndex: number;
+  tall: boolean;
+  spanRows?: boolean;
+}) {
+  return (
+    <div
+      className={`relative h-full w-full overflow-hidden rounded-[11px] ${
+        CATEGORY_BG[colorIndex] ?? CATEGORY_BG[0]
+      } ${spanRows ? "row-span-2" : ""}`}
+    >
+      <p className="absolute left-[11px] top-[15px] line-clamp-2 w-[70%] text-[14px] font-semibold leading-[16px] tracking-[-0.28px] text-white">
+        {title}
+      </p>
+      <Polaroids images={images} tall={tall} />
+      <p className="absolute bottom-[12px] left-[13px] text-[14px] leading-[12px] tracking-[-0.28px] text-white/80">
+        {count} picks
+      </p>
+    </div>
+  );
+}
 
 export function LapisMyPicks({
   collections,
@@ -198,18 +261,43 @@ export function LapisMyPicks({
   collections: Collection[];
   picksByCollection: Record<string, Pick[]>;
 }) {
-  const groups = collections.filter((c) => (picksByCollection[c.id]?.length ?? 0) > 0);
-  if (groups.length === 0) return null;
+  const groups = collections
+    .filter((c) => (picksByCollection[c.id]?.length ?? 0) > 0)
+    .slice(0, 3);
+  const n = groups.length;
+  if (n === 0) return null;
+
+  const gridCls =
+    n === 1
+      ? "grid-cols-1 grid-rows-1"
+      : n === 2
+        ? "grid-cols-2 grid-rows-1"
+        : "grid-cols-2 grid-rows-2";
+
   return (
-    <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
-      <SectionTitle>MY PICKS</SectionTitle>
-      <div className="flex flex-col gap-[20px]">
-        {groups.map((c) => (
-          <div key={c.id} className="flex flex-col gap-[10px]">
-            <p className="pr-[10px] font-malt text-[14px] font-bold text-[#fe7f42]">{c.title}</p>
-            <PickRow picks={picksByCollection[c.id]!} />
-          </div>
-        ))}
+    <div className="flex flex-col gap-[18px] bg-[#feedd5] px-[10px] py-[20px] font-malt">
+      <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-[#b1193f]">
+        MY PICKS
+      </p>
+      <div className={`grid gap-x-[6px] gap-y-[12px] ${gridCls}`} style={{ height: 254 }}>
+        {groups.map((c, i) => {
+          const picks = picksByCollection[c.id]!;
+          const images = picks
+            .map((p) => p.imageUrl)
+            .filter((u): u is string => !!u);
+          const tall = n <= 2 || i === 0;
+          return (
+            <CategoryCard
+              key={c.id}
+              title={c.title}
+              count={picks.length}
+              images={images}
+              colorIndex={i}
+              tall={tall}
+              spanRows={n === 3 && i === 0}
+            />
+          );
+        })}
       </div>
     </div>
   );
