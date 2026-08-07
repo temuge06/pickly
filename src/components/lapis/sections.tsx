@@ -194,10 +194,13 @@ export function LapisTopPicks({ picks }: { picks: Pick[] }) {
 // the left + two stacked on the right (per the Spotly design).
 
 const CATEGORY_BG = [
-  "bg-[#e23d65]",
-  "bg-[#ff5f5f]",
-  "bg-gradient-to-b from-[#fdd566] to-[#e23d65]",
+  "bg-[#fc7f45]",
+  "bg-[#fffc9b]",
+  "bg-[#b22c20]",
 ];
+// Text color per box for contrast (the yellow box needs dark text).
+const CATEGORY_TITLE = ["text-white", "text-[#2a1617]", "text-white"];
+const CATEGORY_COUNT = ["text-white/80", "text-black/55", "text-white/80"];
 
 function Polaroids({ images, tall }: { images: string[]; tall: boolean }) {
   const shots = images.slice(0, 2);
@@ -243,11 +246,11 @@ function CategoryCard({
         CATEGORY_BG[colorIndex] ?? CATEGORY_BG[0]
       } ${spanRows ? "row-span-2" : ""}`}
     >
-      <p className="absolute left-[11px] top-[15px] line-clamp-2 w-[70%] text-[14px] font-semibold leading-[16px] tracking-[-0.28px] text-white">
+      <p className={`absolute left-[11px] top-[15px] line-clamp-2 w-[70%] text-[14px] font-semibold leading-[16px] tracking-[-0.28px] ${CATEGORY_TITLE[colorIndex] ?? CATEGORY_TITLE[0]}`}>
         {title}
       </p>
       <Polaroids images={images} tall={tall} />
-      <p className="absolute bottom-[12px] left-[13px] text-[14px] leading-[12px] tracking-[-0.28px] text-white/80">
+      <p className={`absolute bottom-[12px] left-[13px] text-[14px] leading-[12px] tracking-[-0.28px] ${CATEGORY_COUNT[colorIndex] ?? CATEGORY_COUNT[0]}`}>
         {count} picks
       </p>
     </div>
@@ -275,8 +278,8 @@ export function LapisMyPicks({
         : "grid-cols-2 grid-rows-2";
 
   return (
-    <div className="flex flex-col gap-[18px] bg-[#feedd5] px-[10px] py-[20px] font-malt">
-      <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-[#b1193f]">
+    <div className="flex flex-col gap-[18px] bg-[#2a1617] px-[10px] py-[20px] font-malt">
+      <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-white">
         MY PICKS
       </p>
       <div className={`grid gap-x-[6px] gap-y-[12px] ${gridCls}`} style={{ height: 254 }}>
