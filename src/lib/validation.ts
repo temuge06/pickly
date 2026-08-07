@@ -38,6 +38,9 @@ export const displayNameSchema = z
 
 export const bioSchema = z.string().trim().max(160).optional();
 
+/** My Picks shows at most three collection boxes. */
+export const MAX_COLLECTIONS = 3;
+
 /** Auth: email + password. Supabase hashes with bcrypt (72-byte input cap). */
 export const emailSchema = z
   .string()

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import { collection } from "@/db/schema";
 import { requireCurrentProfile } from "@/lib/auth/session";
+import { MAX_COLLECTIONS } from "@/lib/validation";
 
 function slugify(title: string): string {
   const base = title
@@ -14,9 +15,6 @@ function slugify(title: string): string {
     .replace(/^-+|-+$/g, "");
   return base || `collection-${Date.now()}`;
 }
-
-/** My Picks shows at most three collection boxes. */
-export const MAX_COLLECTIONS = 3;
 
 export async function createCollection(title: string, description?: string) {
   const profile = await requireCurrentProfile();

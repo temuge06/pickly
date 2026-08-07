@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createCollection, deleteCollection, MAX_COLLECTIONS } from "@/lib/actions/collections";
+import { createCollection, deleteCollection } from "@/lib/actions/collections";
+import { MAX_COLLECTIONS } from "@/lib/validation";
 import { LButton, LInput, LSection, Empty, Hint } from "./ui";
 
 type Collection = { id: string; title: string };
