@@ -114,18 +114,11 @@ function SectionTitle({ children }: { children: string }) {
 
 // --- Pick card (shared by Top Picks / My Picks / Not For Me) ---------------
 
-const STATUS_TOGGLE: Record<string, "on" | "off" | "mid"> = {
-  recommend: "on",
-  repurchased: "on",
-  wont_rebuy: "off",
-  testing: "mid",
-};
-
 /** Overlapping avatar circles of the people who recommend this product. */
 function Recommenders({ avatars }: { avatars: string[] }) {
   if (avatars.length === 0) return null;
   return (
-    <div className="absolute bottom-[6px] left-[6px] z-10 flex items-center">
+    <div className="flex items-center">
       {avatars.slice(0, 3).map((src, i) => (
         <span
           key={i}
@@ -149,16 +142,12 @@ function PickCard({
   recommenders?: string[];
 }) {
   const source = hostOf(pick.outboundUrl ?? pick.sourceUrl);
-  const toggle = STATUS_TOGGLE[pick.status] ?? "mid";
   return (
     <div className="flex min-h-[319px] w-[168px] shrink-0 items-start rounded-[14px] bg-[#b22c20] px-[10px] py-[12px]">
       <div className="flex w-[149px] flex-col gap-[26px]">
         <div className="flex flex-col gap-[8px]">
-          <div className="relative">
-            <div className={`relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${muted ? "opacity-70 grayscale-[45%]" : ""}`}>
-              {pick.imageUrl ? <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" /> : null}
-            </div>
-            <Recommenders avatars={recommenders} />
+          <div className={`relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${muted ? "opacity-70 grayscale-[45%]" : ""}`}>
+            {pick.imageUrl ? <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" /> : null}
           </div>
           <div className="flex flex-col gap-[8px] text-white">
             <p className="min-h-[26px] text-[14px] font-bold uppercase leading-[13px]">{pick.title}</p>
@@ -169,13 +158,15 @@ function PickCard({
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-[28px] gap-y-1">
-          {pick.outboundUrl ? (
-            <a href={pick.outboundUrl} target="_blank" rel="noopener noreferrer" className="flex w-[58px] items-center justify-center rounded-[10px] bg-black px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px] text-white">
-              үзэх<span className="ml-0.5 text-[9px]">↗</span>
-            </a>
-          ) : null}
-          <Toggle state={toggle} />
+        <div className="flex flex-col gap-[8px]">
+          <div className="flex items-center gap-[12px]">
+            {pick.outboundUrl ? (
+              <a href={pick.outboundUrl} target="_blank" rel="noopener noreferrer" className="flex w-[58px] items-center justify-center rounded-[10px] bg-black px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px] text-white">
+                үзэх<span className="ml-0.5 text-[9px]">↗</span>
+              </a>
+            ) : null}
+            <Recommenders avatars={recommenders} />
+          </div>
           {source ? (
             <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-white">
               <span className="h-[6px] w-[6px] rounded-full bg-white" />
@@ -185,14 +176,6 @@ function PickCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function Toggle({ state }: { state: "on" | "off" | "mid" }) {
-  return (
-    <span className="flex h-[22px] w-[46px] items-center rounded-full bg-black/40 p-[2px]">
-      <span className={`h-[18px] w-[18px] rounded-full bg-white transition-all ${state === "on" ? "ml-auto" : state === "mid" ? "mx-auto" : "mr-auto"}`} />
-    </span>
   );
 }
 
@@ -364,26 +347,40 @@ export function LapisMyPicks({
 
 // --- Not For Me: wont_rebuy picks ------------------------------------------
 
-export function LapisNotForMe({ picks }: { picks: Pick[] }) {
+export function LapisNotForMe({
+  picks,
+  recommenders,
+}: {
+  picks: Pick[];
+  recommenders?: string[];
+}) {
   if (picks.length === 0) return null;
   return (
     <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
       <SectionTitle>NOT FOR ME</SectionTitle>
-      <PickRow picks={picks} muted />
+      <PickRow picks={picks} muted recommenders={recommenders} />
     </div>
   );
 }
 
 // --- Wishlist --------------------------------------------------------------
 
-export function LapisWishlist({ items }: { items: WishlistItem[] }) {
+export function LapisWishlist({
+  items,
+  recommenders,
+}: {
+  items: WishlistItem[];
+  recommenders?: string[];
+}) {
   if (items.length === 0) return null;
+  const pool = recommenders ?? [];
   return (
     <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
       <SectionTitle>WISHLIST</SectionTitle>
       <div className="no-scrollbar flex gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
-        {items.map((w) => {
+        {items.map((w, i) => {
           const source = hostOf(w.url);
+          const recs = pool.length ? rotate(pool, i).slice(0, 3) : [];
           return (
             <div key={w.id} className="flex h-[144px] w-[314px] shrink-0 items-start gap-[3px] rounded-[14px] bg-[#b22c20] p-[10px]">
               <div className="relative h-[120px] w-[120px] shrink-0 overflow-hidden rounded-[12px] bg-black/10">
@@ -400,6 +397,7 @@ export function LapisWishlist({ items }: { items: WishlistItem[] }) {
                       үзэх<span className="ml-0.5 text-[9px]">↗</span>
                     </a>
                   ) : null}
+                  <Recommenders avatars={recs} />
                   {source ? (
                     <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-white">
                       <span className="h-[6px] w-[6px] rounded-full bg-white" />

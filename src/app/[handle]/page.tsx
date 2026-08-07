@@ -54,8 +54,8 @@ export default async function ProfilePage({
           <LapisMusic tracks={tracks} films={films} books={books} />
           <LapisTopPicks picks={topPicks} recommenders={recommenderAvatars} />
           <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
-          <LapisWishlist items={wishlist} />
-          <LapisNotForMe picks={notForMe} />
+          <LapisWishlist items={wishlist} recommenders={recommenderAvatars} />
+          <LapisNotForMe picks={notForMe} recommenders={recommenderAvatars} />
           <LapisAsk
             handle={profile.handle}
             askEnabled={profile.askEnabled}
