@@ -21,7 +21,10 @@ export async function completeOnboarding(
   const user = await getSessionUser();
   if (!user) redirect("/sign-in");
 
-  const handleParsed = handleSchema.safeParse(formData.get("handle"));
+  // The handle is the username chosen at sign-up, encoded in the auth email
+  // (username@pickly.local). It is never taken from the client.
+  const username = (user.email ?? "").split("@")[0];
+  const handleParsed = handleSchema.safeParse(username);
   if (!handleParsed.success) {
     return { error: handleParsed.error.issues[0]?.message ?? "Буруу нэр." };
   }

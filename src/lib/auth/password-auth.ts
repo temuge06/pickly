@@ -3,32 +3,33 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { emailSchema, passwordSchema } from "@/lib/validation";
+import { usernameToEmail } from "@/lib/auth/username";
+import { handleSchema, passwordSchema } from "@/lib/validation";
 
 export type SignUpResult = { ok: true } | { error: string };
 export type ResetResult = { ok: true } | { error: string };
 
 /**
  * DEMO password reset — no email, no token, no verification. The user supplies
- * an email + a new password and we set it directly via the service-role admin
- * API. This is intentionally NOT secure (anyone who knows an email can change
- * that account's password) and exists only because this is a demo build.
+ * a username (or email) + a new password and we set it directly via the
+ * service-role admin API. This is intentionally NOT secure (anyone who knows a
+ * username can change that account's password) and exists only for this demo.
  */
 export async function resetPasswordDemo(
-  email: string,
+  username: string,
   password: string,
 ): Promise<ResetResult> {
-  const e = emailSchema.safeParse(email);
-  if (!e.success) return { error: e.error.issues[0]?.message ?? "Имэйл буруу." };
   const p = passwordSchema.safeParse(password);
   if (!p.success) return { error: p.error.issues[0]?.message ?? "Нууц үг буруу." };
 
-  // Look up the auth user id by email.
+  const email = usernameToEmail(username);
+
+  // Look up the auth user id by (synthetic or real) email.
   const rows = (await getDb().execute(
-    sql`select id from auth.users where lower(email) = ${e.data} limit 1`,
+    sql`select id from auth.users where lower(email) = ${email} limit 1`,
   )) as unknown as Array<{ id: string }>;
   const userId = rows[0]?.id;
-  if (!userId) return { error: "Ийм имэйлтэй бүртгэл олдсонгүй." };
+  if (!userId) return { error: "Ийм хэрэглэгч олдсонгүй." };
 
   const admin = getSupabaseAdmin();
   const { error } = await admin.auth.admin.updateUserById(userId, {
@@ -40,25 +41,35 @@ export async function resetPasswordDemo(
 }
 
 /**
- * Instant sign-up: creates the account already email-confirmed via the
- * service-role admin API, so there is no confirmation email and the user can
- * sign in immediately. This bypasses the Supabase project's "confirm email"
- * setting entirely — the client then calls signInWithPassword to get a session.
+ * Instant sign-up with a USERNAME + password — no email involved. The username
+ * doubles as the public handle and is mapped to a synthetic auth email. The
+ * account is created already confirmed, so the user can sign in immediately.
  */
 export async function signUpInstant(
-  email: string,
+  username: string,
   password: string,
 ): Promise<SignUpResult> {
-  const e = emailSchema.safeParse(email);
-  if (!e.success) return { error: e.error.issues[0]?.message ?? "Имэйл буруу." };
+  const u = handleSchema.safeParse(username);
+  if (!u.success) {
+    return { error: u.error.issues[0]?.message ?? "Хэрэглэгчийн нэр буруу." };
+  }
   const p = passwordSchema.safeParse(password);
   if (!p.success) return { error: p.error.issues[0]?.message ?? "Нууц үг буруу." };
 
+  // The username becomes the handle — reject if the handle is already taken.
+  const taken = (await getDb().execute(
+    sql`select 1 from profile where lower(handle) = ${u.data} limit 1`,
+  )) as unknown as Array<unknown>;
+  if (taken.length > 0) {
+    return { error: "Энэ нэр аль хэдийн авагдсан байна." };
+  }
+
   const admin = getSupabaseAdmin();
   const { error } = await admin.auth.admin.createUser({
-    email: e.data,
+    email: usernameToEmail(u.data),
     password: p.data,
     email_confirm: true,
+    user_metadata: { username: u.data },
   });
 
   if (error) {
@@ -68,7 +79,7 @@ export async function signUpInstant(
       msg.includes("exists") ||
       msg.includes("registered")
     ) {
-      return { error: "Энэ имэйл бүртгэлтэй байна. Нэвтэрнэ үү." };
+      return { error: "Энэ нэр аль хэдийн авагдсан байна." };
     }
     return { error: "Бүртгэхэд алдаа гарлаа. Дахин оролдоно уу." };
   }

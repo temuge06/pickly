@@ -6,7 +6,7 @@ import { LButton, LInput, LLabel, Hint, Spinner } from "@/components/dashboard/l
 import { uploadOnboardingAvatar } from "@/lib/actions/avatar";
 import { completeOnboarding } from "@/lib/auth/onboarding";
 
-export function OnboardingForm() {
+export function OnboardingForm({ username }: { username: string }) {
   const [state, action, pending] = useActionState(completeOnboarding, null);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -76,24 +76,12 @@ export function OnboardingForm() {
       </div>
 
       <div>
-        <LLabel htmlFor="handle">Хэрэглэгчийн нэр</LLabel>
-        <div className="flex items-center gap-2">
-          <span className="font-malt text-[15px] text-[#feedd5]/40">
-            pickly.mn/
-          </span>
-          <LInput
-            id="handle"
-            name="handle"
-            required
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            inputMode="text"
-            placeholder="sarnai"
-            pattern="[a-z0-9_]+"
-          />
+        <LLabel htmlFor="handle">Хаяг</LLabel>
+        <div className="flex items-center gap-1 rounded-[14px] bg-white/[0.04] px-4 py-3 font-malt text-[15px] text-[#feedd5]/70">
+          <span className="text-[#feedd5]/40">pickly.mn/</span>
+          <span className="font-bold text-[#feedd5]">{username}</span>
         </div>
-        <Hint>Жижиг үсэг, тоо, доогуур зураас (_). 3–24 тэмдэгт.</Hint>
+        <Hint>Энэ таны хуудасны хаяг. Бүртгүүлэх үедээ сонгосон нэр.</Hint>
       </div>
 
       <div>
@@ -102,6 +90,7 @@ export function OnboardingForm() {
           id="displayName"
           name="displayName"
           required
+          defaultValue={username}
           placeholder="Сарнай Бат-Эрдэнэ"
         />
       </div>

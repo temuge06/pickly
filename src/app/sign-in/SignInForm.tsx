@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { LButton, LInput, LLabel, Hint } from "@/components/dashboard/lapis/ui";
 import { signUpInstant } from "@/lib/auth/password-auth";
+import { usernameToEmail } from "@/lib/auth/username";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup";
@@ -16,7 +17,7 @@ export function SignInForm({
   initialError?: string;
 }) {
   const [mode, setMode] = useState<Mode>("signin");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(
@@ -25,15 +26,16 @@ export function SignInForm({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !password || busy) return;
+    if (!username || !password || busy) return;
     setError("");
     setBusy(true);
 
     const supabase = createSupabaseBrowserClient();
+    const email = usernameToEmail(username);
 
     try {
       if (mode === "signup") {
-        const res = await signUpInstant(email, password);
+        const res = await signUpInstant(username, password);
         if ("error" in res) {
           setError(res.error);
           setBusy(false);
@@ -58,7 +60,7 @@ export function SignInForm({
         password,
       });
       if (signInErr) {
-        setError("Имэйл эсвэл нууц үг буруу байна.");
+        setError("Хэрэглэгчийн нэр эсвэл нууц үг буруу байна.");
         setBusy(false);
         return;
       }
@@ -82,9 +84,7 @@ export function SignInForm({
               setError("");
             }}
             className={`flex-1 rounded-[12px] py-2.5 font-malt text-[13.5px] font-bold transition-colors ${
-              mode === m
-                ? "bg-[#fe7f42] text-[#3a1310]"
-                : "text-[#feedd5]/55"
+              mode === m ? "bg-[#fe7f42] text-[#3a1310]" : "text-[#feedd5]/55"
             }`}
           >
             {m === "signin" ? "Нэвтрэх" : "Бүртгүүлэх"}
@@ -93,17 +93,18 @@ export function SignInForm({
       </div>
 
       <div>
-        <LLabel htmlFor="email">Имэйл хаяг</LLabel>
+        <LLabel htmlFor="username">Хэрэглэгчийн нэр</LLabel>
         <LInput
-          id="email"
-          name="email"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
+          id="username"
+          name="username"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           required
-          placeholder="chi@example.com"
-          value={email}
-          onChange={(ev) => setEmail(ev.target.value)}
+          placeholder="sarnai"
+          value={username}
+          onChange={(ev) => setUsername(ev.target.value)}
         />
       </div>
 
@@ -127,7 +128,7 @@ export function SignInForm({
         ) : (
           <Hint>
             {mode === "signup"
-              ? "Дор хаяж 6 тэмдэгт. Имэйл баталгаажуулах шаардлагагүй."
+              ? "Жижиг үсэг, тоо, доогуур зураас. Имэйл шаардлагагүй."
               : "Нэвтэрч ороод хуудсаа удирдаарай."}
           </Hint>
         )}

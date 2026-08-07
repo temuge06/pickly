@@ -16,13 +16,15 @@ export default async function OnboardingPage() {
   const existing = await getCurrentProfile();
   if (existing) redirect("/dashboard");
 
+  const username = (user.email ?? "").split("@")[0] ?? "";
+
   return (
     <AuthShell>
       <AuthHeader
         title="Хуудсаа үүсгэе"
         subtitle="Дараа нь бүгдийг өөрчилж болно. Одоо цөөн зүйл л хэрэгтэй."
       />
-      <OnboardingForm />
+      <OnboardingForm username={username} />
     </AuthShell>
   );
 }
