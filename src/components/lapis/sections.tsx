@@ -121,15 +121,44 @@ const STATUS_TOGGLE: Record<string, "on" | "off" | "mid"> = {
   testing: "mid",
 };
 
-function PickCard({ pick, muted = false }: { pick: Pick; muted?: boolean }) {
+/** Overlapping avatar circles of the people who recommend this product. */
+function Recommenders({ avatars }: { avatars: string[] }) {
+  if (avatars.length === 0) return null;
+  return (
+    <div className="absolute bottom-[6px] left-[6px] z-10 flex items-center">
+      {avatars.slice(0, 3).map((src, i) => (
+        <span
+          key={i}
+          className="relative -ml-[7px] h-[22px] w-[22px] shrink-0 overflow-hidden rounded-full bg-[#b22c20] ring-2 ring-white first:ml-0"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="" className="h-full w-full object-cover" />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function PickCard({
+  pick,
+  muted = false,
+  recommenders = [],
+}: {
+  pick: Pick;
+  muted?: boolean;
+  recommenders?: string[];
+}) {
   const source = hostOf(pick.outboundUrl ?? pick.sourceUrl);
   const toggle = STATUS_TOGGLE[pick.status] ?? "mid";
   return (
     <div className="flex min-h-[319px] w-[168px] shrink-0 items-start rounded-[14px] bg-[#b22c20] px-[10px] py-[12px]">
       <div className="flex w-[149px] flex-col gap-[26px]">
         <div className="flex flex-col gap-[8px]">
-          <div className={`relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${muted ? "opacity-70 grayscale-[45%]" : ""}`}>
-            {pick.imageUrl ? <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" /> : null}
+          <div className="relative">
+            <div className={`relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${muted ? "opacity-70 grayscale-[45%]" : ""}`}>
+              {pick.imageUrl ? <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" /> : null}
+            </div>
+            <Recommenders avatars={recommenders} />
           </div>
           <div className="flex flex-col gap-[8px] text-white">
             <p className="min-h-[26px] text-[14px] font-bold uppercase leading-[13px]">{pick.title}</p>
@@ -167,11 +196,32 @@ function Toggle({ state }: { state: "on" | "off" | "mid" }) {
   );
 }
 
-function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
+/** Rotate a list by n so different cards lead with different faces. */
+function rotate<T>(arr: T[], n: number): T[] {
+  if (arr.length === 0) return arr;
+  const k = ((n % arr.length) + arr.length) % arr.length;
+  return [...arr.slice(k), ...arr.slice(0, k)];
+}
+
+function PickRow({
+  picks,
+  muted,
+  recommenders,
+}: {
+  picks: Pick[];
+  muted?: boolean;
+  recommenders?: string[];
+}) {
+  const pool = recommenders ?? [];
   return (
     <div className="no-scrollbar flex items-stretch gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
-      {picks.map((p) => (
-        <PickCard key={p.id} pick={p} muted={muted} />
+      {picks.map((p, i) => (
+        <PickCard
+          key={p.id}
+          pick={p}
+          muted={muted}
+          recommenders={pool.length ? rotate(pool, i).slice(0, 3) : []}
+        />
       ))}
     </div>
   );
@@ -179,12 +229,18 @@ function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
 
 // --- Top Picks: ungrouped, non-wont_rebuy picks ----------------------------
 
-export function LapisTopPicks({ picks }: { picks: Pick[] }) {
+export function LapisTopPicks({
+  picks,
+  recommenders,
+}: {
+  picks: Pick[];
+  recommenders?: string[];
+}) {
   if (picks.length === 0) return null;
   return (
     <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[#323232] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
       <SectionTitle>TOP PICKS</SectionTitle>
-      <PickRow picks={picks} />
+      <PickRow picks={picks} recommenders={recommenders} />
     </div>
   );
 }

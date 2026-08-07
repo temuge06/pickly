@@ -27,6 +27,12 @@ export default async function ProfilePage({
   const { profile, collections, picks, tracks, films, books, wishlist, askMessages } = data;
   const creators = await getOtherCreators(profile.id);
 
+  // Demo recommenders: profile pictures of other creators, shown as the small
+  // avatar stack on each Top Pick. (No per-product recommendation data yet.)
+  const recommenderAvatars = creators
+    .map((c) => c.avatarUrl)
+    .filter((u): u is string => !!u);
+
   // Split picks into the profile's three product sections:
   //   Not For Me   = status wont_rebuy
   //   My Picks     = the rest, grouped by collection
@@ -46,7 +52,7 @@ export default async function ProfilePage({
           <LapisStatusBar />
           <LapisHeader profile={profile} />
           <LapisMusic tracks={tracks} films={films} books={books} />
-          <LapisTopPicks picks={topPicks} />
+          <LapisTopPicks picks={topPicks} recommenders={recommenderAvatars} />
           <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
           <LapisWishlist items={wishlist} />
           <LapisNotForMe picks={notForMe} />
