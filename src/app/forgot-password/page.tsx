@@ -11,8 +11,8 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell>
       <AuthHeader
-        title="Нууц үгээ мартсан уу?"
-        subtitle="Имэйл хаягаа оруулбал сэргээх холбоос илгээнэ."
+        title="Нууц үг сэргээх"
+        subtitle="Имэйл болон шинэ нууц үгээ оруулаад шинэчилнэ үү."
       />
       <ForgotPasswordForm />
     </AuthShell>
