@@ -69,7 +69,7 @@ export default async function ProfilePage({
             <LapisMusic tracks={tracks} films={films} books={books} />
           ) : null}
           {flags.top_picks ? (
-            <LapisTopPicks picks={topPicks} recommenders={recommenderAvatars} />
+            <LapisTopPicks picks={topPicks} handle={profile.handle} />
           ) : null}
           {flags.my_picks ? (
             <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
@@ -78,7 +78,7 @@ export default async function ProfilePage({
             <LapisWishlist items={wishlist} recommenders={recommenderAvatars} />
           ) : null}
           {flags.not_for_me ? (
-            <LapisNotForMe picks={notForMe} recommenders={recommenderAvatars} />
+            <LapisNotForMe picks={notForMe} />
           ) : null}
           {flags.ask ? (
             <LapisAsk

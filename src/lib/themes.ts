@@ -51,10 +51,13 @@ export type ThemeTokens = {
   /** Follow button — a neutral inverse of the background in every theme. */
   btn: string;
   onBtn: string;
-  /** The "Үзэх" call-to-action sitting ON a product card. Needs its own pair:
-   *  a black chip reads well on every card except Dalai #1's near-black one. */
+  /** The full-width call-to-action on a product card. On Fire's values come
+   *  straight from the Figma card spec (#911c11 on #620000); the other themes
+   *  use the equivalent "one step darker than the card" treatment so the
+   *  button stays legible against each card surface. */
   cardBtn: string;
   onCardBtn: string;
+  cardBtnBorder: string;
 };
 
 export type Theme = {
@@ -87,8 +90,9 @@ export const THEMES: Theme[] = [
       avatarBg: "#42282a",
       btn: "#ffffff",
       onBtn: "#0a0a0a",
-      cardBtn: "#000000",
+      cardBtn: "#911c11",
       onCardBtn: "#ffffff",
+      cardBtnBorder: "#620000",
     },
   },
   {
@@ -113,8 +117,9 @@ export const THEMES: Theme[] = [
       avatarBg: "rgba(177,25,63,0.14)",
       btn: "#ffffff",
       onBtn: "#b1193f",
-      cardBtn: "#000000",
+      cardBtn: "#b1193f",
       onCardBtn: "#ffffff",
+      cardBtnBorder: "#8d1032",
     },
   },
   {
@@ -139,8 +144,9 @@ export const THEMES: Theme[] = [
       avatarBg: "#1e1e1e",
       btn: "#ffffff",
       onBtn: "#0b1014",
-      cardBtn: "#ffffff",
-      onCardBtn: "#0b1014",
+      cardBtn: "#2f2f2f",
+      onCardBtn: "#ffffff",
+      cardBtnBorder: "rgba(255,255,255,0.18)",
     },
   },
   {
@@ -167,6 +173,7 @@ export const THEMES: Theme[] = [
       onBtn: "#ffffff",
       cardBtn: "#000000",
       onCardBtn: "#ffffff",
+      cardBtnBorder: "#000000",
     },
   },
 ];
@@ -205,5 +212,6 @@ export function themeStyle(key: string | null | undefined): React.CSSProperties 
     "--t-on-btn": t.onBtn,
     "--t-card-btn": t.cardBtn,
     "--t-on-card-btn": t.onCardBtn,
+    "--t-card-btn-border": t.cardBtnBorder,
   } as React.CSSProperties;
 }

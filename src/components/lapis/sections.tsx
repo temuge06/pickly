@@ -157,11 +157,9 @@ function Recommenders({ avatars }: { avatars: string[] }) {
 function PickCard({
   pick,
   muted = false,
-  recommenders = [],
 }: {
   pick: Pick;
   muted?: boolean;
-  recommenders?: string[];
 }) {
   const source = hostOf(pick.outboundUrl ?? pick.sourceUrl);
   return (
@@ -169,36 +167,51 @@ function PickCard({
       className="flex min-h-[319px] w-[168px] shrink-0 items-start rounded-[14px] px-[10px] py-[12px]"
       style={{ background: "var(--t-card)", color: "var(--t-on-card)" }}
     >
-      <div className="flex w-[149px] flex-col gap-[26px]">
+      <div className="flex w-[149px] flex-col gap-[7px]">
         <div className="flex flex-col gap-[8px]">
-          <div className={`relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${muted ? "opacity-70 grayscale-[45%]" : ""}`}>
-            {pick.imageUrl ? <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" /> : null}
-          </div>
-          <div className="flex flex-col gap-[8px] text-[var(--t-on-card)]">
-            <p className="min-h-[26px] text-[14px] font-bold uppercase leading-[13px]">{pick.title}</p>
-            {pick.note ? (
-              <p className="line-clamp-4 min-h-[48px] text-[14px] font-light leading-[12px] tracking-[-0.28px]">{pick.note}</p>
-            ) : (
-              <div className="min-h-[48px]" />
-            )}
-          </div>
-        </div>
-        <div className="flex flex-col gap-[8px]">
-          <div className="flex items-center gap-[12px]">
-            {pick.outboundUrl ? (
-              <a href={pick.outboundUrl} target="_blank" rel="noopener noreferrer" className="flex w-[58px] items-center justify-center rounded-[10px] bg-[var(--t-card-btn)] text-[var(--t-on-card-btn)] px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px]">
-                үзэх<span className="ml-0.5 text-[9px]">↗</span>
-              </a>
+          {/* Portrait 149x202, not square — the taller crop is what makes room
+              for the full-width action below. */}
+          <div
+            className={`relative h-[202px] w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${
+              muted ? "opacity-70 grayscale-[45%]" : ""
+            }`}
+          >
+            {pick.imageUrl ? (
+              <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" />
             ) : null}
-            <Recommenders avatars={recommenders} />
           </div>
-          {source ? (
-            <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-[var(--t-on-card)]/70">
-              <span className="h-[6px] w-[6px] rounded-full bg-[var(--t-on-card)]/70" />
-              {source}
-            </span>
-          ) : null}
+          <p className="min-h-[26px] text-[14px] font-bold uppercase leading-[13px] text-[var(--t-on-card)]">
+            {pick.title}
+          </p>
         </div>
+
+        {pick.outboundUrl ? (
+          <a
+            href={pick.outboundUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-[37px] w-full items-center justify-center gap-[6px] rounded-[10px] border text-[12px] font-semibold tracking-[-0.48px]"
+            style={{
+              background: "var(--t-card-btn)",
+              color: "var(--t-on-card-btn)",
+              borderColor: "var(--t-card-btn-border)",
+            }}
+          >
+            Дэлгэрэнгүй үзэх
+            <span className="text-[10px] leading-none" aria-hidden>
+              ↗
+            </span>
+          </a>
+        ) : (
+          <div className="h-[37px]" />
+        )}
+
+        {source ? (
+          <span className="flex items-center justify-center gap-1 text-[8px] font-light tracking-[-0.16px] text-[var(--t-on-card)]/70">
+            <span className="h-[6px] w-[6px] rounded-full bg-[var(--t-on-card)]/70" />
+            {source}
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -211,25 +224,11 @@ function rotate<T>(arr: T[], n: number): T[] {
   return [...arr.slice(k), ...arr.slice(0, k)];
 }
 
-function PickRow({
-  picks,
-  muted,
-  recommenders,
-}: {
-  picks: Pick[];
-  muted?: boolean;
-  recommenders?: string[];
-}) {
-  const pool = recommenders ?? [];
+function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
   return (
     <div className="no-scrollbar flex items-stretch gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
-      {picks.map((p, i) => (
-        <PickCard
-          key={p.id}
-          pick={p}
-          muted={muted}
-          recommenders={pool.length ? rotate(pool, i).slice(0, 3) : []}
-        />
+      {picks.map((p) => (
+        <PickCard key={p.id} pick={p} muted={muted} />
       ))}
     </div>
   );
@@ -239,16 +238,17 @@ function PickRow({
 
 export function LapisTopPicks({
   picks,
-  recommenders,
+  handle,
 }: {
   picks: Pick[];
-  recommenders?: string[];
+  /** Titles the shelf after its owner — "temuge's picks", not "TOP PICKS". */
+  handle: string;
 }) {
   if (picks.length === 0) return null;
   return (
     <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[var(--t-border)] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
-      <SectionTitle>TOP PICKS</SectionTitle>
-      <PickRow picks={picks} recommenders={recommenders} />
+      <SectionTitle>{`${handle}'s picks`}</SectionTitle>
+      <PickRow picks={picks} />
     </div>
   );
 }
@@ -366,18 +366,12 @@ export function LapisMyPicks({
 
 // --- Not For Me: wont_rebuy picks ------------------------------------------
 
-export function LapisNotForMe({
-  picks,
-  recommenders,
-}: {
-  picks: Pick[];
-  recommenders?: string[];
-}) {
+export function LapisNotForMe({ picks }: { picks: Pick[] }) {
   if (picks.length === 0) return null;
   return (
     <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
       <SectionTitle>NOT FOR ME</SectionTitle>
-      <PickRow picks={picks} muted recommenders={recommenders} />
+      <PickRow picks={picks} muted />
     </div>
   );
 }
