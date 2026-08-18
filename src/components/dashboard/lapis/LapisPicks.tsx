@@ -34,15 +34,21 @@ export function LapisPicks({
   picks,
   collections,
   notForMeEnabled = true,
+  topPicksEnabled = true,
+  myPicksEnabled = true,
 }: {
   picks: Pick[];
   collections: Collection[];
-  /** When Not For Me is off those picks have no section, so they're not listed. */
+  /** A pick whose section is switched off has nowhere to appear, so it is not
+   *  listed here either — the dashboard mirrors the public profile exactly. */
   notForMeEnabled?: boolean;
+  topPicksEnabled?: boolean;
+  myPicksEnabled?: boolean;
 }) {
-  const visible = notForMeEnabled
-    ? picks
-    : picks.filter((p) => p.status !== "wont_rebuy");
+  const visible = picks.filter((p) => {
+    if (p.status === "wont_rebuy") return notForMeEnabled;
+    return p.collectionId === null ? topPicksEnabled : myPicksEnabled;
+  });
   const collectionTitle = new Map(collections.map((c) => [c.id, c.title]));
 
   return (

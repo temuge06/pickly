@@ -68,7 +68,9 @@ export default async function ProfilePage({
           {flags.entertainment ? (
             <LapisMusic tracks={tracks} films={films} books={books} />
           ) : null}
-          <LapisTopPicks picks={topPicks} recommenders={recommenderAvatars} />
+          {flags.top_picks ? (
+            <LapisTopPicks picks={topPicks} recommenders={recommenderAvatars} />
+          ) : null}
           {flags.my_picks ? (
             <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
           ) : null}

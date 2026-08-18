@@ -6,6 +6,7 @@ import { FEATURES, FEATURE_LABELS, type Feature, type FeatureFlags } from "@/lib
 import { AError, ASpinner } from "./ui";
 
 const DESCRIPTIONS: Record<Feature, string> = {
+  top_picks: "Цуглуулгад ороогүй үндсэн тавиур.",
   entertainment: "Дуу, кино, номын таб бүхэлдээ.",
   wishlist: "Хүслийн жагсаалт.",
   not_for_me: "«Дахин авахгүй» хэсэг.",
@@ -73,13 +74,18 @@ export function AdminFeatureFlags({
               aria-label={FEATURE_LABELS[f]}
               disabled={busy === f}
               onClick={() => toggle(f)}
-              className={`relative h-[28px] w-[48px] shrink-0 rounded-full transition-colors duration-150 disabled:opacity-60 ${
-                on ? "bg-[#fe7f42]" : "bg-white/[0.14]"
+              className={`relative h-[28px] w-[48px] shrink-0 cursor-pointer rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fe7f42] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1115] disabled:cursor-default disabled:opacity-60 ${
+                on ? "bg-[#fe7f42]" : "bg-white/[0.16]"
               }`}
             >
+              {/* left-[3px] is load-bearing: a <button> centres its content, so
+                  an absolutely-positioned knob with `left: auto` takes its
+                  static origin from the track's MIDPOINT, not its left edge —
+                  the translate then pushed it clean outside the track.
+                  Anchoring left makes the travel (3px → 23px) deterministic. */}
               <span
-                className={`absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white transition-transform duration-150 ${
-                  on ? "translate-x-[23px]" : "translate-x-[3px]"
+                className={`absolute left-[3px] top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-transform duration-150 ${
+                  on ? "translate-x-[20px]" : "translate-x-0"
                 }`}
               />
             </button>

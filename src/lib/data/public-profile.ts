@@ -147,12 +147,16 @@ export async function getPublicProfile(
     (a: ActivityItem) => !inactiveProviders.has(a.provider),
   );
 
-  // Top Picks has no flag of its own, so picks come back in one query. When
-  // not_for_me is off, its rows are stripped HERE — otherwise the page would
-  // ship the hidden products to the browser and merely decline to draw them.
-  const visiblePicks = flags.not_for_me
-    ? picks
-    : picks.filter((k: Pick) => k.status !== "wont_rebuy");
+  // All picks come back in one query, then each section's flag strips its own
+  // rows HERE — otherwise the page would ship hidden products to the browser
+  // and merely decline to draw them.
+  //   not_for_me → status wont_rebuy
+  //   top_picks  → everything else with no collection
+  //   my_picks   → everything else that has one
+  const visiblePicks = picks.filter((k: Pick) => {
+    if (k.status === "wont_rebuy") return flags.not_for_me;
+    return k.collectionId === null ? flags.top_picks : flags.my_picks;
+  });
 
   return {
     profile: p,

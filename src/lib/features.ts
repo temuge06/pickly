@@ -11,6 +11,7 @@ export type Feature = (typeof featureFlag.$inferSelect)["feature"];
 
 /** Every flag, in the order the admin panel lists them. */
 export const FEATURES: Feature[] = [
+  "top_picks",
   "entertainment",
   "wishlist",
   "not_for_me",
@@ -19,6 +20,7 @@ export const FEATURES: Feature[] = [
 ];
 
 export const FEATURE_LABELS: Record<Feature, string> = {
+  top_picks: "Top Picks",
   entertainment: "Entertainment (дуу / кино / ном)",
   wishlist: "Wishlist",
   not_for_me: "Not For Me",

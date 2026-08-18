@@ -106,6 +106,7 @@ export const profileThemeEnum = pgEnum("profile_theme", [
  * the public profile, so they turn on and off as a unit).
  */
 export const featureEnum = pgEnum("feature", [
+  "top_picks",
   "entertainment",
   "wishlist",
   "not_for_me",

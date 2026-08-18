@@ -122,11 +122,13 @@ export function LapisProfile({ profile }: { profile: Profile }) {
             <LInput name="youtube" placeholder="YouTube" defaultValue={socials.youtube ?? ""} />
           </div>
           <input type="hidden" name="accentColor" value={profile.accentColor ?? ""} />
-        </form>
 
-        <ThemePicker current={profile.theme} />
+          {/* Inside the one form on purpose. Splitting it left the submit
+              button in a second <form> with no displayName field, so saving
+              failed with "Expected string, received null". Every control in
+              ThemePicker is type="button", so nesting it submits nothing. */}
+          <ThemePicker current={profile.theme} />
 
-        <form action={action} className="flex flex-col gap-3">
           {state?.error ? (
             <p className="font-malt text-[13px] text-[#ff9a8a]">{state.error}</p>
           ) : null}

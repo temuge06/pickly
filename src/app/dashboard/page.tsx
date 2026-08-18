@@ -64,7 +64,13 @@ export default async function DashboardPage() {
           ) : null}
 
           <LapisProfile profile={profile} />
-          <LapisPicks picks={data.picks} collections={data.collections} notForMeEnabled={flags.not_for_me} />
+          <LapisPicks
+            picks={data.picks}
+            collections={data.collections}
+            notForMeEnabled={flags.not_for_me}
+            topPicksEnabled={flags.top_picks}
+            myPicksEnabled={flags.my_picks}
+          />
           {flags.my_picks ? (
             <LapisCollections
               collections={data.collections}
