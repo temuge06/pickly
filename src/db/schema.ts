@@ -86,9 +86,61 @@ export const askStatusEnum = pgEnum("ask_status", [
   "blocked",
 ]);
 
+/**
+ * Visual themes a creator can pick for their public profile. Each key maps to a
+ * palette in src/lib/themes.ts; the names are the designer's (Figma: Coral
+ * Wave / On Fire / Dalai #1 / Dalai #2). `on_fire` is the default because it IS
+ * the palette every existing profile already renders with — so adding this
+ * column changes nothing visually until a creator chooses otherwise.
+ */
+export const profileThemeEnum = pgEnum("profile_theme", [
+  "on_fire",
+  "coral_wave",
+  "dalai_1",
+  "dalai_2",
+]);
+
+/**
+ * Sections an admin can switch off per creator. `entertainment` is one flag
+ * covering music + films + books together (they share the one MMB tab strip on
+ * the public profile, so they turn on and off as a unit).
+ */
+export const featureEnum = pgEnum("feature", [
+  "entertainment",
+  "wishlist",
+  "not_for_me",
+  "my_picks",
+  "ask",
+]);
+
 // ---------------------------------------------------------------------------
 // Tables
 // ---------------------------------------------------------------------------
+
+/**
+ * Admin accounts. There is exactly ONE tier: an auth user with a row here is an
+ * admin with full control over every creator's picks, wishlist, collections and
+ * feature flags. Presence in this table IS the permission — there is
+ * deliberately no `role` column, because a column that can only hold one value
+ * reads like an authorization boundary while enforcing nothing.
+ *
+ * Rows are granted out-of-band (SQL/Supabase console), never through the app:
+ * `admin_user` has no INSERT/UPDATE/DELETE policy for any role, so no request
+ * path can escalate its own privileges or grant another account.
+ */
+export const adminUser = pgTable("admin_user", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  authUserId: uuid("auth_user_id")
+    .notNull()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  authUserUnique: uniqueIndex("admin_user_auth_user_id_unique").on(
+    table.authUserId,
+  ),
+}));
 
 export const profile = pgTable("profile", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -100,6 +152,8 @@ export const profile = pgTable("profile", {
   bio: text("bio"),
   avatarUrl: text("avatar_url"),
   accentColor: text("accent_color"),
+  /** Public-profile palette. See profileThemeEnum + src/lib/themes.ts. */
+  theme: profileThemeEnum("theme").notNull().default("on_fire"),
   /** e.g. { instagram: "...", tiktok: "...", youtube: "..." } */
   socials: jsonb("socials").$type<Record<string, string>>().default({}),
   // --- Ask feature (v2) ---
@@ -118,6 +172,32 @@ export const profile = pgTable("profile", {
 }, (table) => ({
   handleUnique: uniqueIndex("profile_handle_unique").on(table.handle),
   userIdUnique: uniqueIndex("profile_user_id_unique").on(table.userId),
+}));
+
+/**
+ * Per-creator section switches, written only by staff. A MISSING ROW MEANS ON
+ * — we never backfill a row per profile per feature, so every read must treat
+ * absence as `enabled = true` (see getFeatureFlags). Off means the section is
+ * omitted server-side entirely, not hidden in CSS.
+ */
+export const featureFlag = pgTable("feature_flag", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profile.id, { onDelete: "cascade" }),
+  feature: featureEnum("feature").notNull(),
+  enabled: boolean("enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedBy: uuid("updated_by").references(() => adminUser.id, {
+    onDelete: "set null",
+  }),
+}, (table) => ({
+  profileFeatureUnique: uniqueIndex("feature_flag_profile_feature_unique").on(
+    table.profileId,
+    table.feature,
+  ),
 }));
 
 export const connection = pgTable("connection", {
@@ -312,6 +392,12 @@ export const askMessage = pgTable("ask_message", {
   answerPickId: uuid("answer_pick_id").references(() => pick.id, {
     onDelete: "set null",
   }),
+  /**
+   * Creators can no longer create picks themselves, so a product question is
+   * handed to staff instead: answering + marking it product-related sets this,
+   * and /admin surfaces the flagged messages as a work queue.
+   */
+  flaggedForPick: boolean("flagged_for_pick").notNull().default(false),
   isPublic: boolean("is_public").notNull().default(false),
   /**
    * sha256(ip + rotating daily salt). Enough to rate-limit and detect abuse,
@@ -360,6 +446,21 @@ export const askBlock = pgTable("ask_block", {
 // Relations (query-API ergonomics — no schema effect)
 // ---------------------------------------------------------------------------
 
+export const adminUserRelations = relations(adminUser, ({ many }) => ({
+  featureFlags: many(featureFlag),
+}));
+
+export const featureFlagRelations = relations(featureFlag, ({ one }) => ({
+  profile: one(profile, {
+    fields: [featureFlag.profileId],
+    references: [profile.id],
+  }),
+  updatedByAdmin: one(adminUser, {
+    fields: [featureFlag.updatedBy],
+    references: [adminUser.id],
+  }),
+}));
+
 export const profileRelations = relations(profile, ({ many }) => ({
   connections: many(connection),
   activityItems: many(activityItem),
@@ -369,6 +470,7 @@ export const profileRelations = relations(profile, ({ many }) => ({
   wishlistItems: many(wishlistItem),
   askMessages: many(askMessage),
   askBlocks: many(askBlock),
+  featureFlags: many(featureFlag),
 }));
 
 export const wishlistItemRelations = relations(wishlistItem, ({ one }) => ({

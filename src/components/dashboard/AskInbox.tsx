@@ -8,12 +8,12 @@ import {
   blockAsker,
   hideAsk,
   setAskEnabled,
+  setAskFlaggedForPick,
   setAskPrompt,
   toggleAskPublic,
   unhideAsk,
 } from "@/lib/actions/ask";
 import { DashSection, EmptyHint } from "./Section";
-import { AddPick } from "./AddPick";
 
 type Message = {
   id: string;
@@ -21,6 +21,7 @@ type Message = {
   status: string;
   answerBody: string | null;
   isPublic: boolean;
+  flaggedForPick: boolean;
   createdAt: Date;
 };
 type Collection = { id: string; title: string };
@@ -153,7 +154,7 @@ function NewMessage({
 }) {
   const [answer, setAnswer] = useState("");
   const [makePublic, setMakePublic] = useState(false);
-  const [turningIntoPick, setTurningIntoPick] = useState(false);
+  const [flagForPick, setFlagForPick] = useState(message.flaggedForPick);
   const [pending, start] = useTransition();
 
   return (
@@ -162,14 +163,7 @@ function NewMessage({
         {message.body}
       </p>
 
-      {turningIntoPick ? (
-        <AddPick
-          collections={collections}
-          seedNote=""
-          onDone={() => setTurningIntoPick(false)}
-        />
-      ) : (
-        <>
+      <>
           <TextArea
             rows={2}
             value={answer}
@@ -185,23 +179,28 @@ function NewMessage({
             />
             Профайл дээр нийтлэх
           </label>
+          <label className="flex items-center gap-2 font-body text-[13px] text-paper/70">
+            <input
+              type="checkbox"
+              checked={flagForPick}
+              onChange={(e) => setFlagForPick(e.target.checked)}
+              className="h-4 w-4 accent-marigold"
+            />
+            Барааны асуулт — Pickly-ийн багт илгээх
+          </label>
           <div className="flex flex-wrap gap-2">
             <Button
               disabled={pending || !answer.trim()}
               onClick={() =>
                 start(async () => {
                   await answerAsk(message.id, answer, makePublic);
+                  // Flagging is a separate write so the answer still lands
+                  // even if the creator never ticked the box.
+                  if (flagForPick) await setAskFlaggedForPick(message.id, true);
                 })
               }
             >
               Хариулах
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={pending}
-              onClick={() => setTurningIntoPick(true)}
-            >
-              Пик болгох
             </Button>
             <Button
               variant="ghost"
@@ -220,7 +219,6 @@ function NewMessage({
             </Button>
           </div>
         </>
-      )}
     </div>
   );
 }

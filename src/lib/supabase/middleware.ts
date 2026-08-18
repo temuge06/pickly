@@ -6,8 +6,8 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 /**
  * Refreshes the Supabase session cookie on every matched request and guards
- * /dashboard. When Supabase isn't configured, this is a pass-through so the
- * public site works with zero keys.
+ * /dashboard (signed in) and /admin (signed in AND staff). When Supabase isn't
+ * configured, this is a pass-through so the public site works with zero keys.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -39,12 +39,40 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
-  if (isDashboard && !user) {
+  const { pathname } = request.nextUrl;
+  const isDashboard = pathname.startsWith("/dashboard");
+  const isAdmin = pathname.startsWith("/admin");
+
+  if ((isDashboard || isAdmin) && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
-    url.searchParams.set("next", request.nextUrl.pathname);
+    url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
+  }
+
+  // /admin is a real access boundary, not a hidden nav item: staff can write to
+  // any creator's data. Signed in is not enough — the account must have an
+  // admin_user row, checked HERE at the route level so a non-staff user never
+  // reaches the page at all.
+  //
+  // The lookup runs through PostgREST with the *user's own* session, so the
+  // admin_user_self_read RLS policy is what authorizes it — the same boundary
+  // the server components and server actions re-check. A non-staff session can
+  // only ever read back an empty set, so this cannot be spoofed from the client.
+  if (isAdmin) {
+    const { data, error } = await supabase
+      .from("admin_user")
+      .select("id")
+      .eq("auth_user_id", user!.id)
+      .maybeSingle();
+
+    // Fail closed: an errored check is a denied check.
+    if (error || !data) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;

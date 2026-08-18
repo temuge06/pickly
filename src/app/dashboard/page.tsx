@@ -23,6 +23,7 @@ export default async function DashboardPage() {
   const spotify = data.connections.find((c) => c.provider === "spotify") ?? null;
   const letterboxd = data.connections.find((c) => c.provider === "letterboxd") ?? null;
   const askNew = data.ask.new.length;
+  const flags = data.flags;
 
   return (
     <div className="min-h-dvh bg-neutral-900 sm:py-8">
@@ -46,7 +47,8 @@ export default async function DashboardPage() {
         </header>
 
         <div className="flex flex-col gap-7 pt-5">
-          {/* Ask inbox link */}
+          {/* Ask inbox link — absent, not disabled, when staff turned Ask off. */}
+          {flags.ask ? (
           <div className="animate-fade-up px-4">
             <Link href="/dashboard/ask" className="flex items-center justify-between rounded-[16px] bg-[#b22c20] px-4 py-3.5 transition-transform active:scale-[0.99]">
               <span className="flex items-center gap-2 font-malt text-[14.5px] font-bold text-[#feedd5]">
@@ -59,23 +61,39 @@ export default async function DashboardPage() {
               )}
             </Link>
           </div>
+          ) : null}
 
           <LapisProfile profile={profile} />
-          <LapisPicks picks={data.picks} collections={data.collections} />
-          <LapisCollections collections={data.collections} />
-          <LapisWishlistManager items={data.wishlist} />
-          <LapisSongs spotify={spotify} trackCount={data.tracks.length} configured={env.hasSpotify} />
+          <LapisPicks picks={data.picks} collections={data.collections} notForMeEnabled={flags.not_for_me} />
+          {flags.my_picks ? (
+            <LapisCollections
+              collections={data.collections}
+              pickCounts={data.picks.reduce<Record<string, number>>((acc, p) => {
+                if (p.collectionId) acc[p.collectionId] = (acc[p.collectionId] ?? 0) + 1;
+                return acc;
+              }, {})}
+            />
+          ) : null}
+          {flags.wishlist ? <LapisWishlistManager items={data.wishlist} /> : null}
 
-          <LapisMedia
-            kind="film"
-            icon="🎬"
-            title="Кино"
-            items={data.films}
-            disabledHint={env.hasTmdb ? undefined : "TMDB түлхүүр байхгүй тул хайлт хязгаарлагдмал. Letterboxd-ээр синк хийж болно."}
-            extra={<LapisLetterboxd connection={letterboxd} />}
-          />
+          {/* One flag covers music + film + book: they are a single
+              Entertainment surface, so all three settings areas go together. */}
+          {flags.entertainment ? (
+            <>
+              <LapisSongs spotify={spotify} trackCount={data.tracks.length} configured={env.hasSpotify} />
 
-          <LapisMedia kind="book" icon="📚" title="Ном" items={data.books} />
+              <LapisMedia
+                kind="film"
+                icon="🎬"
+                title="Кино"
+                items={data.films}
+                disabledHint={env.hasTmdb ? undefined : "TMDB түлхүүр байхгүй тул хайлт хязгаарлагдмал. Letterboxd-ээр синк хийж болно."}
+                extra={<LapisLetterboxd connection={letterboxd} />}
+              />
+
+              <LapisMedia kind="book" icon="📚" title="Ном" items={data.books} />
+            </>
+          ) : null}
 
           <LapisLinks links={data.links} />
         </div>

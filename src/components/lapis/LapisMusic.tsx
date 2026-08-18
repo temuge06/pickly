@@ -34,17 +34,17 @@ export function LapisMusic({
   const current = tabs.find((t) => t.key === active) ?? tabs[0]!;
 
   return (
-    <div className="flex flex-col gap-[16px] bg-[#2a1617] py-[17px]">
+    <div className="flex flex-col gap-[16px] bg-[var(--t-bg)] py-[17px]">
       {/* Tabs (Figma 731:14235) */}
-      <div className="mx-[26px] flex w-fit items-center gap-[16px] rounded-[19px] border border-[#fe7f42] bg-[#2a1617] p-[3px] drop-shadow-[0px_0px_1.65px_rgba(192,0,59,0.31)]">
+      <div className="mx-[26px] flex w-fit items-center gap-[16px] rounded-[19px] border border-[var(--t-accent)] bg-[var(--t-bg)] p-[3px] drop-shadow-[0px_0px_1.65px_rgba(192,0,59,0.31)]">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActive(t.key)}
             className={`flex items-center justify-center rounded-[14px] px-[30px] py-[7px] text-[14px] font-bold capitalize leading-[13px] transition-colors ${
               active === t.key
-                ? "bg-[#fe7f42] text-[#feedd5]"
-                : "text-[rgba(254,237,213,0.3)]"
+                ? "bg-[var(--t-accent)] text-[var(--t-on-accent)]"
+                : "text-[var(--t-muted)]"
             }`}
           >
             {t.label}
@@ -79,7 +79,7 @@ const WAVE = [3, 7, 9, 7, 13, 7, 3, 13, 7, 3, 7, 9, 7, 3, 7, 9, 7, 13, 9, 7, 3];
 function MusicBar({ item }: { item: Item }) {
   const note = (item.meta as { note?: string })?.note ?? null;
   return (
-    <div className="flex h-[112px] w-[230px] shrink-0 snap-start items-center rounded-[14px] bg-[#fe7f42] py-[5px] pl-[5px] pr-[4px] drop-shadow-[0px_0px_2.85px_white]">
+    <div className="flex h-[112px] w-[230px] shrink-0 snap-start items-center rounded-[14px] bg-[var(--t-accent)] py-[5px] pl-[5px] pr-[4px] drop-shadow-[0px_0px_2.85px_white]">
       <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-[10px] bg-black/10">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
@@ -88,17 +88,17 @@ function MusicBar({ item }: { item: Item }) {
       <div className="relative h-[102px] w-[114px] shrink-0 pl-[5px]">
         <div className="flex flex-col gap-[9px] pt-[6px]">
           <div>
-            <p className="line-clamp-1 text-[14px] font-bold leading-[16px] tracking-[-0.7px] text-[#feedd5]">
+            <p className="line-clamp-1 text-[14px] font-bold leading-[16px] tracking-[-0.7px] text-[var(--t-on-accent)]">
               {item.title}
             </p>
             {item.subtitle ? (
-              <p className="line-clamp-1 text-[8px] font-extralight tracking-[-0.16px] text-[#fff0e6]">
+              <p className="line-clamp-1 text-[8px] font-extralight tracking-[-0.16px] text-[var(--t-on-accent)]/70">
                 {item.subtitle}
               </p>
             ) : null}
           </div>
           {note ? (
-            <p className="line-clamp-3 w-[104px] text-[10px] font-light leading-[11px] tracking-[-0.2px] text-[#feedd5]">
+            <p className="line-clamp-3 w-[104px] text-[10px] font-light leading-[11px] tracking-[-0.2px] text-[var(--t-on-accent)]">
               “{note}”
             </p>
           ) : null}
@@ -110,7 +110,7 @@ function MusicBar({ item }: { item: Item }) {
               className="w-px rounded-[2px]"
               style={{
                 height: `${h}px`,
-                background: i < 8 ? "#feedd5" : "rgba(254,237,213,0.2)",
+                background: i < 8 ? "var(--t-on-accent)" : "color-mix(in srgb, var(--t-on-accent) 20%, transparent)",
               }}
             />
           ))}
@@ -120,7 +120,7 @@ function MusicBar({ item }: { item: Item }) {
             href={item.externalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute bottom-[8px] right-[1px] flex h-[20px] items-center gap-1 rounded-[10px] bg-[#feedd5] px-[6px] text-[12px] font-semibold capitalize tracking-[-0.48px] text-[#fe7f42]"
+            className="absolute bottom-[8px] right-[1px] flex h-[20px] items-center gap-1 rounded-[10px] bg-[var(--t-on-accent)] px-[6px] text-[12px] font-semibold capitalize tracking-[-0.48px] text-[var(--t-accent)]"
           >
             сонсох<span className="text-[8px]">↗</span>
           </a>
@@ -145,7 +145,7 @@ function MoviePoster({ item }: { item: Item }) {
     </>
   );
   const cls =
-    "h-[161px] w-[110px] shrink-0 snap-start overflow-hidden rounded-[19px] bg-[#feedd5] shadow-[0px_0px_4px_0px_rgba(192,0,59,0.31)]";
+    "h-[161px] w-[110px] shrink-0 snap-start overflow-hidden rounded-[19px] bg-[var(--t-card)] text-[var(--t-on-card)] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)]";
   return item.externalUrl ? (
     <a href={item.externalUrl} target="_blank" rel="noopener noreferrer" className={cls}>
       {inner}

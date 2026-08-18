@@ -14,6 +14,11 @@ export type ResetResult = { ok: true } | { error: string };
  * a username (or email) + a new password and we set it directly via the
  * service-role admin API. This is intentionally NOT secure (anyone who knows a
  * username can change that account's password) and exists only for this demo.
+ *
+ * Staff accounts are excluded below: a token-less reset that can target an
+ * admin is a full platform takeover, not just one hijacked profile. The rest
+ * of this flow still needs replacing with a real emailed-token reset before
+ * public launch.
  */
 export async function resetPasswordDemo(
   username: string,
@@ -30,6 +35,18 @@ export async function resetPasswordDemo(
   )) as unknown as Array<{ id: string }>;
   const userId = rows[0]?.id;
   if (!userId) return { error: "Ийм хэрэглэгч олдсонгүй." };
+
+  // Never let this unverified path touch a staff account. The reset is
+  // deliberately token-less, so allowing it against an admin_user row would
+  // mean anyone who guesses a staff email inherits write access to EVERY
+  // creator's picks — the exact boundary /admin exists to hold. Admin
+  // passwords are rotated out-of-band, like the grant itself.
+  const adminRows = (await getDb().execute(
+    sql`select 1 from public.admin_user where auth_user_id = ${userId}::uuid limit 1`,
+  )) as unknown as Array<unknown>;
+  if (adminRows.length > 0) {
+    return { error: "Энэ бүртгэлийн нууц үгийг эндээс сэргээх боломжгүй." };
+  }
 
   const admin = getSupabaseAdmin();
   const { error } = await admin.auth.admin.updateUserById(userId, {

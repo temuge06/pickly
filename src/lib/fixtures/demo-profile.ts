@@ -37,6 +37,7 @@ export const demoProfile: Profile = {
   bio: "skincare, кофе, номтой найз 💛 Улаанбаатар",
   avatarUrl: photo("sarnai-avatar", 200, 200),
   accentColor: "#e8a33d",
+  theme: "on_fire" as const,
   socials: {
     instagram: "https://instagram.com/sarnai.mn",
     tiktok: "https://tiktok.com/@sarnai.mn",
@@ -432,6 +433,7 @@ export const demoAskMessages: AskMessage[] = [
     answerBody:
       "State Department store-ийн 2 давхарт байдаг, эсвэл iHerb-ээс захиалж болно 💛",
     answerPickId: "b0000000-0000-4000-8000-000000000001",
+    flaggedForPick: false,
     isPublic: true,
     askerIpHash: null,
     askerFingerprint: null,
@@ -445,6 +447,7 @@ export const demoAskMessages: AskMessage[] = [
     status: "answered",
     answerBody: "Одоо Atomic Habits уншиж байна, дадал зуршлын тухай гоё ном.",
     answerPickId: null,
+    flaggedForPick: false,
     isPublic: true,
     askerIpHash: null,
     askerFingerprint: null,

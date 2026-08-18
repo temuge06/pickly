@@ -1,0 +1,1 @@
+ALTER TABLE "admin_user" DROP COLUMN "role";

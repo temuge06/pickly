@@ -3,7 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { useActionState, useRef, useState, useTransition } from "react";
 import { removeAvatar, uploadAvatar } from "@/lib/actions/avatar";
-import { updateProfile } from "@/lib/actions/profile";
+import { setProfileTheme, updateProfile } from "@/lib/actions/profile";
+import { THEMES, type ThemeKey } from "@/lib/themes";
 import { LButton, LInput, LLabel, LTextArea, LSection, Spinner } from "./ui";
 
 type Profile = {
@@ -12,6 +13,7 @@ type Profile = {
   bio: string | null;
   avatarUrl: string | null;
   accentColor: string | null;
+  theme: ThemeKey;
   socials: Record<string, string> | null;
 };
 
@@ -120,6 +122,11 @@ export function LapisProfile({ profile }: { profile: Profile }) {
             <LInput name="youtube" placeholder="YouTube" defaultValue={socials.youtube ?? ""} />
           </div>
           <input type="hidden" name="accentColor" value={profile.accentColor ?? ""} />
+        </form>
+
+        <ThemePicker current={profile.theme} />
+
+        <form action={action} className="flex flex-col gap-3">
           {state?.error ? (
             <p className="font-malt text-[13px] text-[#ff9a8a]">{state.error}</p>
           ) : null}
@@ -132,5 +139,83 @@ export function LapisProfile({ profile }: { profile: Profile }) {
         </form>
       </div>
     </LSection>
+  );
+}
+
+/**
+ * Live theme picker. Each swatch previews the palette it applies — background,
+ * accent, card and category — so the choice is made by looking, not by reading
+ * four names. Selecting one saves immediately and revalidates the public page.
+ */
+function ThemePicker({ current }: { current: ThemeKey }) {
+  const [choice, setChoice] = useState<ThemeKey>(current);
+  const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function choose(key: ThemeKey) {
+    if (key === choice) return;
+    const previous = choice;
+    setChoice(key);
+    setError(null);
+    start(async () => {
+      try {
+        await setProfileTheme(key);
+      } catch {
+        setChoice(previous);
+        setError("Хадгалж чадсангүй.");
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-center gap-2">
+        <LLabel>Загвар</LLabel>
+        {pending ? <Spinner className="mb-1.5 h-3.5 w-3.5 text-[#fe7f42]" /> : null}
+      </div>
+      <div className="grid grid-cols-2 gap-2.5">
+        {THEMES.map((t) => {
+          const active = t.key === choice;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => choose(t.key)}
+              aria-pressed={active}
+              className={`flex flex-col gap-2 rounded-[14px] p-2.5 text-left transition-all ${
+                active
+                  ? "ring-2 ring-[#fe7f42]"
+                  : "ring-1 ring-inset ring-white/[0.1] active:ring-white/25"
+              }`}
+              style={{ background: t.tokens.bg }}
+            >
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="h-5 w-5 shrink-0 rounded-full"
+                  style={{ background: t.tokens.accent }}
+                />
+                <span
+                  className="h-5 flex-1 rounded-[5px]"
+                  style={{ background: t.tokens.card }}
+                />
+                <span
+                  className="h-5 w-5 shrink-0 rounded-[5px]"
+                  style={{ background: t.tokens.category }}
+                />
+              </span>
+              <span
+                className="font-malt text-[12.5px] font-bold"
+                style={{ color: t.tokens.accent }}
+              >
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {error ? (
+        <p className="font-malt text-[13px] text-[#ff9a8a]">{error}</p>
+      ) : null}
+    </div>
   );
 }

@@ -200,7 +200,7 @@ Add to `.env.example` (all optional except the first three; features hide when t
 
 ```
 DATABASE_URL=
-NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_URL=https://hleuslojfzsjhrprebxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ENCRYPTION_KEY=            # 32-byte hex

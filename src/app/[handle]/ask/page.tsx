@@ -21,7 +21,11 @@ export default async function AskPage({
   const { handle } = await params;
   const data = await getPublicProfile(handle);
   // Feature off / no profile → 404, so the surface never hints at existence.
-  if (!data || !data.profile.askEnabled) notFound();
+  // Two independent switches: the ADMIN flag (staff turned Ask off for this
+  // creator) and the creator's own askEnabled toggle. Either one closes the
+  // page — otherwise hiding the section on /[handle] would still leave this
+  // URL reachable by anyone who guessed it.
+  if (!data || !data.flags.ask || !data.profile.askEnabled) notFound();
 
   const { profile } = data;
   const prompt = profile.askPrompt ?? "Асуух зүйл байна уу?";

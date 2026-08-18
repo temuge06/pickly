@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import { profile } from "@/db/schema";
 import { requireCurrentProfile } from "@/lib/auth/session";
+import { THEMES, type ThemeKey } from "@/lib/themes";
 import { bioSchema, displayNameSchema } from "@/lib/validation";
 
 export type ProfileUpdateResult = { error?: string; ok?: boolean };
@@ -47,4 +48,21 @@ export async function updateProfile(
   revalidatePath("/dashboard");
   revalidatePath(`/${me.handle}`);
   return { ok: true };
+}
+
+/**
+ * Set the creator's public-profile palette. Theme stays creator-controlled
+ * (unlike picks, which are admin-only) — it's presentation of their own page,
+ * not catalogue data. Applies instantly: toggle = save, no separate submit.
+ */
+export async function setProfileTheme(theme: string) {
+  const me = await requireCurrentProfile();
+  if (!THEMES.some((t) => t.key === theme)) throw new Error("Тема буруу.");
+  const db = getDb();
+  await db
+    .update(profile)
+    .set({ theme: theme as ThemeKey })
+    .where(eq(profile.id, me.id));
+  revalidatePath("/dashboard");
+  revalidatePath(`/${me.handle}`);
 }

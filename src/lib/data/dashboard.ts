@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
+import { getFeatureFlags } from "@/lib/data/features";
 import {
   activityItem,
   askMessage,
@@ -19,13 +20,19 @@ type Profile = { id: string };
  */
 export async function getDashboardData(profile: Profile) {
   const db = getDb();
+  // Same rule as the public page: a feature an admin switched off is not
+  // queried, so the creator's own dashboard never ships data for a section
+  // they can no longer see.
+  const flags = await getFeatureFlags(profile.id);
   const [collections, picks, links, wishlist, connections, activity, asks] =
     await Promise.all([
-      db
-        .select()
-        .from(collection)
-        .where(eq(collection.profileId, profile.id))
-        .orderBy(collection.position),
+      flags.my_picks
+        ? db
+            .select()
+            .from(collection)
+            .where(eq(collection.profileId, profile.id))
+            .orderBy(collection.position)
+        : [],
       db
         .select()
         .from(pick)
@@ -36,25 +43,32 @@ export async function getDashboardData(profile: Profile) {
         .from(link)
         .where(eq(link.profileId, profile.id))
         .orderBy(link.position),
-      db
-        .select()
-        .from(wishlistItem)
-        .where(eq(wishlistItem.profileId, profile.id))
-        .orderBy(wishlistItem.position),
+      flags.wishlist
+        ? db
+            .select()
+            .from(wishlistItem)
+            .where(eq(wishlistItem.profileId, profile.id))
+            .orderBy(wishlistItem.position)
+        : [],
       db.select().from(connection).where(eq(connection.profileId, profile.id)),
-      db
-        .select()
-        .from(activityItem)
-        .where(eq(activityItem.profileId, profile.id))
-        .orderBy(desc(activityItem.occurredAt)),
-      db
-        .select()
-        .from(askMessage)
-        .where(eq(askMessage.profileId, profile.id))
-        .orderBy(desc(askMessage.createdAt)),
+      flags.entertainment
+        ? db
+            .select()
+            .from(activityItem)
+            .where(eq(activityItem.profileId, profile.id))
+            .orderBy(desc(activityItem.occurredAt))
+        : [],
+      flags.ask
+        ? db
+            .select()
+            .from(askMessage)
+            .where(eq(askMessage.profileId, profile.id))
+            .orderBy(desc(askMessage.createdAt))
+        : [],
     ]);
 
   return {
+    flags,
     collections,
     picks,
     links,

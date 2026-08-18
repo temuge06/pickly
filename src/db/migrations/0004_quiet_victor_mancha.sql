@@ -1,0 +1,2 @@
+CREATE TYPE "public"."profile_theme" AS ENUM('on_fire', 'coral_wave', 'dalai_1', 'dalai_2');--> statement-breakpoint
+ALTER TABLE "profile" ADD COLUMN "theme" "profile_theme" DEFAULT 'on_fire' NOT NULL;

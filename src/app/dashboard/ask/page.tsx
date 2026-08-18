@@ -15,6 +15,10 @@ export default async function AskInboxPage() {
   if (!profile) redirect("/onboarding");
 
   const data = await getDashboardData(profile);
+  // Hiding the dashboard's Ask tile is not enough — this route has to close
+  // too, or a creator who bookmarked it keeps a working inbox for a feature
+  // staff switched off.
+  if (!data.flags.ask) redirect("/dashboard");
 
   return (
     <Canvas>

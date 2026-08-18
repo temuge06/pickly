@@ -10,7 +10,9 @@ import {
   profile,
   wishlistItem,
 } from "@/db/schema";
+import { getFeatureFlags } from "@/lib/data/features";
 import { env } from "@/lib/env";
+import { ALL_ENABLED, type FeatureFlags } from "@/lib/features";
 import {
   demoAskMessages,
   demoBooks,
@@ -41,6 +43,7 @@ export type PublicProfileData = {
   links: Link[];
   wishlist: WishlistItem[];
   askMessages: AskMessage[];
+  flags: FeatureFlags;
 };
 
 /**
@@ -65,6 +68,7 @@ export async function getPublicProfile(
           links: demoLinks,
           wishlist: [],
           askMessages: demoAskMessages,
+          flags: { ...ALL_ENABLED },
         }
       : null;
   }
@@ -78,13 +82,20 @@ export async function getPublicProfile(
   const p = rows[0];
   if (!p) return null;
 
+  // Flags decide what we even ASK the database for. A disabled section must
+  // leave no trace in the response, so we skip its query entirely rather than
+  // fetching and filtering later — nothing to leak into the HTML payload.
+  const flags = await getFeatureFlags(p.id);
+
   const [collections, picks, links, wishlist, connections, activity, asks] =
     await Promise.all([
-      db
-        .select()
-        .from(collection)
-        .where(eq(collection.profileId, p.id))
-        .orderBy(collection.position),
+      flags.my_picks
+        ? db
+            .select()
+            .from(collection)
+            .where(eq(collection.profileId, p.id))
+            .orderBy(collection.position)
+        : [],
       db
         .select()
         .from(pick)
@@ -95,28 +106,34 @@ export async function getPublicProfile(
         .from(link)
         .where(eq(link.profileId, p.id))
         .orderBy(link.position),
-      db
-        .select()
-        .from(wishlistItem)
-        .where(and(eq(wishlistItem.profileId, p.id), eq(wishlistItem.isActive, true)))
-        .orderBy(wishlistItem.position),
+      flags.wishlist
+        ? db
+            .select()
+            .from(wishlistItem)
+            .where(and(eq(wishlistItem.profileId, p.id), eq(wishlistItem.isActive, true)))
+            .orderBy(wishlistItem.position)
+        : [],
       db.select().from(connection).where(eq(connection.profileId, p.id)),
-      db
-        .select()
-        .from(activityItem)
-        .where(eq(activityItem.profileId, p.id))
-        .orderBy(desc(activityItem.occurredAt)),
-      db
-        .select()
-        .from(askMessage)
-        .where(
-          and(
-            eq(askMessage.profileId, p.id),
-            eq(askMessage.isPublic, true),
-            eq(askMessage.status, "answered"),
-          ),
-        )
-        .orderBy(desc(askMessage.answeredAt)),
+      flags.entertainment
+        ? db
+            .select()
+            .from(activityItem)
+            .where(eq(activityItem.profileId, p.id))
+            .orderBy(desc(activityItem.occurredAt))
+        : [],
+      flags.ask
+        ? db
+            .select()
+            .from(askMessage)
+            .where(
+              and(
+                eq(askMessage.profileId, p.id),
+                eq(askMessage.isPublic, true),
+                eq(askMessage.status, "answered"),
+              ),
+            )
+            .orderBy(desc(askMessage.answeredAt))
+        : [],
     ]);
 
   // A provider section is only live when its connection is active. Manual
@@ -130,16 +147,24 @@ export async function getPublicProfile(
     (a: ActivityItem) => !inactiveProviders.has(a.provider),
   );
 
+  // Top Picks has no flag of its own, so picks come back in one query. When
+  // not_for_me is off, its rows are stripped HERE — otherwise the page would
+  // ship the hidden products to the browser and merely decline to draw them.
+  const visiblePicks = flags.not_for_me
+    ? picks
+    : picks.filter((k: Pick) => k.status !== "wont_rebuy");
+
   return {
     profile: p,
     collections,
-    picks,
+    picks: visiblePicks,
     links,
     wishlist,
     tracks: visibleActivity.filter((a: ActivityItem) => a.kind === "track"),
     films: visibleActivity.filter((a: ActivityItem) => a.kind === "film"),
     books: visibleActivity.filter((a: ActivityItem) => a.kind === "book"),
     askMessages: asks,
+    flags,
   };
 }
 

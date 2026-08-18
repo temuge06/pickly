@@ -22,44 +22,65 @@ type WishlistItem = typeof wishlistItem.$inferSelect;
 
 export function LapisStatusBar() {
   return (
-    <div className="flex h-[54px] items-center bg-[#2a1617] px-[10px]">
-      <span className="font-inter text-[16px] font-bold text-white">Pickly</span>
-      <span className="ml-0.5 inline-block h-[7px] w-[7px] -translate-y-1 rounded-[1px] bg-[#fe7f42]" />
+    <div className="flex h-[54px] items-center bg-[var(--t-bg)] px-[10px]">
+      <span className="font-inter text-[16px] font-bold text-[var(--t-accent)]">Pickly</span>
+      <span className="ml-0.5 inline-block h-[7px] w-[7px] -translate-y-1 rounded-[1px] bg-[var(--t-accent)]" />
     </div>
   );
 }
 
 // --- Header (bio shelf) ----------------------------------------------------
 
-export function LapisHeader({ profile }: { profile: Profile }) {
+export function LapisHeader({
+  profile,
+  isOwner = false,
+}: {
+  profile: Profile;
+  /** Resolved on the server by comparing auth.uid() to this profile's owner.
+   *  Never derive this client-side — the button must be absent, not hidden. */
+  isOwner?: boolean;
+}) {
   const socials = (profile.socials ?? {}) as Record<string, string>;
   const socialKeys = Object.keys(socials).filter((k) => socials[k]);
 
   return (
-    <div className="flex flex-col gap-[12px] border-b-[0.5px] border-[#7b4c46] bg-[#2a1617] px-[16px] py-[10px]">
+    <div className="flex flex-col gap-[12px] border-b-[0.5px] border-[var(--t-border)] bg-[var(--t-bg)] px-[16px] py-[10px]">
       <div className="flex flex-col gap-[8px]">
         <div className="flex items-center gap-[23px]">
           <Avatar name={profile.displayName} url={profile.avatarUrl} />
           <div className="flex min-w-0 flex-col gap-[6px]">
-            <p className="font-inter text-[19px] font-semibold leading-none tracking-[-0.38px] text-white">
+            <p className="font-inter text-[19px] font-semibold leading-none tracking-[-0.38px] text-[var(--t-accent)]">
               {profile.displayName}
             </p>
-            <p className="font-inter text-[14px] leading-none tracking-[-0.28px] text-[#a2a9b4]">
+            <p className="font-inter text-[14px] leading-none tracking-[-0.28px] text-[var(--t-muted)]">
               @{profile.handle}
             </p>
           </div>
         </div>
         {/* Bio: real profile.bio only — no placeholder, renders nothing when empty. */}
         {profile.bio?.trim() ? (
-          <p className="font-inter text-[14px] leading-[18px] tracking-[-0.28px] text-[#feedd5]">
+          <p className="font-inter text-[14px] leading-[18px] tracking-[-0.28px] text-[var(--t-text)]">
             {profile.bio}
           </p>
         ) : null}
       </div>
       <div className="flex items-center gap-[25px]">
-        <button className="h-[32px] w-[123px] rounded-[6px] bg-white font-inter text-[14px] font-semibold tracking-[-0.28px] text-[#0a0a0a]">
-          Follow
-        </button>
+        {isOwner ? (
+          <Link
+            href="/dashboard"
+            className="flex h-[32px] w-[123px] items-center justify-center rounded-[6px] font-inter text-[14px] font-semibold tracking-[-0.28px]"
+            style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
+          >
+            Профайл засах
+          </Link>
+        ) : (
+          <button
+            className="h-[32px] w-[123px] rounded-[6px] font-inter text-[14px] font-semibold tracking-[-0.28px]"
+            style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
+          >
+            Follow
+          </button>
+        )}
         {socialKeys.length > 0 ? (
           <div className="flex items-center gap-[13px]">
             {socialKeys.map((k) => {
@@ -71,7 +92,7 @@ export function LapisHeader({ profile }: { profile: Profile }) {
                   href={socials[k]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-[25px] w-[25px] items-center justify-center rounded-full bg-[#fe7f42] text-white"
+                  className="flex h-[25px] w-[25px] items-center justify-center rounded-full bg-[var(--t-accent)] text-[var(--t-on-accent)]"
                 >
                   {glyph}
                 </a>
@@ -96,7 +117,7 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
     );
   }
   return (
-    <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-[#42282a] font-inter text-[30px] font-semibold text-[#fe7f42]">
+    <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-[var(--t-avatar-bg)] font-inter text-[30px] font-semibold text-[var(--t-accent)]">
       {name.trim().charAt(0).toUpperCase() || "?"}
     </div>
   );
@@ -106,7 +127,7 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-white">
+    <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-[var(--t-accent)]">
       {children}
     </p>
   );
@@ -122,7 +143,8 @@ function Recommenders({ avatars }: { avatars: string[] }) {
       {avatars.slice(0, 3).map((src, i) => (
         <span
           key={i}
-          className="relative -ml-[7px] h-[22px] w-[22px] shrink-0 overflow-hidden rounded-full bg-[#b22c20] ring-2 ring-white first:ml-0"
+          className="relative -ml-[7px] h-[22px] w-[22px] shrink-0 overflow-hidden rounded-full ring-2 ring-white first:ml-0"
+          style={{ background: "var(--t-card)" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={src} alt="" className="h-full w-full object-cover" />
@@ -143,13 +165,16 @@ function PickCard({
 }) {
   const source = hostOf(pick.outboundUrl ?? pick.sourceUrl);
   return (
-    <div className="flex min-h-[319px] w-[168px] shrink-0 items-start rounded-[14px] bg-[#b22c20] px-[10px] py-[12px]">
+    <div
+      className="flex min-h-[319px] w-[168px] shrink-0 items-start rounded-[14px] px-[10px] py-[12px]"
+      style={{ background: "var(--t-card)", color: "var(--t-on-card)" }}
+    >
       <div className="flex w-[149px] flex-col gap-[26px]">
         <div className="flex flex-col gap-[8px]">
           <div className={`relative aspect-square w-full overflow-hidden rounded-[10px] bg-black/10 shadow-[0px_1px_4.4px_0px_rgba(0,0,0,0.25)] ${muted ? "opacity-70 grayscale-[45%]" : ""}`}>
             {pick.imageUrl ? <ProductImage src={pick.imageUrl} alt={pick.title} sizes="149px" /> : null}
           </div>
-          <div className="flex flex-col gap-[8px] text-white">
+          <div className="flex flex-col gap-[8px] text-[var(--t-on-card)]">
             <p className="min-h-[26px] text-[14px] font-bold uppercase leading-[13px]">{pick.title}</p>
             {pick.note ? (
               <p className="line-clamp-4 min-h-[48px] text-[14px] font-light leading-[12px] tracking-[-0.28px]">{pick.note}</p>
@@ -161,15 +186,15 @@ function PickCard({
         <div className="flex flex-col gap-[8px]">
           <div className="flex items-center gap-[12px]">
             {pick.outboundUrl ? (
-              <a href={pick.outboundUrl} target="_blank" rel="noopener noreferrer" className="flex w-[58px] items-center justify-center rounded-[10px] bg-black px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px] text-white">
+              <a href={pick.outboundUrl} target="_blank" rel="noopener noreferrer" className="flex w-[58px] items-center justify-center rounded-[10px] bg-[var(--t-card-btn)] text-[var(--t-on-card-btn)] px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px]">
                 үзэх<span className="ml-0.5 text-[9px]">↗</span>
               </a>
             ) : null}
             <Recommenders avatars={recommenders} />
           </div>
           {source ? (
-            <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-white">
-              <span className="h-[6px] w-[6px] rounded-full bg-white" />
+            <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-[var(--t-on-card)]/70">
+              <span className="h-[6px] w-[6px] rounded-full bg-[var(--t-on-card)]/70" />
               {source}
             </span>
           ) : null}
@@ -221,7 +246,7 @@ export function LapisTopPicks({
 }) {
   if (picks.length === 0) return null;
   return (
-    <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[#323232] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
+    <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[var(--t-border)] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
       <SectionTitle>TOP PICKS</SectionTitle>
       <PickRow picks={picks} recommenders={recommenders} />
     </div>
@@ -232,14 +257,12 @@ export function LapisTopPicks({
 // 1 collection → one full-width box; 2 → two equal boxes; 3 → one tall box on
 // the left + two stacked on the right (per the Spotly design).
 
-const CATEGORY_BG = [
-  "bg-[#fc7f45]",
-  "bg-[#fffc9b]",
-  "bg-[#b22c20]",
-];
-// Text color per box for contrast (the yellow box needs dark text).
-const CATEGORY_TITLE = ["text-white", "text-[#2a1617]", "text-white"];
-const CATEGORY_COUNT = ["text-white/80", "text-black/55", "text-white/80"];
+// One Category colour per theme — the Figma spec sheets replace the old
+// three-colour rotation with a single swatch, so every collection box matches.
+const CATEGORY_STYLE = {
+  background: "var(--t-category)",
+  color: "var(--t-on-category)",
+} as const;
 
 function Polaroids({ images, tall }: { images: string[]; tall: boolean }) {
   const shots = images.slice(0, 2);
@@ -268,28 +291,25 @@ function CategoryCard({
   title,
   count,
   images,
-  colorIndex,
   tall,
   spanRows,
 }: {
   title: string;
   count: number;
   images: string[];
-  colorIndex: number;
   tall: boolean;
   spanRows?: boolean;
 }) {
   return (
     <div
-      className={`relative h-full w-full overflow-hidden rounded-[11px] ${
-        CATEGORY_BG[colorIndex] ?? CATEGORY_BG[0]
-      } ${spanRows ? "row-span-2" : ""}`}
+      className={`relative h-full w-full overflow-hidden rounded-[11px] ${spanRows ? "row-span-2" : ""}`}
+      style={CATEGORY_STYLE}
     >
-      <p className={`absolute left-[11px] top-[15px] line-clamp-2 w-[70%] text-[14px] font-semibold leading-[16px] tracking-[-0.28px] ${CATEGORY_TITLE[colorIndex] ?? CATEGORY_TITLE[0]}`}>
+      <p className="absolute left-[11px] top-[15px] line-clamp-2 w-[70%] text-[14px] font-semibold leading-[16px] tracking-[-0.28px]">
         {title}
       </p>
       <Polaroids images={images} tall={tall} />
-      <p className={`absolute bottom-[12px] left-[13px] text-[14px] leading-[12px] tracking-[-0.28px] ${CATEGORY_COUNT[colorIndex] ?? CATEGORY_COUNT[0]}`}>
+      <p className="absolute bottom-[12px] left-[13px] text-[14px] leading-[12px] tracking-[-0.28px] opacity-70">
         {count} picks
       </p>
     </div>
@@ -317,8 +337,8 @@ export function LapisMyPicks({
         : "grid-cols-2 grid-rows-2";
 
   return (
-    <div className="flex flex-col gap-[18px] bg-[#2a1617] px-[10px] py-[20px] font-malt">
-      <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-white">
+    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] px-[10px] py-[20px] font-malt">
+      <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-[var(--t-accent)]">
         MY PICKS
       </p>
       <div className={`grid gap-x-[6px] gap-y-[12px] ${gridCls}`} style={{ height: 254 }}>
@@ -334,7 +354,6 @@ export function LapisMyPicks({
               title={c.title}
               count={picks.length}
               images={images}
-              colorIndex={i}
               tall={tall}
               spanRows={n === 3 && i === 0}
             />
@@ -356,7 +375,7 @@ export function LapisNotForMe({
 }) {
   if (picks.length === 0) return null;
   return (
-    <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
+    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
       <SectionTitle>NOT FOR ME</SectionTitle>
       <PickRow picks={picks} muted recommenders={recommenders} />
     </div>
@@ -375,32 +394,36 @@ export function LapisWishlist({
   if (items.length === 0) return null;
   const pool = recommenders ?? [];
   return (
-    <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[10px] font-malt">
+    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
       <SectionTitle>WISHLIST</SectionTitle>
       <div className="no-scrollbar flex gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
         {items.map((w, i) => {
           const source = hostOf(w.url);
           const recs = pool.length ? rotate(pool, i).slice(0, 3) : [];
           return (
-            <div key={w.id} className="flex h-[144px] w-[314px] shrink-0 items-start gap-[3px] rounded-[14px] bg-[#b22c20] p-[10px]">
+            <div
+              key={w.id}
+              className="flex h-[144px] w-[314px] shrink-0 items-start gap-[3px] rounded-[14px] p-[10px]"
+              style={{ background: "var(--t-card)", color: "var(--t-on-card)" }}
+            >
               <div className="relative h-[120px] w-[120px] shrink-0 overflow-hidden rounded-[12px] bg-black/10">
                 {w.imageUrl ? <ProductImage src={w.imageUrl} alt={w.title} sizes="120px" /> : null}
               </div>
               <div className="relative flex h-full flex-1 flex-col pl-[12px]">
-                <p className="text-[14px] font-bold uppercase leading-[15px] text-white">{w.title}</p>
+                <p className="text-[14px] font-bold uppercase leading-[15px] text-[var(--t-on-card)]">{w.title}</p>
                 {w.note ? (
-                  <p className="mt-[8px] line-clamp-3 text-[13px] font-light leading-[13px] tracking-[-0.28px] text-white/95">{w.note}</p>
+                  <p className="mt-[8px] line-clamp-3 text-[13px] font-light leading-[13px] tracking-[-0.28px] text-[var(--t-on-card)]/95">{w.note}</p>
                 ) : null}
                 <div className="mt-auto flex items-center gap-[10px]">
                   {w.url ? (
-                    <a href={w.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center rounded-[10px] bg-black px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px] text-white">
+                    <a href={w.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center rounded-[10px] bg-[var(--t-card-btn)] text-[var(--t-on-card-btn)] px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px]">
                       үзэх<span className="ml-0.5 text-[9px]">↗</span>
                     </a>
                   ) : null}
                   <Recommenders avatars={recs} />
                   {source ? (
-                    <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-white">
-                      <span className="h-[6px] w-[6px] rounded-full bg-white" />
+                    <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-[var(--t-on-card)]/70">
+                      <span className="h-[6px] w-[6px] rounded-full bg-[var(--t-on-card)]/70" />
                       {source}
                     </span>
                   ) : null}
@@ -419,7 +442,7 @@ export function LapisWishlist({
 export function LapisLinks({ links }: { links: LinkRow[] }) {
   if (links.length === 0) return null;
   return (
-    <div className="flex flex-col gap-[18px] bg-[#2a1617] px-[10px] py-[20px] font-malt">
+    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] px-[10px] py-[20px] font-malt">
       <SectionTitle>LINKS</SectionTitle>
       <div className="flex flex-col gap-[8px]">
         {links.map((l) => (
@@ -428,12 +451,12 @@ export function LapisLinks({ links }: { links: LinkRow[] }) {
             href={l.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex min-h-[48px] items-center justify-between gap-3 rounded-[14px] bg-[#fe7f42]/12 px-4 py-3 ring-1 ring-inset ring-[#fe7f42]/25"
+            className="flex min-h-[48px] items-center justify-between gap-3 rounded-[14px] bg-[var(--t-accent)]/12 px-4 py-3 ring-1 ring-inset ring-[var(--t-accent)]/25"
           >
-            <span className="truncate text-[14px] font-semibold text-[#feedd5]">
+            <span className="truncate text-[14px] font-semibold text-[var(--t-text)]">
               {l.label}
             </span>
-            <span className="shrink-0 text-[13px] text-[#fe7f42]">↗</span>
+            <span className="shrink-0 text-[13px] text-[var(--t-accent)]">↗</span>
           </a>
         ))}
       </div>
@@ -455,14 +478,15 @@ export function LapisAsk({
   if (!askEnabled) return null;
   const published = questions.filter((q) => q.isPublic && q.status === "answered");
   return (
-    <div className="flex flex-col gap-[18px] bg-[#2a1617] py-[20px] pl-[12px] font-malt">
+    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[12px] font-malt">
       <SectionTitle>Ask Me Anything!</SectionTitle>
       <div className="no-scrollbar flex gap-[16px] overflow-x-auto pr-[12px]">
         <Link
           href={`/${handle}/ask`}
-          className="flex h-[222px] w-[171px] shrink-0 flex-col rounded-[16px] bg-white p-[12px]"
+          className="flex h-[222px] w-[171px] shrink-0 flex-col rounded-[16px] p-[12px]"
+          style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
         >
-          <span className="w-fit rounded-full bg-[#fe7f42] px-[10px] py-[3px] text-[12px] font-bold text-white">
+          <span className="w-fit rounded-full bg-[var(--t-accent)] px-[10px] py-[3px] text-[12px] font-bold text-[var(--t-on-accent)]">
             Q&amp;A
           </span>
           <span className="mt-3 text-[13px] text-black/35">Асуулт үлдээх</span>
@@ -470,15 +494,16 @@ export function LapisAsk({
         {published.map((q) => (
           <div
             key={q.id}
-            className="relative flex h-[222px] w-[166px] shrink-0 flex-col overflow-hidden rounded-[16px] bg-[#fe7f42] p-[14px]"
+            className="relative flex h-[222px] w-[166px] shrink-0 flex-col overflow-hidden rounded-[16px] p-[14px]"
+            style={{ background: "var(--t-ask)", color: "var(--t-on-ask)" }}
           >
             <Sparkle />
-            <p className="mt-[8px] text-[14px] font-semibold text-white">Асуулт</p>
-            <p className="mt-[6px] line-clamp-4 text-[15px] font-light italic leading-[1.05] text-white">
+            <p className="mt-[8px] text-[14px] font-semibold text-[var(--t-on-ask)]">Асуулт</p>
+            <p className="mt-[6px] line-clamp-4 text-[15px] font-light italic leading-[1.05] text-[var(--t-on-ask)]">
               “{q.body}”
             </p>
             {q.answerBody ? (
-              <p className="mt-1 line-clamp-3 text-[12px] font-light text-[#feedd5]">
+              <p className="mt-1 line-clamp-3 text-[12px] font-light text-[var(--t-text)]">
                 {q.answerBody}
               </p>
             ) : null}
@@ -498,89 +523,46 @@ export type Creator = {
   bio: string | null;
 };
 
-const SIMILAR_BG = ["#4b4b4b", "#d02c53", "#6b4bcc"];
+// Same collapse as Category: one "others" surface per theme.
+const SIMILAR_STYLE = {
+  background: "var(--t-others)",
+  color: "var(--t-on-others)",
+} as const;
 
 export function LapisSimilar({ creators }: { creators: Creator[] }) {
   if (creators.length === 0) return null;
   return (
-    <div className="bg-[#2a1617] p-[10px] font-malt">
-      <div className="overflow-hidden rounded-[16px] bg-[#1c0f0f] p-[15px]">
+    <div className="bg-[var(--t-bg)] p-[10px] font-malt">
+      <div className="overflow-hidden rounded-[16px] bg-[var(--t-panel)] p-[15px]">
         <div className="no-scrollbar flex gap-[8px] overflow-x-auto">
           {creators.map((c, i) => (
             <Link
               key={c.handle}
               href={`/${c.handle}`}
               className="flex h-[210px] w-[160px] shrink-0 flex-col items-center rounded-[16px] pt-[14px]"
-              style={{ background: SIMILAR_BG[i % SIMILAR_BG.length] }}
+              style={SIMILAR_STYLE}
             >
               <div className="h-[88px] w-[88px] overflow-hidden rounded-full bg-black/30">
                 {c.avatarUrl ? (
                   <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[34px] font-semibold text-white/80">
+                  <div className="flex h-full w-full items-center justify-center text-[34px] font-semibold text-[var(--t-on-others)]/80">
                     {c.displayName.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
-              <p className="mt-[11px] text-[14px] font-semibold text-white">
+              <p className="mt-[11px] text-[14px] font-semibold text-[var(--t-on-others)]">
                 {c.handle}
               </p>
-              <p className="mt-[5px] line-clamp-2 w-[132px] px-1 text-center text-[10px] font-light uppercase leading-[16px] text-white/85">
+              <p className="mt-[5px] line-clamp-2 w-[132px] px-1 text-center text-[10px] font-light uppercase leading-[16px] text-[var(--t-on-others)]/85">
                 {c.bio ?? `${c.displayName} in da Pickly`}
               </p>
-              <span className="mb-[12px] mt-auto rounded-[8px] bg-black/25 px-[14px] py-[4px] text-[13px] font-semibold uppercase text-white">
+              <span className="mb-[12px] mt-auto rounded-[8px] bg-black/25 px-[14px] py-[4px] text-[13px] font-semibold uppercase text-[var(--t-on-others)]">
                 pICKLY ҮЗЭХ
               </span>
             </Link>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// --- Bottom nav ------------------------------------------------------------
-
-export function LapisBottomNav() {
-  const items = [
-    { label: "Нүүр", icon: <IcoHome />, active: true, href: undefined as string | undefined },
-    { label: "Discover", icon: <IcoCompass />, active: false, href: undefined },
-    { label: "Saved", icon: <IcoBookmark />, active: false, href: undefined },
-    // The creator's own management area. A visitor who isn't signed in is
-    // routed to /sign-in by middleware; the creator lands on their dashboard.
-    { label: "Профайл", icon: <IcoUser />, active: false, href: "/dashboard" },
-  ];
-  return (
-    <div className="sticky bottom-0 left-0 right-0 flex h-[86px] items-start bg-[#0b1014] px-[5px] py-[10px]">
-      <div className="flex h-[68px] w-full items-center rounded-[23px] border-[1.111px] border-white/[0.13] bg-[rgba(4,4,4,0.94)] p-px shadow-[0px_3px_16px_0px_rgba(176,24,61,0.1)]">
-        {items.map((it) => {
-          const inner = (
-            <>
-              {it.active ? (
-                <span className="absolute inset-x-[6px] inset-y-[3px] rounded-[14px] bg-[#fe7f42] opacity-10" />
-              ) : null}
-              <span className={it.active ? "text-[#fe7f42]" : "text-white"}>{it.icon}</span>
-              <span
-                className={`font-inter text-[10px] ${
-                  it.active ? "text-[#fe7f42]" : "font-medium text-white"
-                }`}
-              >
-                {it.label}
-              </span>
-            </>
-          );
-          const cls =
-            "relative flex flex-1 flex-col items-center justify-center gap-[3px] transition-transform active:scale-95";
-          return it.href ? (
-            <Link key={it.label} href={it.href} className={cls}>
-              {inner}
-            </Link>
-          ) : (
-            <div key={it.label} className={cls}>
-              {inner}
-            </div>
-          );
-        })}
       </div>
     </div>
   );
@@ -598,37 +580,6 @@ function hostOf(url: string | null | undefined): string | null {
 }
 
 const iconStyle: CSSProperties = { width: 21, height: 21 };
-function IcoHome() {
-  return (
-    <svg style={iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5 9.5V20h14V9.5" />
-    </svg>
-  );
-}
-function IcoCompass() {
-  return (
-    <svg style={iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m15.5 8.5-2 5-5 2 2-5 5-2Z" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-function IcoBookmark() {
-  return (
-    <svg style={iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
-      <path d="M6 3h12v18l-6-4-6 4V3Z" />
-    </svg>
-  );
-}
-function IcoUser() {
-  return (
-    <svg style={iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c0-4 3.5-6 8-6s8 2 8 6" />
-    </svg>
-  );
-}
 function Sparkle() {
   return (
     <svg width="46" height="46" viewBox="0 0 46 46" className="mx-auto" fill="white" aria-hidden>

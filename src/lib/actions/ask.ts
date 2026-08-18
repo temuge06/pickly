@@ -87,16 +87,20 @@ export async function blockAsker(messageId: string) {
   revalidatePath("/dashboard/ask");
 }
 
-/** Link a message to the pick it produced (question → pick flow). */
-export async function linkAnswerPick(messageId: string, pickId: string) {
+/**
+ * Hand a product question to staff (question → pick, without giving creators
+ * write access to picks).
+ *
+ * Creators can no longer turn an answer into a pick themselves — this marks
+ * the message instead, and /admin surfaces the flagged ones as a work queue.
+ * The creator keeps the part that is genuinely theirs (answering and
+ * publishing); the catalogue write stays on the admin side of the boundary.
+ */
+export async function setAskFlaggedForPick(messageId: string, flagged: boolean) {
   const { msg, db } = await ownedMessage(messageId);
   await db
     .update(askMessage)
-    .set({
-      answerPickId: pickId,
-      status: "answered",
-      answeredAt: msg.answeredAt ?? new Date(),
-    })
+    .set({ flaggedForPick: flagged })
     .where(eq(askMessage.id, msg.id));
   revalidatePath("/dashboard/ask");
 }
