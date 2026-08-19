@@ -38,8 +38,13 @@ function asHttpUrl(raw: string | null | undefined): string | null {
   }
 }
 
-/** Banner upload: same Storage bucket and WebP pipeline as avatars/picks.
- *  Kept at the card's 382x305 aspect so uploads can't distort the shelf. */
+/**
+ * Banner upload: same Storage bucket and WebP pipeline as avatars/picks, kept
+ * at the card's 382x305 aspect so uploads can't distort the shelf.
+ *
+ * Stored at 1146x915 — 3x the rendered card. Anything less is visibly soft on
+ * a DPR-3 phone, which is where these are actually looked at.
+ */
 export async function uploadCampaignBanner(
   formData: FormData,
 ): Promise<{ url?: string; error?: string }> {
@@ -52,8 +57,8 @@ export async function uploadCampaignBanner(
     const input = Buffer.from(await file.arrayBuffer());
     const webp = await sharp(input)
       .rotate()
-      .resize(764, 610, { fit: "cover", position: "attention" })
-      .webp({ quality: 85 })
+      .resize(1146, 915, { fit: "cover", position: "attention", withoutEnlargement: false, kernel: "lanczos3" })
+      .webp({ quality: 92 })
       .toBuffer();
 
     const path = `campaigns/${crypto.randomUUID()}.webp`;

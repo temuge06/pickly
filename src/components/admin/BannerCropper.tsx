@@ -7,9 +7,13 @@ import { AButton, AHint } from "./ui";
 /** The banner's fixed aspect, straight from the card spec. */
 const FRAME_W = 382;
 const FRAME_H = 305;
-/** Exported at 2x so the banner stays sharp on retina phones. */
-const OUT_W = 764;
-const OUT_H = 610;
+/**
+ * Exported at 3x the 382px card. 2x looked soft on modern phones, which run at
+ * DPR 3 — the browser was upscaling the last 50%. 3x covers every DPR in use
+ * and still lands well under 300KB as WebP.
+ */
+const OUT_W = 1146;
+const OUT_H = 915;
 
 type Props = {
   /** Receives the cropped image as a WebP blob, ready to upload. */
@@ -115,7 +119,7 @@ export function BannerCropper({ onCropped, busy }: Props) {
     canvas.toBlob(
       (blob) => (blob ? onCropped(blob) : setError("Зургийг боловсруулж чадсангүй.")),
       "image/webp",
-      0.9,
+      0.92,
     );
   }
 
