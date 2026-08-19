@@ -57,6 +57,7 @@ ALTER TABLE public.admin_user     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feature_flag   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaign       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaign_assignment ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.promo_code     ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- profile
@@ -312,3 +313,25 @@ DROP POLICY IF EXISTS campaign_assignment_owner_read ON public.campaign_assignme
 CREATE POLICY campaign_assignment_owner_read ON public.campaign_assignment
   FOR SELECT TO authenticated
   USING (profile_id IN (SELECT public.owned_profile_ids()));
+
+-- ---------------------------------------------------------------------------
+-- promo_code — staff-authored, same boundary as pick and campaign. Anon reads
+-- only the active ones (an inactive code is inventory that is not running and
+-- should not be enumerable with the public key). The owning creator may read
+-- their own, including inactive, but never write: codes are negotiated deals,
+-- not creator content.
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS promo_code_anon_read ON public.promo_code;
+CREATE POLICY promo_code_anon_read ON public.promo_code
+  FOR SELECT TO anon USING (is_active = true);
+
+DROP POLICY IF EXISTS promo_code_owner_read ON public.promo_code;
+CREATE POLICY promo_code_owner_read ON public.promo_code
+  FOR SELECT TO authenticated
+  USING (profile_id IN (SELECT public.owned_profile_ids()));
+
+DROP POLICY IF EXISTS promo_code_admin_all ON public.promo_code;
+CREATE POLICY promo_code_admin_all ON public.promo_code
+  FOR ALL TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());

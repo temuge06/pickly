@@ -11,6 +11,7 @@ import type {
   wishlistItem,
 } from "@/db/schema";
 import { ProductImage } from "@/components/ui/ProductImage";
+import { PromoCard, type PublicPromo } from "./PromoCard";
 
 type Profile = typeof profile.$inferSelect;
 type Pick = typeof pick.$inferSelect;
@@ -448,6 +449,24 @@ export function LapisNotForMe({ picks }: { picks: Pick[] }) {
     <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
       <SectionTitle>NOT FOR ME</SectionTitle>
       <PickRow picks={picks} muted />
+    </div>
+  );
+}
+
+// --- Promo codes ----------------------------------------------------------
+
+/** Staff-authored discount tickets. Hidden entirely when a creator has none,
+ *  same rule as every other section. */
+export function LapisPromos({ promos }: { promos: PublicPromo[] }) {
+  if (promos.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
+      <SectionTitle>PROMO CODES</SectionTitle>
+      <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+        {promos.map((p) => (
+          <PromoCard key={p.id} promo={p} />
+        ))}
+      </div>
     </div>
   );
 }

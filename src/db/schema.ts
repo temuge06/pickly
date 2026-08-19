@@ -451,6 +451,51 @@ export const campaignAssignment = pgTable("campaign_assignment", {
   ),
 }));
 
+/**
+ * A promo code shown on one creator's profile. Staff-authored only — creators
+ * cannot add these, same boundary as picks and campaigns.
+ *
+ * Unlike `campaign`, this is attached straight to a profile rather than going
+ * through an assignment table: a code is negotiated per creator (ANU10), so
+ * there is no shared inventory to fan out. If codes ever need to run across
+ * many profiles at once, this grows an assignment table like campaigns did.
+ */
+export const promoCode = pgTable("promo_code", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profile.id, { onDelete: "cascade" }),
+  /** Big headline on the card, e.g. "10% OFF". */
+  headline: text("headline").notNull(),
+  /** Small print under the headline, e.g. "биетээр үйлчлүүлэхдээ ашиглана уу." */
+  description: text("description"),
+  /** The code the visitor copies, e.g. "ANU10". */
+  code: text("code").notNull(),
+  /** Where Copy sends them, so the code can be pasted straight away. */
+  url: text("url"),
+  /** Brand artwork on the left of the ticket. Re-hosted to our own Storage. */
+  imageUrl: text("image_url"),
+  /** Rendered as "EXP. JULY 31, 2026". Null → no expiry line. */
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  isActive: boolean("is_active").notNull().default(true),
+  position: integer("position").notNull().default(0),
+  createdBy: uuid("created_by").references(() => adminUser.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  profileActivePositionIdx: index("promo_code_profile_active_position_idx").on(
+    table.profileId,
+    table.isActive,
+    table.position,
+  ),
+}));
+
 export const askMessage = pgTable("ask_message", {
   id: uuid("id").primaryKey().defaultRandom(),
   profileId: uuid("profile_id")
@@ -520,6 +565,7 @@ export const askBlock = pgTable("ask_block", {
 export const adminUserRelations = relations(adminUser, ({ many }) => ({
   featureFlags: many(featureFlag),
   campaignAssignments: many(campaignAssignment),
+  promoCodes: many(promoCode),
 }));
 
 export const featureFlagRelations = relations(featureFlag, ({ one }) => ({
@@ -588,6 +634,13 @@ export const pickRelations = relations(pick, ({ one }) => ({
 export const linkRelations = relations(link, ({ one }) => ({
   profile: one(profile, {
     fields: [link.profileId],
+    references: [profile.id],
+  }),
+}));
+
+export const promoCodeRelations = relations(promoCode, ({ one }) => ({
+  profile: one(profile, {
+    fields: [promoCode.profileId],
     references: [profile.id],
   }),
 }));

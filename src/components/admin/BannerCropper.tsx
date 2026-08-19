@@ -4,21 +4,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AButton, AHint } from "./ui";
 
-/** The banner's fixed aspect, straight from the card spec. */
-const FRAME_W = 382;
-const FRAME_H = 305;
-/**
- * Exported at 3x the 382px card. 2x looked soft on modern phones, which run at
- * DPR 3 — the browser was upscaling the last 50%. 3x covers every DPR in use
- * and still lands well under 300KB as WebP.
- */
-const OUT_W = 1146;
-const OUT_H = 915;
-
 type Props = {
   /** Receives the cropped image as a WebP blob, ready to upload. */
   onCropped: (blob: Blob) => void;
   busy?: boolean;
+  /**
+   * Crop box in CSS px, matching how the artwork is rendered. Defaults to the
+   * campaign banner; the promo ticket uses its own 114x162 portrait.
+   */
+  frame?: { w: number; h: number };
+  /**
+   * Exported size. 3x the rendered box: 2x looked soft on DPR-3 phones, and 3x
+   * covers every density in use while staying small as WebP.
+   */
+  output?: { w: number; h: number };
+  /** Draws a ghost of the live CTA so the admin avoids framing under it. */
+  showCtaGuide?: boolean;
 };
 
 /**
@@ -29,7 +30,17 @@ type Props = {
  * that positions the preview also drives the export, so what the admin frames
  * is exactly what gets uploaded.
  */
-export function BannerCropper({ onCropped, busy }: Props) {
+export function BannerCropper({
+  onCropped,
+  busy,
+  frame = { w: 382, h: 305 },
+  output = { w: 1146, h: 915 },
+  showCtaGuide = true,
+}: Props) {
+  const FRAME_W = frame.w;
+  const FRAME_H = frame.h;
+  const OUT_W = output.w;
+  const OUT_H = output.h;
   const [src, setSrc] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -138,7 +149,8 @@ export function BannerCropper({ onCropped, busy }: Props) {
             accept(e.dataTransfer.files?.[0]);
           }}
           onClick={() => fileRef.current?.click()}
-          className={`flex aspect-[382/305] w-full max-w-[340px] cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed p-4 text-center transition-colors ${
+          style={{ aspectRatio: `${FRAME_W}/${FRAME_H}` }}
+          className={`flex w-full max-w-[340px] cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed p-4 text-center transition-colors ${
             dragOver
               ? "border-[#fe7f42] bg-[#fe7f42]/10"
               : "border-white/15 bg-white/[0.02] hover:border-white/30"
@@ -176,7 +188,8 @@ export function BannerCropper({ onCropped, busy }: Props) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className="relative aspect-[382/305] w-full max-w-[340px] cursor-grab touch-none overflow-hidden rounded-[14px] bg-black/40 active:cursor-grabbing"
+        style={{ aspectRatio: `${FRAME_W}/${FRAME_H}` }}
+        className="relative w-full max-w-[340px] cursor-grab touch-none overflow-hidden rounded-[14px] bg-black/40 active:cursor-grabbing"
       >
         <img
           src={src}
@@ -191,9 +204,11 @@ export function BannerCropper({ onCropped, busy }: Props) {
         />
         {/* Mirrors where the live CTA sits, so the admin can avoid framing
             something important underneath it. */}
-        <span className="pointer-events-none absolute bottom-[5%] right-[3%] flex h-[12%] w-[42%] items-center justify-center rounded-full border border-white/40 bg-white/10 font-inter text-[9px] text-white/70 backdrop-blur-[4px]">
-          Дэлгэрэнгүй Үзэх
-        </span>
+        {showCtaGuide ? (
+          <span className="pointer-events-none absolute bottom-[5%] right-[3%] flex h-[12%] w-[42%] items-center justify-center rounded-full border border-white/40 bg-white/10 font-inter text-[9px] text-white/70 backdrop-blur-[4px]">
+            Дэлгэрэнгүй Үзэх
+          </span>
+        ) : null}
       </div>
 
       <label className="flex items-center gap-2">
@@ -211,7 +226,7 @@ export function BannerCropper({ onCropped, busy }: Props) {
           aria-label="Томруулах"
         />
       </label>
-      <AHint>Чирж байрлуулаад, гулсуураар томруулна. 382×305 хэмжээгээр тайрна.</AHint>
+      <AHint>{`Чирж байрлуулаад, гулсуураар томруулна. ${FRAME_W}×${FRAME_H} харьцаагаар тайрна.`}</AHint>
 
       {error ? <p className="font-inter text-[12.5px] text-[#ffb3a3]">{error}</p> : null}
 

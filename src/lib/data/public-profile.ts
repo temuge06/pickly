@@ -12,6 +12,8 @@ import {
 } from "@/db/schema";
 import { getProfileCampaigns, type ProfileCampaign } from "@/lib/data/campaigns";
 import { getFeatureFlags } from "@/lib/data/features";
+import { getProfilePromos } from "@/lib/data/promos";
+import type { PublicPromo } from "@/components/lapis/PromoCard";
 import { env } from "@/lib/env";
 import { ALL_ENABLED, type FeatureFlags } from "@/lib/features";
 import {
@@ -46,6 +48,7 @@ export type PublicProfileData = {
   askMessages: AskMessage[];
   /** Top Picks is a sponsored-banner shelf now, not a product shelf. */
   campaigns: ProfileCampaign[];
+  promos: PublicPromo[];
   flags: FeatureFlags;
 };
 
@@ -72,6 +75,7 @@ export async function getPublicProfile(
           wishlist: [],
           askMessages: demoAskMessages,
           campaigns: [],
+          promos: [],
           flags: { ...ALL_ENABLED },
         }
       : null;
@@ -91,7 +95,7 @@ export async function getPublicProfile(
   // fetching and filtering later — nothing to leak into the HTML payload.
   const flags = await getFeatureFlags(p.id);
 
-  const [collections, picks, links, wishlist, connections, activity, asks, campaigns] =
+  const [collections, picks, links, wishlist, connections, activity, asks, campaigns, promos] =
     await Promise.all([
       flags.my_picks
         ? db
@@ -139,6 +143,7 @@ export async function getPublicProfile(
             .orderBy(desc(askMessage.answeredAt))
         : [],
       flags.top_picks ? getProfileCampaigns(p.id) : [],
+      getProfilePromos(p.id),
     ]);
 
   // A provider section is only live when its connection is active. Manual
@@ -179,6 +184,7 @@ export async function getPublicProfile(
     books: visibleActivity.filter((a: ActivityItem) => a.kind === "book"),
     askMessages: asks,
     campaigns,
+    promos,
     flags,
   };
 }

@@ -4,12 +4,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminAddProduct } from "@/components/admin/AdminAddProduct";
 import { AdminCollections } from "@/components/admin/AdminCollections";
+import { AdminPromos } from "@/components/admin/AdminPromos";
 import { CreatorCampaigns } from "@/components/admin/CreatorCampaigns";
 import { AdminFeatureFlags } from "@/components/admin/AdminFeatureFlags";
 import { Panel } from "@/components/admin/ui";
 import { getDb } from "@/db";
 import { askMessage, campaign, campaignAssignment, collection, pick, profile, wishlistItem } from "@/db/schema";
 import { listCampaigns } from "@/lib/actions/campaigns";
+import { listPromos } from "@/lib/actions/promos";
 import { getFeatureFlags } from "@/lib/data/features";
 import { formatMnt } from "@/lib/format";
 
@@ -83,6 +85,8 @@ export default async function AdminCreatorPage({
     listCampaigns(),
   ]);
 
+  const promos = await listPromos(creator.id);
+
   const notForMe = picks.filter((p) => p.status === "wont_rebuy");
   const keep = picks.filter((p) => p.status !== "wont_rebuy");
   const topPicks = keep.filter((p) => p.collectionId === null);
@@ -149,6 +153,13 @@ export default async function AdminCreatorPage({
               assigned={assignedCampaigns}
               library={campaignLibrary}
             />
+          </Panel>
+
+          <Panel
+            title="Промо код"
+            subtitle="Зураг, код, сайтын холбоос. Copy дарахад код хуулагдаад сайт нээгдэнэ."
+          >
+            <AdminPromos profileId={creator.id} promos={promos} />
           </Panel>
 
           <Panel

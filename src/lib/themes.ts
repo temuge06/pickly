@@ -51,6 +51,17 @@ export type ThemeTokens = {
   /** Follow button — a neutral inverse of the background in every theme. */
   btn: string;
   onBtn: string;
+  /** Promo ticket: card body, the chip the code sits on, the Copy control,
+   *  the big headline, and the small print. Taken from the four variants of
+   *  the coupon component rather than derived — the designer picked a specific
+   *  pairing per theme (e.g. yellow headline on every dark theme, black on the
+   *  light one). */
+  promoBg: string;
+  promoChip: string;
+  promoBtn: string;
+  promoOnBtn: string;
+  promoHeadline: string;
+  promoText: string;
   /** The full-width call-to-action on a product card. On Fire's values come
    *  straight from the Figma card spec (#911c11 on #620000); the other themes
    *  use the equivalent "one step darker than the card" treatment so the
@@ -90,6 +101,12 @@ export const THEMES: Theme[] = [
       avatarBg: "#42282a",
       btn: "#ffffff",
       onBtn: "#0a0a0a",
+      promoBg: "#fe7f42",
+      promoChip: "#b22c20",
+      promoBtn: "#feedd5",
+      promoOnBtn: "#1a1a1a",
+      promoHeadline: "#ffe500",
+      promoText: "#feedd5",
       cardBtn: "#911c11",
       onCardBtn: "#ffffff",
       cardBtnBorder: "#620000",
@@ -117,6 +134,12 @@ export const THEMES: Theme[] = [
       avatarBg: "rgba(177,25,63,0.14)",
       btn: "#ffffff",
       onBtn: "#b1193f",
+      promoBg: "#c0003b",
+      promoChip: "#ff605f",
+      promoBtn: "#feedd5",
+      promoOnBtn: "#1a1a1a",
+      promoHeadline: "#ffe500",
+      promoText: "#feedd5",
       cardBtn: "#b1193f",
       onCardBtn: "#ffffff",
       cardBtnBorder: "#8d1032",
@@ -144,6 +167,12 @@ export const THEMES: Theme[] = [
       avatarBg: "#1e1e1e",
       btn: "#ffffff",
       onBtn: "#0b1014",
+      promoBg: "#222222",
+      promoChip: "#3f3f3f",
+      promoBtn: "#ffe500",
+      promoOnBtn: "#1a1a1a",
+      promoHeadline: "#ffe500",
+      promoText: "#9b9b9b",
       cardBtn: "#2f2f2f",
       onCardBtn: "#ffffff",
       cardBtnBorder: "rgba(255,255,255,0.18)",
@@ -171,6 +200,12 @@ export const THEMES: Theme[] = [
       avatarBg: "#f0f0f0",
       btn: "#000000",
       onBtn: "#ffffff",
+      promoBg: "#e7e7e7",
+      promoChip: "#9a9a9a",
+      promoBtn: "#ffffff",
+      promoOnBtn: "#1a1a1a",
+      promoHeadline: "#000000",
+      promoText: "#000000",
       cardBtn: "#000000",
       onCardBtn: "#ffffff",
       cardBtnBorder: "#000000",
@@ -210,6 +245,12 @@ export function themeStyle(key: string | null | undefined): React.CSSProperties 
     "--t-avatar-bg": t.avatarBg,
     "--t-btn": t.btn,
     "--t-on-btn": t.onBtn,
+    "--t-promo-bg": t.promoBg,
+    "--t-promo-chip": t.promoChip,
+    "--t-promo-btn": t.promoBtn,
+    "--t-promo-on-btn": t.promoOnBtn,
+    "--t-promo-headline": t.promoHeadline,
+    "--t-promo-text": t.promoText,
     "--t-card-btn": t.cardBtn,
     "--t-on-card-btn": t.onCardBtn,
     "--t-card-btn-border": t.cardBtnBorder,

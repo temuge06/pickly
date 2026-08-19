@@ -5,6 +5,7 @@ import {
   LapisHeader,
   LapisMyPicks,
   LapisNotForMe,
+  LapisPromos,
   LapisSimilar,
   LapisStatusBar,
   LapisTopPicks,
@@ -25,7 +26,7 @@ export default async function ProfilePage({
   const data = await getPublicProfile(handle);
   if (!data) notFound();
 
-  const { profile, collections, picks, tracks, films, books, wishlist, askMessages, campaigns, flags } = data;
+  const { profile, collections, picks, tracks, films, books, wishlist, askMessages, campaigns, promos, flags } = data;
   const creators = await getOtherCreators(profile.id);
 
   // Owner check, server-side. A logged-out visitor or a different signed-in
@@ -90,6 +91,7 @@ export default async function ProfilePage({
           {flags.my_picks ? (
             <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
           ) : null}
+          <LapisPromos promos={promos} />
           {flags.wishlist ? (
             <LapisWishlist items={wishlist} recommenders={recommenderAvatars} />
           ) : null}
