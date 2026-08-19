@@ -21,11 +21,32 @@ type WishlistItem = typeof wishlistItem.$inferSelect;
 
 // --- Status bar ------------------------------------------------------------
 
+/**
+ * The wordmark follows the creator's theme, but the arrow does NOT — it is a
+ * fixed brand orange in every theme mock, so it stays a constant rather than a
+ * token. It sits as a superscript at the wordmark's cap height.
+ */
+const LOGO_ARROW = "#ff5106";
+
 export function LapisStatusBar() {
   return (
     <div className="flex h-[54px] items-center bg-[var(--t-bg)] px-[10px]">
       <span className="font-inter text-[16px] font-bold text-[var(--t-accent)]">Pickly</span>
-      <span className="ml-0.5 inline-block h-[7px] w-[7px] -translate-y-1 rounded-[1px] bg-[var(--t-accent)]" />
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden
+        className="ml-[1px] h-[10px] w-[10px] -translate-y-[4px]"
+        fill="none"
+        stroke={LOGO_ARROW}
+        strokeWidth={4.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {/* diagonal shaft */}
+        <path d="M5.5 18.5 L18 6" />
+        {/* corner-bracket head */}
+        <path d="M8.5 6 H18 V15.5" />
+      </svg>
     </div>
   );
 }
