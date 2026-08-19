@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { TextArea } from "@/components/ui/Field";
-import { submitAsk } from "@/lib/ask/submit";
 import { getClientFingerprint } from "@/lib/ask/fingerprint";
+import { submitAsk } from "@/lib/ask/submit";
 
 const MAX = 500;
 
+/**
+ * Themed ask form. Every surface reads a theme token, so the page matches
+ * whichever palette the creator picked rather than the old fixed dark one.
+ */
 export function AskForm({ handle, prompt }: { handle: string; prompt: string }) {
   const [body, setBody] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
@@ -16,8 +18,9 @@ export function AskForm({ handle, prompt }: { handle: string; prompt: string }) 
     e.preventDefault();
     if (!body.trim() || state === "sending") return;
     setState("sending");
-    // Server returns a uniform success shape regardless of filtering/limits —
-    // the asker never learns whether a message landed, was dropped, or hidden.
+    // The server returns a uniform success shape regardless of filtering or
+    // rate limits — the asker never learns whether a message landed, was
+    // dropped, or was hidden.
     await submitAsk(handle, body, getClientFingerprint());
     setBody("");
     setState("sent");
@@ -25,27 +28,35 @@ export function AskForm({ handle, prompt }: { handle: string; prompt: string }) 
 
   if (state === "sent") {
     return (
-      <div className="rounded-3xl bg-shelf p-6 text-center">
-        <p className="font-display text-[17px] font-bold text-ink">
-          Илгээгдлээ 💛
-        </p>
-        <p className="mt-2 font-body text-[14px] leading-relaxed text-ink/70">
+      <div
+        className="flex flex-col items-center gap-[10px] rounded-[16px] p-6 text-center"
+        style={{ background: "var(--t-card)", color: "var(--t-on-card)" }}
+      >
+        <p className="font-malt text-[17px] font-extrabold uppercase">Илгээгдлээ 💛</p>
+        <p className="font-inter text-[13.5px] leading-relaxed opacity-80">
           Асуултыг чинь хүлээж авлаа.
         </p>
-        <Button
-          variant="ghost"
-          className="mt-4 !text-ink !ring-ink/15"
+        <button
+          type="button"
           onClick={() => setState("idle")}
+          className="mt-1 flex h-[37px] items-center justify-center rounded-[10px] border px-4 font-malt text-[13px] font-semibold"
+          style={{
+            background: "var(--t-card-btn)",
+            color: "var(--t-on-card-btn)",
+            borderColor: "var(--t-card-btn-border)",
+          }}
         >
           Дахин асуух
-        </Button>
+        </button>
       </div>
     );
   }
 
+  const remaining = MAX - body.length;
+
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3">
-      <TextArea
+    <form onSubmit={onSubmit} className="flex flex-col gap-[10px]">
+      <textarea
         name="body"
         rows={5}
         maxLength={MAX}
@@ -54,16 +65,36 @@ export function AskForm({ handle, prompt }: { handle: string; prompt: string }) 
         value={body}
         onChange={(e) => setBody(e.target.value)}
         autoFocus
+        className="w-full resize-none rounded-[16px] border-2 bg-transparent px-4 py-3.5 font-inter text-[16px] leading-relaxed outline-none transition-colors placeholder:opacity-45"
+        style={{
+          borderColor: "color-mix(in srgb, var(--t-accent) 45%, transparent)",
+          color: "var(--t-text)",
+          background: "color-mix(in srgb, var(--t-accent) 6%, transparent)",
+        }}
       />
-      <div className="flex items-center justify-between px-1">
-        <span className="font-mono text-[11px] text-paper/40">
+
+      <div className="flex items-center justify-end px-1">
+        <span
+          className="font-inter text-[11.5px] tabular-nums"
+          style={{ color: remaining <= 40 ? "var(--t-accent)" : "var(--t-muted)" }}
+        >
           {body.length}/{MAX}
         </span>
       </div>
-      <Button type="submit" disabled={state === "sending" || !body.trim()}>
+
+      <button
+        type="submit"
+        disabled={state === "sending" || !body.trim()}
+        className="flex h-[46px] items-center justify-center rounded-[14px] font-malt text-[14.5px] font-bold transition-all duration-150 disabled:pointer-events-none disabled:opacity-45"
+        style={{ background: "var(--t-accent)", color: "var(--t-on-accent)" }}
+      >
         {state === "sending" ? "Илгээж байна…" : "Асуулт илгээх"}
-      </Button>
-      <p className="mt-1 text-center font-body text-[12px] text-paper/40">
+      </button>
+
+      <p
+        className="mt-1 text-center font-inter text-[12px] leading-relaxed"
+        style={{ color: "var(--t-muted)" }}
+      >
         Хүндэтгэлтэй байгаарай. Зохисгүй мессежийг шүүнэ.
       </p>
     </form>

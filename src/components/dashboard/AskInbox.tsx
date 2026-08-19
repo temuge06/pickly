@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/Button";
-import { TextArea, TextInput } from "@/components/ui/Field";
 import {
   answerAsk,
   blockAsker,
@@ -13,7 +11,23 @@ import {
   toggleAskPublic,
   unhideAsk,
 } from "@/lib/actions/ask";
-import { DashSection, EmptyHint } from "./Section";
+import {
+  Empty,
+  Hint,
+  LButton,
+  LInput,
+  LSection,
+  LTextArea,
+  Spinner,
+} from "./lapis/ui";
+
+/**
+ * Ask inbox, in the dashboard's own design language (#2a1617 surface, #fe7f42
+ * accent, Montserrat Alternates). It previously used the older paper/marigold
+ * palette, which left section headings almost invisible against the dark
+ * shell — this reuses the same primitives as every other dashboard section so
+ * it can't drift again.
+ */
 
 type Message = {
   id: string;
@@ -24,6 +38,33 @@ type Message = {
   flaggedForPick: boolean;
   createdAt: Date;
 };
+
+/** Shared checkbox row — the native control tinted to the dashboard accent. */
+function Check({
+  checked,
+  onChange,
+  disabled,
+  children,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 font-malt text-[13px] text-[#feedd5]/75">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-[16px] w-[16px] shrink-0 accent-[#fe7f42]"
+      />
+      {children}
+    </label>
+  );
+}
+
 export function AskInbox({
   handle,
   askEnabled,
@@ -38,34 +79,33 @@ export function AskInbox({
   const [showHidden, setShowHidden] = useState(false);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-7">
       <AskSettings handle={handle} askEnabled={askEnabled} askPrompt={askPrompt} />
 
-      <DashSection label={`Шинэ (${messages.new.length})`}>
+      <LSection icon="✉️" title={`Шинэ (${messages.new.length})`}>
         {messages.new.length === 0 ? (
-          <EmptyHint>Одоогоор шинэ асуулт алга.</EmptyHint>
+          <Empty>Одоогоор шинэ асуулт алга.</Empty>
         ) : (
-          messages.new.map((m) => (
-            <NewMessage key={m.id} message={m} />
-          ))
+          messages.new.map((m) => <NewMessage key={m.id} message={m} />)
         )}
-      </DashSection>
+      </LSection>
 
       {messages.answered.length > 0 ? (
-        <DashSection label="Хариулсан">
+        <LSection icon="💬" title="Хариулсан">
           {messages.answered.map((m) => (
             <AnsweredMessage key={m.id} message={m} />
           ))}
-        </DashSection>
+        </LSection>
       ) : null}
 
       {messages.hidden.length > 0 ? (
-        <DashSection
-          label={`Шүүгдсэн (${messages.hidden.length})`}
+        <LSection
+          icon="🛡"
+          title={`Шүүгдсэн (${messages.hidden.length})`}
           action={
             <button
               onClick={() => setShowHidden((v) => !v)}
-              className="font-mono text-[11px] text-paper/50"
+              className="rounded-full bg-[#fe7f42]/15 px-3 py-1.5 font-malt text-[12px] font-bold text-[#fe7f42] transition-colors active:bg-[#fe7f42]/25"
             >
               {showHidden ? "Нуух" : "Харах"}
             </button>
@@ -74,11 +114,9 @@ export function AskInbox({
           {showHidden ? (
             messages.hidden.map((m) => <HiddenMessage key={m.id} message={m} />)
           ) : (
-            <p className="px-1 font-body text-[12px] text-paper/40">
-              Автоматаар шүүгдсэн мессежүүд. Санаатай нээж үзнэ үү.
-            </p>
+            <Hint>Автоматаар шүүгдсэн мессежүүд. Санаатай нээж үзнэ үү.</Hint>
           )}
-        </DashSection>
+        </LSection>
       ) : null}
     </div>
   );
@@ -94,50 +132,89 @@ function AskSettings({
   askPrompt: string | null;
 }) {
   const [prompt, setPrompt] = useState(askPrompt ?? "");
+  const [enabled, setEnabled] = useState(askEnabled);
+  const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
 
+  function toggle() {
+    const next = !enabled;
+    setEnabled(next); // optimistic — reverts below if the write fails
+    start(async () => {
+      try {
+        await setAskEnabled(next);
+      } catch {
+        setEnabled(!next);
+      }
+    });
+  }
+
   return (
-    <div className="mx-4 flex flex-col gap-3 rounded-2xl bg-paper/[0.05] p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="font-body text-[14px] font-medium text-paper">
-            Ask идэвхтэй
-          </p>
-          <p className="font-mono text-[11px] text-paper/50">
-            pickly.mn/{handle}/ask
-          </p>
-        </div>
-        <button
-          role="switch"
-          aria-checked={askEnabled}
-          disabled={pending}
-          onClick={() => start(async () => void (await setAskEnabled(!askEnabled)))}
-          className={`relative h-7 w-12 rounded-full transition ${
-            askEnabled ? "bg-jade" : "bg-paper/20"
-          }`}
-        >
-          <span
-            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
-              askEnabled ? "left-6" : "left-1"
+    <section className="animate-fade-up px-4">
+      <div className="flex flex-col gap-3.5 rounded-[16px] bg-white/[0.04] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-malt text-[14.5px] font-bold text-[#feedd5]">
+              Ask идэвхтэй
+            </p>
+            <p className="truncate font-malt text-[12px] text-[#feedd5]/45">
+              pickly.mn/{handle}/ask
+            </p>
+          </div>
+          {/* left-[3px] is load-bearing: a <button> centres its content, so an
+              absolutely-positioned knob with `left: auto` takes its origin from
+              the track's midpoint and lands outside it. */}
+          <button
+            role="switch"
+            aria-checked={enabled}
+            aria-label="Ask идэвхтэй"
+            disabled={pending}
+            onClick={toggle}
+            className={`relative h-[28px] w-[48px] shrink-0 cursor-pointer rounded-full transition-colors duration-150 disabled:opacity-60 ${
+              enabled ? "bg-[#fe7f42]" : "bg-white/[0.16]"
             }`}
+          >
+            <span
+              className={`absolute left-[3px] top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-transform duration-150 ${
+                enabled ? "translate-x-[20px]" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <LInput
+            value={prompt}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              setSaved(false);
+            }}
+            placeholder="Асуух зүйл байна уу?"
+            aria-label="Асуултын урилга"
           />
-        </button>
+          <div className="flex items-center gap-2">
+            <LButton
+              variant="soft"
+              loading={pending}
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  await setAskPrompt(prompt);
+                  setSaved(true);
+                })
+              }
+            >
+              Хадгалах
+            </LButton>
+            {saved && !pending ? (
+              <span className="font-malt text-[12.5px] font-bold text-[#8fe0a0]">
+                ✓ Хадгаллаа
+              </span>
+            ) : null}
+          </div>
+          <Hint>Энэ бичиг таны Ask хуудсан дээр урилга болж харагдана.</Hint>
+        </div>
       </div>
-      <div className="flex gap-2">
-        <TextInput
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Асуух зүйл байна уу?"
-        />
-        <Button
-          variant="ghost"
-          disabled={pending}
-          onClick={() => start(async () => void (await setAskPrompt(prompt)))}
-        >
-          Хадгалах
-        </Button>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -148,67 +225,59 @@ function NewMessage({ message }: { message: Message }) {
   const [pending, start] = useTransition();
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-paper/[0.05] p-4">
-      <p className="font-body text-[14.5px] leading-relaxed text-paper">
+    <div
+      className={`flex flex-col gap-3 rounded-[16px] bg-white/[0.04] p-4 transition-opacity ${
+        pending ? "opacity-60" : ""
+      }`}
+    >
+      <p className="font-malt text-[14.5px] leading-relaxed text-[#feedd5]">
         {message.body}
       </p>
 
-      <>
-          <TextArea
-            rows={2}
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Хариултаа бичих…"
-          />
-          <label className="flex items-center gap-2 font-body text-[13px] text-paper/70">
-            <input
-              type="checkbox"
-              checked={makePublic}
-              onChange={(e) => setMakePublic(e.target.checked)}
-              className="h-4 w-4 accent-marigold"
-            />
-            Профайл дээр нийтлэх
-          </label>
-          <label className="flex items-center gap-2 font-body text-[13px] text-paper/70">
-            <input
-              type="checkbox"
-              checked={flagForPick}
-              onChange={(e) => setFlagForPick(e.target.checked)}
-              className="h-4 w-4 accent-marigold"
-            />
-            Барааны асуулт — Pickly-ийн багт илгээх
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={pending || !answer.trim()}
-              onClick={() =>
-                start(async () => {
-                  await answerAsk(message.id, answer, makePublic);
-                  // Flagging is a separate write so the answer still lands
-                  // even if the creator never ticked the box.
-                  if (flagForPick) await setAskFlaggedForPick(message.id, true);
-                })
-              }
-            >
-              Хариулах
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={pending}
-              onClick={() => start(async () => void (await hideAsk(message.id)))}
-            >
-              Нуух
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={pending}
-              className="!text-berry/80"
-              onClick={() => start(async () => void (await blockAsker(message.id)))}
-            >
-              Блоклох
-            </Button>
-          </div>
-        </>
+      <LTextArea
+        rows={2}
+        value={answer}
+        onChange={(e) => setAnswer(e.target.value)}
+        placeholder="Хариултаа бичих…"
+      />
+
+      <Check checked={makePublic} onChange={setMakePublic} disabled={pending}>
+        Профайл дээр нийтлэх
+      </Check>
+      <Check checked={flagForPick} onChange={setFlagForPick} disabled={pending}>
+        Барааны асуулт — Pickly-ийн багт илгээх
+      </Check>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <LButton
+          loading={pending}
+          disabled={pending || !answer.trim()}
+          onClick={() =>
+            start(async () => {
+              await answerAsk(message.id, answer, makePublic);
+              // A separate write, so the answer still lands even if the
+              // creator never ticked the box.
+              if (flagForPick) await setAskFlaggedForPick(message.id, true);
+            })
+          }
+        >
+          Хариулах
+        </LButton>
+        <LButton
+          variant="ghost"
+          disabled={pending}
+          onClick={() => start(async () => void (await hideAsk(message.id)))}
+        >
+          Нуух
+        </LButton>
+        <LButton
+          variant="danger"
+          disabled={pending}
+          onClick={() => start(async () => void (await blockAsker(message.id)))}
+        >
+          Блоклох
+        </LButton>
+      </div>
     </div>
   );
 }
@@ -216,23 +285,25 @@ function NewMessage({ message }: { message: Message }) {
 function AnsweredMessage({ message }: { message: Message }) {
   const [pending, start] = useTransition();
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-paper/[0.05] p-4">
-      <p className="font-body text-[13.5px] text-paper/70">{message.body}</p>
-      <p className="border-l-2 border-marigold/60 pl-2.5 font-body text-[14px] text-paper">
+    <div className="flex flex-col gap-2 rounded-[16px] bg-white/[0.04] p-4">
+      <p className="font-malt text-[13.5px] leading-relaxed text-[#feedd5]/60">
+        {message.body}
+      </p>
+      <p className="border-l-2 border-[#fe7f42]/70 pl-2.5 font-malt text-[14px] leading-relaxed text-[#feedd5]">
         {message.answerBody}
       </p>
-      <label className="flex items-center gap-2 font-body text-[12.5px] text-paper/60">
-        <input
-          type="checkbox"
+      <div className="flex items-center gap-2">
+        <Check
           checked={message.isPublic}
           disabled={pending}
-          onChange={(e) =>
-            start(async () => void (await toggleAskPublic(message.id, e.target.checked)))
+          onChange={(v) =>
+            start(async () => void (await toggleAskPublic(message.id, v)))
           }
-          className="h-4 w-4 accent-marigold"
-        />
-        Нийтэд харагдаж байна
-      </label>
+        >
+          Нийтэд харагдаж байна
+        </Check>
+        {pending ? <Spinner className="h-3.5 w-3.5 text-[#feedd5]/40" /> : null}
+      </div>
     </div>
   );
 }
@@ -240,20 +311,20 @@ function AnsweredMessage({ message }: { message: Message }) {
 function HiddenMessage({ message }: { message: Message }) {
   const [pending, start] = useTransition();
   return (
-    <div className="flex items-center justify-between gap-2 rounded-2xl bg-paper/[0.04] p-3">
-      <p className="min-w-0 flex-1 truncate font-body text-[13px] text-paper/55">
+    <div className="flex items-center justify-between gap-2 rounded-[16px] bg-white/[0.03] p-3">
+      <p className="min-w-0 flex-1 truncate font-malt text-[13px] text-[#feedd5]/50">
         {message.body}
       </p>
       {message.status === "hidden" ? (
         <button
           disabled={pending}
           onClick={() => start(async () => void (await unhideAsk(message.id)))}
-          className="shrink-0 font-mono text-[11px] text-paper/60"
+          className="shrink-0 rounded-lg px-2 py-1 font-malt text-[11.5px] font-bold text-[#fe7f42] transition-colors active:bg-white/[0.05] disabled:opacity-50"
         >
           Сэргээх
         </button>
       ) : (
-        <span className="shrink-0 font-mono text-[10px] text-berry/70">
+        <span className="shrink-0 rounded-full bg-[#ff9a8a]/12 px-2 py-0.5 font-malt text-[10.5px] font-bold uppercase text-[#ff9a8a]">
           Блоклосон
         </span>
       )}
