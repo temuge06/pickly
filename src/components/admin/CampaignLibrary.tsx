@@ -74,6 +74,11 @@ export function CampaignLibrary({ campaigns }: { campaigns: CampaignRow[] }) {
                   {c.assignedCount} профайл дээр
                   {c.isActive ? "" : " · унтраалттай"}
                 </p>
+                {!c.bannerImageUrl ? (
+                  <p className="truncate font-inter text-[12px] font-semibold text-[#ffb3a3]">
+                    Баннер зураг алга — профайл дээр харагдахгүй
+                  </p>
+                ) : null}
               </div>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 font-malt text-[10.5px] font-black uppercase ${

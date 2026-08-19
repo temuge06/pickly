@@ -124,8 +124,25 @@ export function CampaignForm({
 
       {error ? <AError>{error}</AError> : null}
 
+      {/* A campaign with no banner renders an empty box on every profile it is
+          assigned to, and the upload takes a moment — so saving is blocked both
+          while it is in flight and while the banner is still missing. Without
+          this, hitting save early silently stored a campaign with a null
+          banner and the image looked like it had "not been saved". */}
+      {!banner ? (
+        <p className="font-inter text-[12.5px] text-white/40">
+          {uploading
+            ? "Зураг байршиж байна… дуустал хүлээнэ үү."
+            : "Баннер зураг заавал — үүнгүйгээр профайл дээр хоосон харагдана."}
+        </p>
+      ) : null}
+
       <div className="flex gap-2">
-        <AButton onClick={save} loading={saving} disabled={!title.trim()}>
+        <AButton
+          onClick={save}
+          loading={saving}
+          disabled={!title.trim() || !banner || uploading}
+        >
           {existing ? "Хадгалах" : "Үүсгэх"}
         </AButton>
         {uploading ? <ASpinner className="h-4 w-4 self-center text-[#fe7f42]" /> : null}

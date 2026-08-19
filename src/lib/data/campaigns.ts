@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNotNull, ne } from "drizzle-orm";
 import { getDb } from "@/db";
 import { campaign, campaignAssignment } from "@/db/schema";
 import { env } from "@/lib/env";
@@ -40,6 +40,10 @@ export async function getProfileCampaigns(
         eq(campaignAssignment.profileId, profileId),
         eq(campaignAssignment.isActive, true),
         eq(campaign.isActive, true),
+        // A banner with no image is an empty box with a button on it. Skip it
+        // rather than render a broken card if one ever reaches this far.
+        isNotNull(campaign.bannerImageUrl),
+        ne(campaign.bannerImageUrl, ""),
       ),
     )
     .orderBy(asc(campaignAssignment.position), asc(campaignAssignment.createdAt));
