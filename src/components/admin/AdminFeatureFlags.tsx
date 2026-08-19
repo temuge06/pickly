@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { setFeatureFlag } from "@/lib/actions/admin";
 import { FEATURES, FEATURE_LABELS, type Feature, type FeatureFlags } from "@/lib/features";
-import { AError, ASpinner } from "./ui";
+import { AError, ASpinner, SaveState } from "./ui";
+import { useSaveState } from "./useSaveState";
 
 const DESCRIPTIONS: Record<Feature, string> = {
   top_picks: "Цуглуулгад ороогүй үндсэн тавиур.",
@@ -28,29 +29,32 @@ export function AdminFeatureFlags({
 }) {
   const [flags, setFlags] = useState(initial);
   const [busy, setBusy] = useState<Feature | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [, start] = useTransition();
+  const save = useSaveState();
 
   function toggle(feature: Feature) {
     const next = !flags[feature];
+    // Optimistic: the switch moves under the finger, then reverts if the write
+    // fails. Waiting for the round trip made it feel unresponsive.
     setFlags((f) => ({ ...f, [feature]: next }));
     setBusy(feature);
-    setError(null);
-    start(async () => {
-      try {
-        await setFeatureFlag(profileId, feature, next);
-      } catch (err) {
-        setFlags((f) => ({ ...f, [feature]: !next }));
-        setError(err instanceof Error ? err.message : "Хадгалж чадсангүй.");
-      } finally {
-        setBusy(null);
-      }
-    });
+    save.run(
+      async () => {
+        try {
+          await setFeatureFlag(profileId, feature, next);
+        } catch (e) {
+          setFlags((f) => ({ ...f, [feature]: !next }));
+          throw e;
+        }
+      },
+      () => setBusy(null),
+    );
   }
 
   return (
     <div className="flex flex-col gap-2">
-      {error ? <AError>{error}</AError> : null}
+      <div className="min-h-[18px]">
+        <SaveState status={save.status} error={save.error} />
+      </div>
       {FEATURES.map((f) => {
         const on = flags[f];
         return (
@@ -92,6 +96,7 @@ export function AdminFeatureFlags({
           </div>
         );
       })}
+      {save.status === "error" ? <AError>{save.error}</AError> : null}
       <p className="mt-1 font-inter text-[12px] leading-relaxed text-white/30">
         Унтраасан хэсэг нийтийн профайл болон бүтээгчийн дашбоардаас бүрмөсөн
         алга болно — саарлаад үлдэхгүй. Тохируулга шууд хадгалагдана.

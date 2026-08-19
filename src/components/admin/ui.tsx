@@ -129,3 +129,39 @@ export function AError({ children }: { children: React.ReactNode }) {
     </p>
   );
 }
+
+/**
+ * The visible half of useSaveState. Renders nothing when idle, so it only
+ * takes space while it has something to say.
+ */
+export function SaveState({
+  status,
+  error,
+  labels,
+}: {
+  status: "idle" | "saving" | "error" | "saved";
+  error?: string | null;
+  labels?: { saving?: string; saved?: string };
+}) {
+  if (status === "idle") return null;
+  if (status === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-inter text-[12.5px] text-white/50">
+        <ASpinner className="h-3.5 w-3.5 text-[#fe7f42]" />
+        {labels?.saving ?? "Хадгалж байна…"}
+      </span>
+    );
+  }
+  if (status === "saved") {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-inter text-[12.5px] font-semibold text-[#9ee7b4]">
+        ✓ {labels?.saved ?? "Хадгаллаа"}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 font-inter text-[12.5px] font-semibold text-[#ffb3a3]">
+      ✕ {error ?? "Алдаа гарлаа"}
+    </span>
+  );
+}

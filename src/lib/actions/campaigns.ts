@@ -55,11 +55,23 @@ export async function uploadCampaignBanner(
 
   try {
     const input = Buffer.from(await file.arrayBuffer());
-    const webp = await sharp(input)
-      .rotate()
-      .resize(1146, 915, { fit: "cover", position: "attention", withoutEnlargement: false, kernel: "lanczos3" })
-      .webp({ quality: 92 })
-      .toBuffer();
+
+    // The in-browser cropper already emits exactly 1146x915 WebP, framed by the
+    // admin. Re-encoding that costs ~170ms of function time (the entropy-based
+    // "attention" crop is the expensive part) and can only lose quality, so
+    // pass it straight through. Anything else — a pasted URL, a different size,
+    // a JPEG — still goes through the full pipeline.
+    const meta = await sharp(input).metadata();
+    const alreadyExact =
+      meta.format === "webp" && meta.width === 1146 && meta.height === 915;
+
+    const webp = alreadyExact
+      ? input
+      : await sharp(input)
+          .rotate()
+          .resize(1146, 915, { fit: "cover", position: "attention", withoutEnlargement: false, kernel: "lanczos3" })
+          .webp({ quality: 92 })
+          .toBuffer();
 
     const path = `campaigns/${crypto.randomUUID()}.webp`;
     const admin = getSupabaseAdmin();

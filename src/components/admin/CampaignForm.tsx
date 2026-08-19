@@ -10,7 +10,8 @@ import {
   type CampaignInput,
 } from "@/lib/actions/campaigns";
 import { BannerCropper } from "./BannerCropper";
-import { ALabel, AButton, AError, AHint, AInput, ASpinner } from "./ui";
+import { ALabel, AButton, AError, AHint, AInput, ASpinner, SaveState } from "./ui";
+import { useSaveState } from "./useSaveState";
 
 type Existing = CampaignInput & { id: string };
 
@@ -36,7 +37,7 @@ export function CampaignForm({
   const [label] = useState(existing?.advertiserLabel ?? "");
   const [error, setError] = useState<string | null>(null);
   const [uploading, startUpload] = useTransition();
-  const [saving, startSave] = useTransition();
+  const save = useSaveState();
 
   /** The cropper hands back a already-framed WebP blob; upload it as-is. */
   function onCropped(blob: Blob) {
@@ -50,11 +51,10 @@ export function CampaignForm({
     });
   }
 
-  function save() {
+  function onSave() {
     if (!title.trim()) return;
     setError(null);
-    startSave(async () => {
-      try {
+    save.run(async () => {
         const payload: CampaignInput = {
           title,
           bannerImageUrl: banner || null,
@@ -68,9 +68,6 @@ export function CampaignForm({
           router.push(`/admin/campaigns/${id}`);
         }
         onSaved?.();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Хадгалж чадсангүй.");
-      }
     });
   }
 
@@ -94,10 +91,13 @@ export function CampaignForm({
             <div className="aspect-[382/305] w-full max-w-[340px] overflow-hidden rounded-[14px] bg-white/[0.04]">
               <img src={banner} alt="" className="h-full w-full object-cover" />
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <AButton type="button" variant="ghost" onClick={() => setBanner("")}>
                 Өөр зураг
               </AButton>
+              <span className="font-inter text-[12.5px] font-semibold text-[#9ee7b4]">
+                ✓ Зураг байршлаа
+              </span>
             </div>
           </div>
         ) : (
@@ -139,12 +139,19 @@ export function CampaignForm({
 
       <div className="flex gap-2">
         <AButton
-          onClick={save}
-          loading={saving}
-          disabled={!title.trim() || !banner || uploading}
+          onClick={onSave}
+          loading={save.busy}
+          disabled={!title.trim() || !banner || uploading || save.busy}
         >
           {existing ? "Хадгалах" : "Үүсгэх"}
         </AButton>
+        <span className="self-center">
+          <SaveState
+            status={save.status}
+            error={save.error}
+            labels={{ saved: existing ? "Хадгаллаа" : "Үүслээ" }}
+          />
+        </span>
         {uploading ? <ASpinner className="h-4 w-4 self-center text-[#fe7f42]" /> : null}
       </div>
     </div>
