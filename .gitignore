@@ -11,3 +11,7 @@ dist
 next-env.d.ts
 .vercel
 .gstack/
+
+# Campaign banner staging — the images live in Supabase Storage, not the repo.
+public/campaigns/*
+!public/campaigns/README.md
