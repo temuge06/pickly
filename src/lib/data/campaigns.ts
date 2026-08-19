@@ -8,7 +8,6 @@ export type ProfileCampaign = {
   title: string;
   bannerImageUrl: string | null;
   destinationUrl: string | null;
-  advertiserLabel: string | null;
 };
 
 /**
@@ -30,7 +29,9 @@ export async function getProfileCampaigns(
       title: campaign.title,
       bannerImageUrl: campaign.bannerImageUrl,
       destinationUrl: campaign.destinationUrl,
-      advertiserLabel: campaign.advertiserLabel,
+      // advertiserLabel is deliberately NOT selected: the profile no longer
+      // shows a caption, so shipping it would put an unused string in the
+      // page payload.
     })
     .from(campaignAssignment)
     .innerJoin(campaign, eq(campaign.id, campaignAssignment.campaignId))

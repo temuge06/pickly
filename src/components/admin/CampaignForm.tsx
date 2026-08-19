@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createCampaign,
@@ -9,6 +9,7 @@ import {
   uploadCampaignBanner,
   type CampaignInput,
 } from "@/lib/actions/campaigns";
+import { BannerCropper } from "./BannerCropper";
 import { ALabel, AButton, AError, AHint, AInput, ASpinner } from "./ui";
 
 type Existing = CampaignInput & { id: string };
@@ -29,18 +30,19 @@ export function CampaignForm({
   const [title, setTitle] = useState(existing?.title ?? "");
   const [banner, setBanner] = useState(existing?.bannerImageUrl ?? "");
   const [destination, setDestination] = useState(existing?.destinationUrl ?? "");
-  const [label, setLabel] = useState(existing?.advertiserLabel ?? "");
+  // advertiser_label is retained on the row for existing data but is no longer
+  // shown on the profile — the banner links out directly — so the form does
+  // not collect it any more.
+  const [label] = useState(existing?.advertiserLabel ?? "");
   const [error, setError] = useState<string | null>(null);
   const [uploading, startUpload] = useTransition();
   const [saving, startSave] = useTransition();
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  /** The cropper hands back a already-framed WebP blob; upload it as-is. */
+  function onCropped(blob: Blob) {
     setError(null);
     const fd = new FormData();
-    fd.set("file", file);
+    fd.set("file", new File([blob], "banner.webp", { type: "image/webp" }));
     startUpload(async () => {
       const res = await uploadCampaignBanner(fd);
       if (res.error) setError(res.error);
@@ -88,39 +90,26 @@ export function CampaignForm({
       <div>
         <ALabel>Баннер зураг</ALabel>
         {banner ? (
-          <div className="mb-2 aspect-[382/305] w-full max-w-[300px] overflow-hidden rounded-[12px] bg-white/[0.04]">
-            <img src={banner} alt="" className="h-full w-full object-cover" />
+          <div className="flex flex-col gap-2">
+            <div className="aspect-[382/305] w-full max-w-[340px] overflow-hidden rounded-[14px] bg-white/[0.04]">
+              <img src={banner} alt="" className="h-full w-full object-cover" />
+            </div>
+            <div className="flex gap-2">
+              <AButton type="button" variant="ghost" onClick={() => setBanner("")}>
+                Өөр зураг
+              </AButton>
+            </div>
           </div>
-        ) : null}
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={onPick}
-          />
-          <AButton
-            type="button"
-            variant="ghost"
-            onClick={() => fileRef.current?.click()}
-            loading={uploading}
-          >
-            {uploading ? "Байршуулж байна…" : "Зураг сонгох"}
-          </AButton>
-          {banner ? (
-            <AButton type="button" variant="ghost" onClick={() => setBanner("")}>
-              Арилгах
-            </AButton>
-          ) : null}
-        </div>
+        ) : (
+          <BannerCropper onCropped={onCropped} busy={uploading} />
+        )}
         <AInput
           className="mt-2"
           value={banner}
           onChange={(e) => setBanner(e.target.value)}
           placeholder="эсвэл зургийн холбоос https://…"
         />
-        <AHint>382×305 харьцаагаар автоматаар тайрч, WebP болгож хадгална.</AHint>
+        <AHint>Чирж оруулаад тайрна. Хадгалахдаа 764×610 WebP болгоно.</AHint>
       </div>
 
       <div>
@@ -131,17 +120,6 @@ export function CampaignForm({
           onChange={(e) => setDestination(e.target.value)}
           placeholder="https://www.facebook.com/ayanga.store"
         />
-      </div>
-
-      <div>
-        <ALabel htmlFor="clabel">Доор харагдах бичиг</ALabel>
-        <AInput
-          id="clabel"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="https://www.facebook.com/ayanga.store"
-        />
-        <AHint>Баннерын доор доогуур зураастай, том үсгээр гарна. Хоосон бол харагдахгүй.</AHint>
       </div>
 
       {error ? <AError>{error}</AError> : null}

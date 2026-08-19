@@ -278,24 +278,22 @@ function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
             sizes="382px"
           />
         ) : null}
-        {/* Glassy CTA pill, bottom-right on the banner. The label is fixed
-            platform copy, not per-campaign. */}
-        <span className="absolute bottom-[17px] right-[12px] flex h-[37px] w-[162px] items-center justify-center rounded-[20px] border-[0.2px] border-white bg-black/[0.09] shadow-[inset_0px_0px_4px_0px_rgba(38,52,0,0.5)] text-[14px] font-bold text-white [text-shadow:0px_2px_1px_rgba(0,0,0,0.25)]">
+        {/* Liquid-glass CTA pill, bottom-right on the banner. Fixed platform
+            copy, not per-campaign. The backdrop blur is load-bearing as well
+            as decorative: it softens whatever artwork sits behind the pill so
+            the label stays readable on any creative. */}
+        <span className="absolute bottom-[17px] right-[12px] flex h-[37px] w-[162px] items-center justify-center rounded-[20px] border border-white/45 bg-gradient-to-b from-white/25 to-white/5 backdrop-blur-[10px] backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_-2px_4px_-1px_rgba(0,0,0,0.3),0_6px_16px_-4px_rgba(0,0,0,0.45)] text-[14px] font-bold text-white [text-shadow:0px_1px_3px_rgba(0,0,0,0.5)]">
           Дэлгэрэнгүй Үзэх
         </span>
       </div>
-      {campaign.advertiserLabel ? (
-        <span className="block w-full px-2 text-center text-[12px] font-bold uppercase leading-[15px] underline decoration-solid underline-offset-2 text-[var(--t-accent)] [word-break:break-word]">
-          {campaign.advertiserLabel}
-        </span>
-      ) : null}
     </>
   );
 
   const cls =
-    "flex w-[382px] max-w-[calc(100vw-20px)] shrink-0 snap-start flex-col gap-[10px]";
+    "block w-[382px] max-w-[calc(100vw-20px)] shrink-0 snap-start";
 
-  // The whole card — banner, pill and label — is one link target.
+  // The banner itself is the click target — tapping it goes straight to the
+  // campaign's destination. No caption underneath.
   return campaign.destinationUrl ? (
     <a
       href={campaign.destinationUrl}
