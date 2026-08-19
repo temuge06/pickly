@@ -106,12 +106,14 @@ export const profileThemeEnum = pgEnum("profile_theme", [
  * the public profile, so they turn on and off as a unit).
  */
 export const featureEnum = pgEnum("feature", [
-  "top_picks",
   "entertainment",
   "wishlist",
   "not_for_me",
   "my_picks",
   "ask",
+  // Appended by migration 0005 — declared last so this matches the physical
+  // enum order in Postgres. Display order is FEATURES in src/lib/features.ts.
+  "top_picks",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -381,6 +383,74 @@ export const wishlistItem = pgTable("wishlist_item", {
   ),
 }));
 
+/**
+ * A sponsored banner. Campaigns are platform inventory, not creator content:
+ * only staff create them, and one campaign is normally shown across many
+ * profiles at once — which is why the banner lives here and the placement
+ * lives in campaign_assignment rather than being denormalised per profile.
+ *
+ * This does NOT replace `pick`. My Picks, Wishlist and Not For Me keep using
+ * pick exactly as before; only the Top Picks shelf renders campaigns.
+ */
+export const campaign = pgTable("campaign", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  /** Re-hosted to our own Storage, never hotlinked from the advertiser. */
+  bannerImageUrl: text("banner_image_url"),
+  /** Where a tap goes. The seam where click-tracking lands later. */
+  destinationUrl: text("destination_url"),
+  /** Shown as the underlined caption under the banner, e.g. "ayanga.store". */
+  advertiserLabel: text("advertiser_label"),
+  /** Off hides the banner on every profile at once, without unassigning. */
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: uuid("created_by").references(() => adminUser.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  activeIdx: index("campaign_active_idx").on(table.isActive),
+}));
+
+/**
+ * Placement of one campaign on one creator's Top Picks shelf. Two independent
+ * `is_active` switches matter here: the campaign's (kill it everywhere) and
+ * the assignment's (drop it from one profile), so pausing a banner globally
+ * never loses the per-creator placements.
+ */
+export const campaignAssignment = pgTable("campaign_assignment", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaign.id, { onDelete: "cascade" }),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profile.id, { onDelete: "cascade" }),
+  /** Display order within that creator's Top Picks shelf. */
+  position: integer("position").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  assignedBy: uuid("assigned_by").references(() => adminUser.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  campaignProfileUnique: uniqueIndex("campaign_assignment_campaign_profile_unique").on(
+    table.campaignId,
+    table.profileId,
+  ),
+  profileActivePositionIdx: index("campaign_assignment_profile_active_position_idx").on(
+    table.profileId,
+    table.isActive,
+    table.position,
+  ),
+}));
+
 export const askMessage = pgTable("ask_message", {
   id: uuid("id").primaryKey().defaultRandom(),
   profileId: uuid("profile_id")
@@ -449,6 +519,7 @@ export const askBlock = pgTable("ask_block", {
 
 export const adminUserRelations = relations(adminUser, ({ many }) => ({
   featureFlags: many(featureFlag),
+  campaignAssignments: many(campaignAssignment),
 }));
 
 export const featureFlagRelations = relations(featureFlag, ({ one }) => ({
@@ -517,6 +588,25 @@ export const pickRelations = relations(pick, ({ one }) => ({
 export const linkRelations = relations(link, ({ one }) => ({
   profile: one(profile, {
     fields: [link.profileId],
+    references: [profile.id],
+  }),
+}));
+
+export const campaignRelations = relations(campaign, ({ one, many }) => ({
+  assignments: many(campaignAssignment),
+  creator: one(adminUser, {
+    fields: [campaign.createdBy],
+    references: [adminUser.id],
+  }),
+}));
+
+export const campaignAssignmentRelations = relations(campaignAssignment, ({ one }) => ({
+  campaign: one(campaign, {
+    fields: [campaignAssignment.campaignId],
+    references: [campaign.id],
+  }),
+  profile: one(profile, {
+    fields: [campaignAssignment.profileId],
     references: [profile.id],
   }),
 }));

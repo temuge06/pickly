@@ -25,7 +25,7 @@ export default async function ProfilePage({
   const data = await getPublicProfile(handle);
   if (!data) notFound();
 
-  const { profile, collections, picks, tracks, films, books, wishlist, askMessages, flags } = data;
+  const { profile, collections, picks, tracks, films, books, wishlist, askMessages, campaigns, flags } = data;
   const creators = await getOtherCreators(profile.id);
 
   // Owner check, server-side. A logged-out visitor or a different signed-in
@@ -41,12 +41,11 @@ export default async function ProfilePage({
     .filter((u): u is string => !!u);
 
   // Split picks into the profile's three product sections:
-  //   Not For Me   = status wont_rebuy
-  //   My Picks     = the rest, grouped by collection
-  //   Top Picks    = the rest, ungrouped (no collection)
+  //   Not For Me = status wont_rebuy
+  //   My Picks   = the rest, grouped by collection
+  // Top Picks is no longer sourced from picks at all — it renders campaigns.
   const notForMe = picks.filter((p) => p.status === "wont_rebuy");
   const keep = picks.filter((p) => p.status !== "wont_rebuy");
-  const topPicks = keep.filter((p) => p.collectionId === null);
   const picksByCollection: Record<string, typeof picks> = {};
   for (const p of keep) {
     if (p.collectionId) (picksByCollection[p.collectionId] ??= []).push(p);
@@ -69,7 +68,7 @@ export default async function ProfilePage({
             <LapisMusic tracks={tracks} films={films} books={books} />
           ) : null}
           {flags.top_picks ? (
-            <LapisTopPicks picks={topPicks} handle={profile.handle} />
+            <LapisTopPicks campaigns={campaigns} handle={profile.handle} />
           ) : null}
           {flags.my_picks ? (
             <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />

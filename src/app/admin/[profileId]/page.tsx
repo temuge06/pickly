@@ -4,10 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminAddProduct } from "@/components/admin/AdminAddProduct";
 import { AdminCollections } from "@/components/admin/AdminCollections";
+import { CreatorCampaigns } from "@/components/admin/CreatorCampaigns";
 import { AdminFeatureFlags } from "@/components/admin/AdminFeatureFlags";
 import { Panel } from "@/components/admin/ui";
 import { getDb } from "@/db";
-import { askMessage, collection, pick, profile, wishlistItem } from "@/db/schema";
+import { askMessage, campaign, campaignAssignment, collection, pick, profile, wishlistItem } from "@/db/schema";
+import { listCampaigns } from "@/lib/actions/campaigns";
 import { getFeatureFlags } from "@/lib/data/features";
 import { formatMnt } from "@/lib/format";
 
@@ -58,6 +60,27 @@ export default async function AdminCreatorPage({
       )
       .orderBy(desc(askMessage.answeredAt)),
     getFeatureFlags(creator.id),
+  ]);
+
+  const [assignedCampaigns, campaignLibrary] = await Promise.all([
+    db
+      .select({
+        assignmentId: campaignAssignment.id,
+        campaignId: campaign.id,
+        title: campaign.title,
+        bannerImageUrl: campaign.bannerImageUrl,
+        isActive: campaign.isActive,
+      })
+      .from(campaignAssignment)
+      .innerJoin(campaign, eq(campaign.id, campaignAssignment.campaignId))
+      .where(
+        and(
+          eq(campaignAssignment.profileId, creator.id),
+          eq(campaignAssignment.isActive, true),
+        ),
+      )
+      .orderBy(asc(campaignAssignment.position)),
+    listCampaigns(),
   ]);
 
   const notForMe = picks.filter((p) => p.status === "wont_rebuy");
@@ -115,6 +138,17 @@ export default async function AdminCreatorPage({
             subtitle="Асаах/унтраахад шууд хадгалагдана. Бичлэг байхгүй бол асаалттай гэж үзнэ."
           >
             <AdminFeatureFlags profileId={creator.id} initial={flags} />
+          </Panel>
+
+          <Panel
+            title="Top Picks баннер"
+            subtitle="Энэ профайлын Top Picks хэсэгт ямар кампанит ажил ажиллаж байна."
+          >
+            <CreatorCampaigns
+              profileId={creator.id}
+              assigned={assignedCampaigns}
+              library={campaignLibrary}
+            />
           </Panel>
 
           <Panel

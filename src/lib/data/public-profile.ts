@@ -10,6 +10,7 @@ import {
   profile,
   wishlistItem,
 } from "@/db/schema";
+import { getProfileCampaigns, type ProfileCampaign } from "@/lib/data/campaigns";
 import { getFeatureFlags } from "@/lib/data/features";
 import { env } from "@/lib/env";
 import { ALL_ENABLED, type FeatureFlags } from "@/lib/features";
@@ -43,6 +44,8 @@ export type PublicProfileData = {
   links: Link[];
   wishlist: WishlistItem[];
   askMessages: AskMessage[];
+  /** Top Picks is a sponsored-banner shelf now, not a product shelf. */
+  campaigns: ProfileCampaign[];
   flags: FeatureFlags;
 };
 
@@ -68,6 +71,7 @@ export async function getPublicProfile(
           links: demoLinks,
           wishlist: [],
           askMessages: demoAskMessages,
+          campaigns: [],
           flags: { ...ALL_ENABLED },
         }
       : null;
@@ -87,7 +91,7 @@ export async function getPublicProfile(
   // fetching and filtering later — nothing to leak into the HTML payload.
   const flags = await getFeatureFlags(p.id);
 
-  const [collections, picks, links, wishlist, connections, activity, asks] =
+  const [collections, picks, links, wishlist, connections, activity, asks, campaigns] =
     await Promise.all([
       flags.my_picks
         ? db
@@ -134,6 +138,7 @@ export async function getPublicProfile(
             )
             .orderBy(desc(askMessage.answeredAt))
         : [],
+      flags.top_picks ? getProfileCampaigns(p.id) : [],
     ]);
 
   // A provider section is only live when its connection is active. Manual
@@ -153,9 +158,14 @@ export async function getPublicProfile(
   //   not_for_me → status wont_rebuy
   //   top_picks  → everything else with no collection
   //   my_picks   → everything else that has one
+  // Top Picks renders CAMPAIGNS now, so an ungrouped pick has no section to
+  // appear in and is dropped here rather than shipped to a browser that will
+  // never draw it. The rows are untouched in the database.
+  //   not_for_me → status wont_rebuy
+  //   my_picks   → anything else with a collection
   const visiblePicks = picks.filter((k: Pick) => {
     if (k.status === "wont_rebuy") return flags.not_for_me;
-    return k.collectionId === null ? flags.top_picks : flags.my_picks;
+    return k.collectionId !== null && flags.my_picks;
   });
 
   return {
@@ -168,6 +178,7 @@ export async function getPublicProfile(
     films: visibleActivity.filter((a: ActivityItem) => a.kind === "film"),
     books: visibleActivity.filter((a: ActivityItem) => a.kind === "book"),
     askMessages: asks,
+    campaigns,
     flags,
   };
 }

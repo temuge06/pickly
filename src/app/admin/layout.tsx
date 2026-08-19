@@ -36,6 +36,12 @@ export default async function AdminLayout({
           </Link>
           <div className="flex items-center gap-1">
             <Link
+              href="/admin/campaigns"
+              className="flex min-h-[38px] items-center rounded-[10px] px-3 font-malt text-[12.5px] font-semibold text-white/45 transition-colors hover:text-white/80"
+            >
+              Кампанит ажил
+            </Link>
+            <Link
               href="/dashboard"
               className="flex min-h-[38px] items-center rounded-[10px] px-3 font-malt text-[12.5px] font-semibold text-white/45 transition-colors hover:text-white/80"
             >

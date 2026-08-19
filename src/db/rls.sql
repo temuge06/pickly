@@ -55,6 +55,8 @@ ALTER TABLE public.ask_message    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ask_block      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_user     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feature_flag   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_assignment ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- profile
@@ -260,3 +262,53 @@ CREATE POLICY feature_flag_admin_all ON public.feature_flag
 DROP POLICY IF EXISTS ask_message_admin_read ON public.ask_message;
 CREATE POLICY ask_message_admin_read ON public.ask_message
   FOR SELECT TO authenticated USING (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- campaign / campaign_assignment — sponsored banners on the Top Picks shelf.
+-- Staff-write-only, same shape as pick/wishlist_item.
+--
+-- Anon may read ONLY what a profile actually renders: an active campaign that
+-- has at least one active assignment, and the active assignments themselves.
+-- A drafted or paused campaign is invisible to the public key even though its
+-- row exists — inventory that is not running should not be enumerable by
+-- anyone holding the anon key.
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS campaign_anon_read ON public.campaign;
+CREATE POLICY campaign_anon_read ON public.campaign
+  FOR SELECT TO anon USING (
+    is_active = true
+    AND EXISTS (
+      SELECT 1 FROM public.campaign_assignment ca
+      WHERE ca.campaign_id = campaign.id AND ca.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS campaign_admin_all ON public.campaign;
+CREATE POLICY campaign_admin_all ON public.campaign
+  FOR ALL TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS campaign_assignment_anon_read ON public.campaign_assignment;
+CREATE POLICY campaign_assignment_anon_read ON public.campaign_assignment
+  FOR SELECT TO anon USING (
+    is_active = true
+    AND EXISTS (
+      SELECT 1 FROM public.campaign c
+      WHERE c.id = campaign_assignment.campaign_id AND c.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS campaign_assignment_admin_all ON public.campaign_assignment;
+CREATE POLICY campaign_assignment_admin_all ON public.campaign_assignment
+  FOR ALL TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- A creator may see which banners run on their own page (read-only). They
+-- cannot add, remove or reorder them — placement is sold inventory, not
+-- creator content.
+DROP POLICY IF EXISTS campaign_assignment_owner_read ON public.campaign_assignment;
+CREATE POLICY campaign_assignment_owner_read ON public.campaign_assignment
+  FOR SELECT TO authenticated
+  USING (profile_id IN (SELECT public.owned_profile_ids()));

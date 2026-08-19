@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import type { ProfileCampaign } from "@/lib/data/campaigns";
 import type {
   askMessage,
   collection,
@@ -234,22 +235,78 @@ function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
   );
 }
 
-// --- Top Picks: ungrouped, non-wont_rebuy picks ----------------------------
+// --- Top Picks: sponsored campaign banners -------------------------------
 
+/**
+ * Top Picks is a campaign shelf, not a product shelf. My Picks, Wishlist and
+ * Not For Me continue to render `pick` rows unchanged — only this section
+ * sources from campaign_assignment.
+ *
+ * Card geometry follows the Figma spec (node 1033:6946): a 382x305 full-bleed
+ * banner at radius 20, with the CTA pill inset 12px from the right and 17px
+ * from the bottom.
+ */
 export function LapisTopPicks({
-  picks,
+  campaigns,
   handle,
 }: {
-  picks: Pick[];
-  /** Titles the shelf after its owner — "temuge's picks", not "TOP PICKS". */
+  campaigns: ProfileCampaign[];
+  /** Titles the shelf after its owner — "temuge's picks". */
   handle: string;
 }) {
-  if (picks.length === 0) return null;
+  if (campaigns.length === 0) return null;
   return (
     <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[var(--t-border)] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
       <SectionTitle>{`${handle}'s picks`}</SectionTitle>
-      <PickRow picks={picks} />
+      <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+        {campaigns.map((c) => (
+          <CampaignCard key={c.id} campaign={c} />
+        ))}
+      </div>
     </div>
+  );
+}
+
+function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
+  const inner = (
+    <>
+      <div className="relative aspect-[382/305] w-full overflow-hidden rounded-[20px] bg-black/10">
+        {campaign.bannerImageUrl ? (
+          <ProductImage
+            src={campaign.bannerImageUrl}
+            alt={campaign.title}
+            sizes="382px"
+          />
+        ) : null}
+        {/* Glassy CTA pill, bottom-right on the banner. The label is fixed
+            platform copy, not per-campaign. */}
+        <span className="absolute bottom-[17px] right-[12px] flex h-[37px] w-[162px] items-center justify-center rounded-[20px] border-[0.2px] border-white bg-black/[0.09] shadow-[inset_0px_0px_4px_0px_rgba(38,52,0,0.5)] text-[14px] font-bold text-white [text-shadow:0px_2px_1px_rgba(0,0,0,0.25)]">
+          Дэлгэрэнгүй Үзэх
+        </span>
+      </div>
+      {campaign.advertiserLabel ? (
+        <span className="block w-full px-2 text-center text-[12px] font-bold uppercase leading-[15px] underline decoration-solid underline-offset-2 text-[var(--t-accent)] [word-break:break-word]">
+          {campaign.advertiserLabel}
+        </span>
+      ) : null}
+    </>
+  );
+
+  const cls =
+    "flex w-[382px] max-w-[calc(100vw-20px)] shrink-0 snap-start flex-col gap-[10px]";
+
+  // The whole card — banner, pill and label — is one link target.
+  return campaign.destinationUrl ? (
+    <a
+      href={campaign.destinationUrl}
+      target="_blank"
+      rel="noopener noreferrer sponsored"
+      className={cls}
+    >
+      {inner}
+    </a>
+  ) : (
+    <div className={cls}>{inner}</div>
   );
 }
 

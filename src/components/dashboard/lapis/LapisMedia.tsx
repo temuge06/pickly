@@ -52,7 +52,11 @@ export function LapisMedia({
 
   return (
     <LSection icon={icon} title={title}>
-      {extra}
+      {/* Wrapped in a fragment on purpose: `extra` is an element created by the
+          CALLER and handed over as a prop, so React never marked it validated.
+          Rendered bare it lands in LSection's children array and trips the
+          "unique key" warning. The fragment makes it a static child. */}
+      {extra ? <>{extra}</> : null}
       <form onSubmit={onSearch} className="flex gap-2">
         <LInput
           value={query}
