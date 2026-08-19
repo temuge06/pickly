@@ -24,19 +24,15 @@ type Message = {
   flaggedForPick: boolean;
   createdAt: Date;
 };
-type Collection = { id: string; title: string };
-
 export function AskInbox({
   handle,
   askEnabled,
   askPrompt,
-  collections,
   messages,
 }: {
   handle: string;
   askEnabled: boolean;
   askPrompt: string | null;
-  collections: Collection[];
   messages: { new: Message[]; answered: Message[]; hidden: Message[] };
 }) {
   const [showHidden, setShowHidden] = useState(false);
@@ -50,7 +46,7 @@ export function AskInbox({
           <EmptyHint>Одоогоор шинэ асуулт алга.</EmptyHint>
         ) : (
           messages.new.map((m) => (
-            <NewMessage key={m.id} message={m} collections={collections} />
+            <NewMessage key={m.id} message={m} />
           ))
         )}
       </DashSection>
@@ -145,13 +141,7 @@ function AskSettings({
   );
 }
 
-function NewMessage({
-  message,
-  collections,
-}: {
-  message: Message;
-  collections: Collection[];
-}) {
+function NewMessage({ message }: { message: Message }) {
   const [answer, setAnswer] = useState("");
   const [makePublic, setMakePublic] = useState(false);
   const [flagForPick, setFlagForPick] = useState(message.flaggedForPick);

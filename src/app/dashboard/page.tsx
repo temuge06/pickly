@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LapisCollections } from "@/components/dashboard/lapis/LapisCollections";
 import { LapisLetterboxd, LapisSongs } from "@/components/dashboard/lapis/LapisConnections";
 import { LapisLinks } from "@/components/dashboard/lapis/LapisLinks";
 import { LapisMedia } from "@/components/dashboard/lapis/LapisMedia";
-import { LapisPicks } from "@/components/dashboard/lapis/LapisPicks";
 import { LapisProfile } from "@/components/dashboard/lapis/LapisProfile";
-import { LapisWishlistManager } from "@/components/dashboard/lapis/LapisWishlist";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { dashboardEnabled, env } from "@/lib/env";
@@ -72,23 +69,6 @@ export default async function DashboardPage() {
           ) : null}
 
           <LapisProfile profile={profile} />
-          <LapisPicks
-            picks={data.picks}
-            collections={data.collections}
-            notForMeEnabled={flags.not_for_me}
-            topPicksEnabled={flags.top_picks}
-            myPicksEnabled={flags.my_picks}
-          />
-          {flags.my_picks ? (
-            <LapisCollections
-              collections={data.collections}
-              pickCounts={data.picks.reduce<Record<string, number>>((acc, p) => {
-                if (p.collectionId) acc[p.collectionId] = (acc[p.collectionId] ?? 0) + 1;
-                return acc;
-              }, {})}
-            />
-          ) : null}
-          {flags.wishlist ? <LapisWishlistManager items={data.wishlist} /> : null}
 
           {/* One flag covers music + film + book: they are a single
               Entertainment surface, so all three settings areas go together. */}

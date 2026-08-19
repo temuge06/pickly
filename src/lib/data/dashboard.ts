@@ -1,15 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { getFeatureFlags } from "@/lib/data/features";
-import {
-  activityItem,
-  askMessage,
-  collection,
-  connection,
-  link,
-  pick,
-  wishlistItem,
-} from "@/db/schema";
+import { activityItem, askMessage, connection, link } from "@/db/schema";
 
 type Profile = { id: string };
 
@@ -24,32 +16,16 @@ export async function getDashboardData(profile: Profile) {
   // queried, so the creator's own dashboard never ships data for a section
   // they can no longer see.
   const flags = await getFeatureFlags(profile.id);
-  const [collections, picks, links, wishlist, connections, activity, asks] =
+  // Products (picks, collections, wishlist) are admin-curated and no longer
+  // shown here, so the dashboard does not query them at all — three fewer
+  // round trips on every load.
+  const [links, connections, activity, asks] =
     await Promise.all([
-      flags.my_picks
-        ? db
-            .select()
-            .from(collection)
-            .where(eq(collection.profileId, profile.id))
-            .orderBy(collection.position)
-        : [],
-      db
-        .select()
-        .from(pick)
-        .where(eq(pick.profileId, profile.id))
-        .orderBy(pick.position),
       db
         .select()
         .from(link)
         .where(eq(link.profileId, profile.id))
         .orderBy(link.position),
-      flags.wishlist
-        ? db
-            .select()
-            .from(wishlistItem)
-            .where(eq(wishlistItem.profileId, profile.id))
-            .orderBy(wishlistItem.position)
-        : [],
       db.select().from(connection).where(eq(connection.profileId, profile.id)),
       flags.entertainment
         ? db
@@ -69,10 +45,7 @@ export async function getDashboardData(profile: Profile) {
 
   return {
     flags,
-    collections,
-    picks,
     links,
-    wishlist,
     connections,
     films: activity.filter((a) => a.kind === "film"),
     books: activity.filter((a) => a.kind === "book"),
