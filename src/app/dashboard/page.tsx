@@ -26,8 +26,16 @@ export default async function DashboardPage() {
   const flags = data.flags;
 
   return (
-    <div className="min-h-dvh bg-neutral-900 sm:py-8">
-      <div className="mx-auto min-h-dvh w-full max-w-[430px] overflow-x-clip bg-[#2a1617] pb-16 shadow-[0_0_80px_rgba(0,0,0,0.4)] sm:min-h-0">
+    <div className="min-h-dvh bg-[#2a1617] sm:bg-neutral-900 sm:py-8">
+      {/* Same treatment as the public profile: the global body colour shows in
+          the overscroll bounce on a phone, and the 430px cap is a desktop-only
+          device frame that otherwise leaves grey margins down both edges. */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: "html,body{background-color:#2a1617;overscroll-behavior-y:none}",
+        }}
+      />
+      <div className="mx-auto min-h-dvh w-full overflow-x-clip bg-[#2a1617] pb-16 sm:min-h-0 sm:max-w-[430px] sm:shadow-[0_0_80px_rgba(0,0,0,0.4)]">
         {/* Header */}
         <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-[#7b4c46]/60 bg-[#2a1617]/90 px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)] backdrop-blur-md">
           <div className="min-w-0">

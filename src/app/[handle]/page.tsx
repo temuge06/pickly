@@ -12,7 +12,7 @@ import {
 } from "@/components/lapis/sections";
 import { getSessionUser } from "@/lib/auth/session";
 import { getOtherCreators, getPublicProfile } from "@/lib/data/public-profile";
-import { themeStyle } from "@/lib/themes";
+import { getTheme, themeStyle } from "@/lib/themes";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,7 @@ export default async function ProfilePage({
   // Owner check, server-side. A logged-out visitor or a different signed-in
   // creator gets HTML with no Edit button in it at all — not a hidden or
   // disabled one, so there is nothing to reveal by editing CSS or the DOM.
+  const theme = getTheme(profile.theme);
   const viewer = await getSessionUser();
   const isOwner = viewer !== null && viewer.id === profile.userId;
 
@@ -56,8 +57,24 @@ export default async function ProfilePage({
     // profile root, server-side. Every themed surface below reads a var, so the
     // correct colours are in the first byte of HTML — no client JS, and no
     // flash of the default theme before the real one loads.
-    <div className="min-h-dvh bg-neutral-800 sm:py-8" style={themeStyle(profile.theme)}>
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[402px] flex-col overflow-x-clip bg-[var(--t-bg)] font-malt shadow-[0_0_80px_rgba(0,0,0,0.4)] sm:min-h-0">
+    <div
+      className="min-h-dvh bg-[var(--t-bg)] sm:bg-neutral-800 sm:py-8"
+      style={themeStyle(profile.theme)}
+    >
+      {/* The global body colour (--color-wall, a dark purple) is what shows in
+          the rubber-band area when a phone overscrolls past the top or bottom.
+          Repaint html/body in THIS profile's background so the bounce is
+          invisible, and stop the chain from propagating to the viewport.
+          Server-rendered from our own token table — no client JS, no flash. */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `html,body{background-color:${theme.tokens.bg};overscroll-behavior-y:none}`,
+        }}
+      />
+      {/* Full-bleed on a phone; the 402px "device frame" is a desktop-only
+          treatment. Capping the width on mobile left the neutral backdrop
+          showing as grey margins down both edges. */}
+      <div className="relative mx-auto flex min-h-dvh w-full flex-col overflow-x-clip bg-[var(--t-bg)] font-malt sm:min-h-0 sm:max-w-[402px] sm:shadow-[0_0_80px_rgba(0,0,0,0.4)]">
         <div className="flex-1">
           <LapisStatusBar />
           <LapisHeader profile={profile} isOwner={isOwner} />
