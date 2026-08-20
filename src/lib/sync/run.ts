@@ -2,12 +2,10 @@ import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { activityItem, connection } from "@/db/schema";
 import { spotifyAdapter } from "./spotify";
-import { FeedNotFoundError, letterboxdAdapter } from "./letterboxd";
 import { RevokedError, type Connection, type ProviderAdapter } from "./types";
 
 const ADAPTERS: Record<string, ProviderAdapter> = {
   spotify: spotifyAdapter,
-  letterboxd: letterboxdAdapter,
 };
 
 export type SyncOutcome = {
@@ -71,12 +69,7 @@ export async function syncConnection(conn: Connection): Promise<SyncOutcome> {
     };
   } catch (err) {
     const revoked = err instanceof RevokedError;
-    const message =
-      err instanceof FeedNotFoundError || err instanceof RevokedError
-        ? err.message
-        : err instanceof Error
-          ? err.message
-          : "Unknown sync error";
+    const message = err instanceof Error ? err.message : "Unknown sync error";
     const status: "revoked" | "error" = revoked ? "revoked" : "error";
 
     await db

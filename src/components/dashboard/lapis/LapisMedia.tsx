@@ -25,14 +25,12 @@ export function LapisMedia({
   title,
   items,
   disabledHint,
-  extra,
 }: {
   kind: "film" | "book";
   icon: string;
   title: string;
   items: Item[];
   disabledHint?: string;
-  extra?: React.ReactNode;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MediaResult[] | null>(null);
@@ -52,11 +50,6 @@ export function LapisMedia({
 
   return (
     <LSection icon={icon} title={title}>
-      {/* Wrapped in a fragment on purpose: `extra` is an element created by the
-          CALLER and handed over as a prop, so React never marked it validated.
-          Rendered bare it lands in LSection's children array and trips the
-          "unique key" warning. The fragment makes it a static child. */}
-      {extra ? <>{extra}</> : null}
       <form onSubmit={onSearch} className="flex gap-2">
         <LInput
           value={query}
@@ -69,16 +62,16 @@ export function LapisMedia({
       </form>
 
       {searching ? (
-        <div className="flex gap-3 overflow-x-hidden rounded-[14px] bg-white/[0.03] p-3">
+        <div className="flex gap-3 overflow-x-hidden rounded-[14px] bg-[var(--t-well)] p-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="w-[74px] shrink-0">
-              <div className="skeleton-dark aspect-[2/3] rounded-lg" />
-              <div className="skeleton-dark mt-1.5 h-2.5 w-4/5 rounded" />
+              <div className="skeleton-theme aspect-[2/3] rounded-lg" />
+              <div className="skeleton-theme mt-1.5 h-2.5 w-4/5 rounded" />
             </div>
           ))}
         </div>
       ) : results && results.length > 0 ? (
-        <div className="no-scrollbar animate-fade-up flex gap-3 overflow-x-auto rounded-[14px] bg-white/[0.03] p-3">
+        <div className="no-scrollbar animate-fade-up flex gap-3 overflow-x-auto rounded-[14px] bg-[var(--t-well)] p-3">
           {results.map((r) => {
             const busy = addingId === r.externalId;
             return (
@@ -103,23 +96,23 @@ export function LapisMedia({
                 }
                 className="w-[74px] shrink-0 text-left transition-transform active:scale-95 disabled:opacity-60"
               >
-                <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-white/[0.06]">
+                <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-[var(--t-field)]">
                   {r.imageUrl ? <img src={r.imageUrl} alt="" className="h-full w-full object-cover" /> : null}
                   {busy ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#fe7f42] border-t-transparent" />
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--t-accent)] border-t-transparent" />
                     </div>
                   ) : null}
                 </div>
-                <p className="mt-1 line-clamp-2 font-malt text-[11px] font-semibold text-[#feedd5]">{r.title}</p>
+                <p className="mt-1 line-clamp-2 font-malt text-[11px] font-semibold text-[var(--t-text)]">{r.title}</p>
               </button>
             );
           })}
         </div>
       ) : results && results.length === 0 ? (
-        <p className="px-1 font-malt text-[12.5px] text-[#feedd5]/45">Илэрц олдсонгүй.</p>
+        <p className="px-1 font-malt text-[12.5px] text-[var(--t-muted)]">Илэрц олдсонгүй.</p>
       ) : disabledHint ? (
-        <p className="px-1 font-malt text-[12.5px] text-[#feedd5]/40">{disabledHint}</p>
+        <p className="px-1 font-malt text-[12.5px] text-[var(--t-muted)]">{disabledHint}</p>
       ) : null}
 
       {items.length === 0 ? (
@@ -127,24 +120,24 @@ export function LapisMedia({
       ) : null}
 
       {items.map((it) => (
-        <div key={it.id} className="flex items-center gap-3 rounded-[14px] bg-white/[0.04] p-2.5">
-          <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-md bg-white/[0.06]">
+        <div key={it.id} className="flex items-center gap-3 rounded-[14px] bg-[var(--t-well)] p-2.5">
+          <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-md bg-[var(--t-field)]">
             {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-full w-full object-cover" /> : null}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-malt text-[14px] font-bold text-[#feedd5]">{it.title}</p>
-            {it.subtitle ? <p className="truncate font-malt text-[11.5px] text-[#feedd5]/45">{it.subtitle}</p> : null}
+            <p className="truncate font-malt text-[14px] font-bold text-[var(--t-text)]">{it.title}</p>
+            {it.subtitle ? <p className="truncate font-malt text-[11.5px] text-[var(--t-muted)]">{it.subtitle}</p> : null}
           </div>
           {it.provider === "manual" ? (
             <button
               disabled={pending}
               onClick={() => start(async () => void (await deleteMediaItem(it.id)))}
-              className="shrink-0 rounded-lg px-2 py-1 font-malt text-[11px] font-bold text-[#ff9a8a] transition-colors active:bg-white/[0.05]"
+              className="shrink-0 rounded-lg px-2 py-1 font-malt text-[11px] font-bold text-[var(--t-danger)] transition-colors active:bg-[var(--t-field)]"
             >
               Устгах
             </button>
           ) : (
-            <span className="shrink-0 font-malt text-[10px] font-semibold text-[#feedd5]/35">Letterboxd</span>
+            <span className="shrink-0 font-malt text-[10px] font-semibold text-[var(--t-muted)]">Синк</span>
           )}
         </div>
       ))}

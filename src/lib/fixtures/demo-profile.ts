@@ -46,6 +46,7 @@ export const demoProfile: Profile = {
   askEnabled: true,
   askPrompt: "Асуух зүйл байна уу?",
   isMinor: false,
+  notificationsSeenAt: null,
   createdAt: new Date("2025-01-10T00:00:00Z"),
 };
 
@@ -295,7 +296,7 @@ export const demoFilms: ActivityItem[] = [
   {
     id: "a0000000-0000-4000-8000-000000000010",
     profileId: PROFILE_ID,
-    provider: "letterboxd",
+    provider: "manual",
     kind: "film",
     externalId: "film-1",
     title: "Past Lives",
@@ -309,7 +310,7 @@ export const demoFilms: ActivityItem[] = [
   {
     id: "a0000000-0000-4000-8000-000000000011",
     profileId: PROFILE_ID,
-    provider: "letterboxd",
+    provider: "manual",
     kind: "film",
     externalId: "film-2",
     title: "Perfect Days",
@@ -323,7 +324,7 @@ export const demoFilms: ActivityItem[] = [
   {
     id: "a0000000-0000-4000-8000-000000000012",
     profileId: PROFILE_ID,
-    provider: "letterboxd",
+    provider: "manual",
     kind: "film",
     externalId: "film-3",
     title: "Мэргэн",
@@ -337,7 +338,7 @@ export const demoFilms: ActivityItem[] = [
   {
     id: "a0000000-0000-4000-8000-000000000013",
     profileId: PROFILE_ID,
-    provider: "letterboxd",
+    provider: "manual",
     kind: "film",
     externalId: "film-4",
     title: "Oppenheimer",

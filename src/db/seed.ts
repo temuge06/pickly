@@ -114,14 +114,6 @@ async function main() {
         status: "active",
         lastSyncAt: new Date(),
       },
-      {
-        id: "cc000000-0000-4000-8000-000000000002",
-        profileId: demoProfile.id,
-        provider: "letterboxd",
-        externalUsername: "sarnai",
-        status: "active",
-        lastSyncAt: new Date(),
-      },
     ])
     .onConflictDoNothing();
 
@@ -204,7 +196,7 @@ async function main() {
       {
         id: "a1000000-0000-4000-8000-000000000001",
         profileId: p2Id,
-        provider: "letterboxd",
+        provider: "manual",
         kind: "film",
         externalId: "t-film-1",
         title: "In the Mood for Love",

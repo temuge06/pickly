@@ -169,6 +169,19 @@ export const profile = pgTable("profile", {
    * onboarding; policy decision flagged in README before public launch.
    */
   isMinor: boolean("is_minor").notNull().default(false),
+  /**
+   * Watermark for the notification bell. Everything in the derived feed newer
+   * than this counts as unread; opening /notifications moves it to now.
+   *
+   * A watermark rather than a per-row read flag because the feed itself has no
+   * rows: it is computed from activity_item / campaign_assignment / promo_code
+   * / ask_message at read time (see src/lib/data/notifications.ts). That way a
+   * new notification source needs no fan-out writes and no backfill, and an
+   * event can never be "missed" because a trigger did not fire.
+   */
+  notificationsSeenAt: timestamp("notifications_seen_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -541,6 +554,34 @@ export const askMessage = pgTable("ask_message", {
   ),
 }));
 
+/**
+ * One creator following another. Both sides are `profile` ids, not auth users:
+ * following is a profile-level relationship, and every read here already
+ * scopes by profile.
+ *
+ * Self-follows are rejected in the action AND by a CHECK constraint, so the
+ * notification feed never has to filter the follower out of its own results.
+ */
+export const follow = pgTable("follow", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  followerProfileId: uuid("follower_profile_id")
+    .notNull()
+    .references(() => profile.id, { onDelete: "cascade" }),
+  followingProfileId: uuid("following_profile_id")
+    .notNull()
+    .references(() => profile.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  pairUnique: uniqueIndex("follow_pair_unique").on(
+    table.followerProfileId,
+    table.followingProfileId,
+  ),
+  // "who follows me" — the follower count on a profile.
+  followingIdx: index("follow_following_idx").on(table.followingProfileId),
+}));
+
 /** Creator-muted askers. A blocked fingerprint gets silent-success drops. */
 export const askBlock = pgTable("ask_block", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -589,6 +630,21 @@ export const profileRelations = relations(profile, ({ many }) => ({
   askMessages: many(askMessage),
   askBlocks: many(askBlock),
   featureFlags: many(featureFlag),
+  following: many(follow, { relationName: "follower" }),
+  followers: many(follow, { relationName: "following" }),
+}));
+
+export const followRelations = relations(follow, ({ one }) => ({
+  follower: one(profile, {
+    fields: [follow.followerProfileId],
+    references: [profile.id],
+    relationName: "follower",
+  }),
+  following: one(profile, {
+    fields: [follow.followingProfileId],
+    references: [profile.id],
+    relationName: "following",
+  }),
 }));
 
 export const wishlistItemRelations = relations(wishlistItem, ({ one }) => ({

@@ -58,6 +58,7 @@ ALTER TABLE public.feature_flag   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaign       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaign_assignment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.promo_code     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.follow         ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- profile
@@ -335,3 +336,29 @@ CREATE POLICY promo_code_admin_all ON public.promo_code
   FOR ALL TO authenticated
   USING (public.is_admin())
   WITH CHECK (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- follow — who follows whom. Public to read (a follower count is public on
+-- every social product, and the graph is derivable from profile pages anyway),
+-- but a row may only be written by the FOLLOWER side. That asymmetry is the
+-- whole security property here: without it, anyone holding the anon key could
+-- insert rows naming someone else as the follower and stuff a stranger's
+-- notification feed with profiles they never chose.
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS follow_anon_read ON public.follow;
+CREATE POLICY follow_anon_read ON public.follow
+  FOR SELECT TO anon USING (true);
+
+DROP POLICY IF EXISTS follow_follower_read ON public.follow;
+CREATE POLICY follow_follower_read ON public.follow
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS follow_follower_insert ON public.follow;
+CREATE POLICY follow_follower_insert ON public.follow
+  FOR INSERT TO authenticated
+  WITH CHECK (follower_profile_id IN (SELECT public.owned_profile_ids()));
+
+DROP POLICY IF EXISTS follow_follower_delete ON public.follow;
+CREATE POLICY follow_follower_delete ON public.follow
+  FOR DELETE TO authenticated
+  USING (follower_profile_id IN (SELECT public.owned_profile_ids()));

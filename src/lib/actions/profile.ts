@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import { profile } from "@/db/schema";
 import { requireCurrentProfile } from "@/lib/auth/session";
+import { SOCIAL_KEYS, isSocialKey, normalizeSocial } from "@/lib/socials";
 import { THEMES, type ThemeKey } from "@/lib/themes";
 import { bioSchema, displayNameSchema } from "@/lib/validation";
 
@@ -21,12 +22,27 @@ export async function updateProfile(
     return { error: name.error.issues[0]?.message ?? "Нэр буруу." };
   }
   const bio = bioSchema.safeParse(formData.get("bio") ?? "");
-  if (!bio.success) return { error: "Танилцуулга хэтэрхий урт." };
+  if (!bio.success) return { error: "Bio хэтэрхий урт байна." };
 
+  // Every key in the shared catalogue, not a hardcoded trio — the editor lets
+  // a creator add any of them. Values are normalised to a real URL here rather
+  // than in the browser, so a handle typed as "@sarnai" still opens on the
+  // public page, and an empty field drops its key instead of storing "".
+  //
+  // Anything stored under a key the catalogue does not cover is carried over
+  // untouched: the form has no field for it, so treating "absent from the
+  // FormData" as "delete it" would silently drop a link the creator never
+  // touched. The public header renders those keys with the fallback glyph.
+  const existing = (me.socials ?? {}) as Record<string, string>;
   const socials: Record<string, string> = {};
-  for (const key of ["instagram", "tiktok", "youtube"]) {
-    const val = (formData.get(key) as string | null)?.trim();
-    if (val) socials[key] = val;
+  for (const [key, value] of Object.entries(existing)) {
+    if (!isSocialKey(key) && value) socials[key] = value;
+  }
+  for (const key of SOCIAL_KEYS) {
+    const raw = formData.get(`social_${key}`);
+    if (typeof raw !== "string") continue;
+    const url = normalizeSocial(key, raw);
+    if (url) socials[key] = url;
   }
 
   const db = getDb();

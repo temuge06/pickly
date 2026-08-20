@@ -6,8 +6,9 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 /**
  * Refreshes the Supabase session cookie on every matched request and guards
- * /dashboard (signed in) and /admin (signed in AND staff). When Supabase isn't
- * configured, this is a pass-through so the public site works with zero keys.
+ * /dashboard and /notifications (signed in) and /admin (signed in AND staff).
+ * When Supabase isn't configured, this is a pass-through so the public site
+ * works with zero keys.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -42,8 +43,11 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isDashboard = pathname.startsWith("/dashboard");
   const isAdmin = pathname.startsWith("/admin");
+  // The notification feed is one creator's own inbox — it belongs behind the
+  // same gate as /dashboard, not just behind the page's own redirect.
+  const isNotifications = pathname.startsWith("/notifications");
 
-  if ((isDashboard || isAdmin) && !user) {
+  if ((isDashboard || isAdmin || isNotifications) && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     url.searchParams.set("next", pathname);

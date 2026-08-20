@@ -36,7 +36,10 @@ export function LapisMusic({
   return (
     <div className="flex flex-col gap-[16px] bg-[var(--t-bg)] py-[17px]">
       {/* Tabs (Figma 731:14235) */}
-      <div className="mx-[26px] flex w-fit items-center gap-[16px] rounded-[19px] border border-[var(--t-accent)] bg-[var(--t-bg)] p-[3px] drop-shadow-[0px_0px_1.65px_rgba(192,0,59,0.31)]">
+      {/* mx-auto, not mx-[26px]: the pill is only as wide as its tabs, so a
+          fixed left margin parked it off-centre by however much the row was
+          narrower than the frame. */}
+      <div className="mx-auto flex w-fit items-center gap-[16px] rounded-[19px] border border-[var(--t-accent)] bg-[var(--t-bg)] p-[3px] drop-shadow-[0px_0px_1.65px_rgba(192,0,59,0.31)]">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -74,8 +77,6 @@ export function LapisMusic({
 
 // --- Дуу: music bar --------------------------------------------------------
 
-const WAVE = [3, 7, 9, 7, 13, 7, 3, 13, 7, 3, 7, 9, 7, 3, 7, 9, 7, 13, 9, 7, 3];
-
 function MusicBar({ item }: { item: Item }) {
   const note = (item.meta as { note?: string })?.note ?? null;
   return (
@@ -103,26 +104,18 @@ function MusicBar({ item }: { item: Item }) {
             </p>
           ) : null}
         </div>
-        <div className="absolute bottom-[13px] left-0 flex items-center gap-px">
-          {WAVE.map((h, i) => (
-            <span
-              key={i}
-              className="w-px rounded-[2px]"
-              style={{
-                height: `${h}px`,
-                background: i < 8 ? "var(--t-on-accent)" : "color-mix(in srgb, var(--t-on-accent) 20%, transparent)",
-              }}
-            />
-          ))}
-        </div>
+        {/* The decorative waveform used to sit to the left of this button and
+            was read as a play control it never was. Removing it frees the row,
+            so сонсох — the one thing here that IS tappable — gets the full
+            width and a real tap target. */}
         {item.externalUrl ? (
           <a
             href={item.externalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute bottom-[8px] right-[1px] flex h-[20px] items-center gap-1 rounded-[10px] bg-[var(--t-on-accent)] px-[6px] text-[12px] font-semibold capitalize tracking-[-0.48px] text-[var(--t-accent)]"
+            className="absolute bottom-[6px] left-[5px] right-[1px] flex h-[28px] items-center justify-center gap-[3px] rounded-[14px] bg-[var(--t-on-accent)] text-[14px] font-bold capitalize tracking-[-0.28px] text-[var(--t-accent)]"
           >
-            сонсох<span className="text-[8px]">↗</span>
+            сонсох<span className="text-[10px]">↗</span>
           </a>
         ) : null}
       </div>

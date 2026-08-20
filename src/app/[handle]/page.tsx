@@ -6,13 +6,16 @@ import {
   LapisMyPicks,
   LapisNotForMe,
   LapisPromos,
+  LapisQuickLinks,
   LapisSimilar,
   LapisStatusBar,
   LapisTopPicks,
   LapisWishlist,
 } from "@/components/lapis/sections";
-import { getSessionUser } from "@/lib/auth/session";
+import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
+import { isFollowing } from "@/lib/data/follow";
 import { getOtherCreators, getPublicProfile } from "@/lib/data/public-profile";
+import { getUnreadNotificationCount } from "@/lib/data/notifications";
 import { getTheme, themeStyle } from "@/lib/themes";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +29,7 @@ export default async function ProfilePage({
   const data = await getPublicProfile(handle);
   if (!data) notFound();
 
-  const { profile, collections, picks, tracks, films, books, wishlist, askMessages, campaigns, promos, flags } = data;
+  const { profile, collections, picks, tracks, films, books, links, wishlist, askMessages, campaigns, promos, flags } = data;
   const creators = await getOtherCreators(profile.id);
 
   // Owner check, server-side. A logged-out visitor or a different signed-in
@@ -35,6 +38,17 @@ export default async function ProfilePage({
   const theme = getTheme(profile.theme);
   const viewer = await getSessionUser();
   const isOwner = viewer !== null && viewer.id === profile.userId;
+
+  // The signed-in creator's OWN profile row, used for two viewer-only bits of
+  // chrome: the bell (mine only) and the "back to my profile" control (only
+  // when I am looking at someone else). Both resolve server-side, so a visitor
+  // receives HTML that contains neither.
+  const me = viewer ? await getCurrentProfile() : null;
+  const [following, unread] = await Promise.all([
+    !isOwner && me ? isFollowing(profile.id) : Promise.resolve(false),
+    isOwner && me ? getUnreadNotificationCount(me) : Promise.resolve(0),
+  ]);
+  const backTo = me && me.id !== profile.id ? me.handle : null;
 
   // Demo recommenders: profile pictures of other creators, shown as the small
   // avatar stack on each Top Pick. (No per-product recommendation data yet.)
@@ -77,8 +91,16 @@ export default async function ProfilePage({
           showing as grey margins down both edges. */}
       <div className="relative mx-auto flex min-h-dvh w-full flex-col overflow-x-clip bg-[var(--t-bg)] font-malt sm:min-h-0 sm:max-w-[402px] sm:shadow-[0_0_80px_rgba(0,0,0,0.4)]">
         <div className="flex-1">
-          <LapisStatusBar />
-          <LapisHeader profile={profile} isOwner={isOwner} />
+          <LapisStatusBar
+            bell={isOwner ? { unread } : null}
+            backTo={backTo}
+          />
+          <LapisHeader
+            profile={profile}
+            isOwner={isOwner}
+            isFollowing={following}
+            isAuthed={viewer !== null}
+          />
           {/* Flags are resolved server-side: a disabled section is not rendered
               at all, and getPublicProfile already skipped its query, so the
               viewer receives no trace of it. */}
@@ -105,6 +127,10 @@ export default async function ProfilePage({
               questions={askMessages}
             />
           ) : null}
+          {/* Under Ask, above Similar: the creator's own links are the last
+              thing they want a visitor to leave through, and the section is
+              absent (not empty) when they have added none. */}
+          <LapisQuickLinks links={links} />
           <LapisSimilar creators={creators} />
         </div>
       </div>

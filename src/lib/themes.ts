@@ -69,6 +69,23 @@ export type ThemeTokens = {
   cardBtn: string;
   onCardBtn: string;
   cardBtnBorder: string;
+
+  /* --- Dashboard (profile editing) surfaces ---------------------------------
+   * The editor is themed by the SAME palette the creator picked for their
+   * public page, so these four have to work on a near-black background
+   * (On Fire, Dalai #1) and on a cream/white one (Coral Wave, Dalai #2)
+   * alike. That is why they are explicit per theme rather than a hardcoded
+   * white overlay: `rgba(255,255,255,0.04)` is invisible on white paper. */
+  /** Content well — the panel a group of fields sits in. */
+  well: string;
+  /** Field surface — inputs, textareas, selects, chips. */
+  field: string;
+  /** Hairline ring around a well or field. */
+  ring: string;
+  /** Destructive text (Delete, error copy). Legible on `bg`. */
+  danger: string;
+  /** Confirmation text ("Saved ✓"). Legible on `bg`. */
+  success: string;
 };
 
 export type Theme = {
@@ -110,6 +127,11 @@ export const THEMES: Theme[] = [
       cardBtn: "#911c11",
       onCardBtn: "#ffffff",
       cardBtnBorder: "#620000",
+      well: "rgba(255,255,255,0.04)",
+      field: "rgba(255,255,255,0.06)",
+      ring: "rgba(255,255,255,0.10)",
+      danger: "#ff9a8a",
+      success: "#8fe0a0",
     },
   },
   {
@@ -143,6 +165,11 @@ export const THEMES: Theme[] = [
       cardBtn: "#b1193f",
       onCardBtn: "#ffffff",
       cardBtnBorder: "#8d1032",
+      well: "rgba(177,25,63,0.06)",
+      field: "rgba(177,25,63,0.08)",
+      ring: "rgba(177,25,63,0.18)",
+      danger: "#c0003b",
+      success: "#127a4e",
     },
   },
   {
@@ -176,6 +203,11 @@ export const THEMES: Theme[] = [
       cardBtn: "#2f2f2f",
       onCardBtn: "#ffffff",
       cardBtnBorder: "rgba(255,255,255,0.18)",
+      well: "rgba(255,255,255,0.05)",
+      field: "rgba(255,255,255,0.08)",
+      ring: "rgba(255,255,255,0.14)",
+      danger: "#ff9a8a",
+      success: "#8fe0a0",
     },
   },
   {
@@ -209,6 +241,11 @@ export const THEMES: Theme[] = [
       cardBtn: "#000000",
       onCardBtn: "#ffffff",
       cardBtnBorder: "#000000",
+      well: "rgba(0,0,0,0.04)",
+      field: "rgba(0,0,0,0.06)",
+      ring: "rgba(0,0,0,0.12)",
+      danger: "#c62828",
+      success: "#127a4e",
     },
   },
 ];
@@ -254,5 +291,10 @@ export function themeStyle(key: string | null | undefined): React.CSSProperties 
     "--t-card-btn": t.cardBtn,
     "--t-on-card-btn": t.onCardBtn,
     "--t-card-btn-border": t.cardBtnBorder,
+    "--t-well": t.well,
+    "--t-field": t.field,
+    "--t-ring": t.ring,
+    "--t-danger": t.danger,
+    "--t-success": t.success,
   } as React.CSSProperties;
 }

@@ -11,6 +11,9 @@ import type {
   wishlistItem,
 } from "@/db/schema";
 import { ProductImage } from "@/components/ui/ProductImage";
+import { socialGlyph } from "@/components/social-icons";
+import { SOCIAL_PLATFORMS, detectLinkIcon, hostOf as socialHostOf } from "@/lib/socials";
+import { FollowButton } from "./FollowButton";
 import { PromoCard, type PublicPromo } from "./PromoCard";
 
 type Profile = typeof profile.$inferSelect;
@@ -29,25 +32,90 @@ type WishlistItem = typeof wishlistItem.$inferSelect;
  */
 const LOGO_ARROW = "#ff5106";
 
-export function LapisStatusBar() {
+/**
+ * Top bar: the wordmark, plus whichever navigation the viewer is entitled to.
+ *
+ *   own profile      → bell (with an unread dot)
+ *   someone else's,  → "back to my profile"
+ *     signed in
+ *   signed out       → wordmark only
+ *
+ * The bell is rendered only for the owner and the count is resolved
+ * server-side, so a visitor's HTML contains no trace of it — nothing to reveal
+ * by editing the DOM.
+ */
+export function LapisStatusBar({
+  bell,
+  backTo,
+}: {
+  /** Owner only. `unread` drives the dot. */
+  bell?: { unread: number } | null;
+  /** Signed-in viewer's own handle, when they are looking at someone else. */
+  backTo?: string | null;
+} = {}) {
   return (
-    <div className="flex h-[54px] items-center bg-[var(--t-bg)] px-[10px]">
-      <span className="font-inter text-[16px] font-bold text-[var(--t-accent)]">Pickly</span>
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden
-        className="ml-[1px] h-[10px] w-[10px] -translate-y-[4px]"
-        fill="none"
-        stroke={LOGO_ARROW}
-        strokeWidth={4.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {/* diagonal shaft */}
-        <path d="M5.5 18.5 L18 6" />
-        {/* corner-bracket head */}
-        <path d="M8.5 6 H18 V15.5" />
-      </svg>
+    <div className="flex h-[54px] items-center gap-[8px] bg-[var(--t-bg)] px-[10px]">
+      {backTo ? (
+        <Link
+          href={`/${backTo}`}
+          aria-label="Миний профайл руу буцах"
+          className="-ml-[2px] flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full text-[var(--t-accent)] transition-transform active:scale-95"
+          style={{ background: "color-mix(in srgb, var(--t-accent) 12%, transparent)" }}
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </Link>
+      ) : null}
+
+      <span className="flex items-center">
+        <span className="font-inter text-[16px] font-bold text-[var(--t-accent)]">Pickly</span>
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden
+          className="ml-[1px] h-[10px] w-[10px] -translate-y-[4px]"
+          fill="none"
+          stroke={LOGO_ARROW}
+          strokeWidth={4.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {/* diagonal shaft */}
+          <path d="M5.5 18.5 L18 6" />
+          {/* corner-bracket head */}
+          <path d="M8.5 6 H18 V15.5" />
+        </svg>
+      </span>
+
+      {bell ? (
+        <Link
+          href="/notifications"
+          aria-label={
+            bell.unread > 0
+              ? `Мэдэгдэл — ${bell.unread} шинэ`
+              : "Мэдэгдэл"
+          }
+          className="relative ml-auto flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-[var(--t-accent)] transition-transform active:scale-95"
+          style={{ background: "color-mix(in srgb, var(--t-accent) 12%, transparent)" }}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5" />
+            <path d="M13.7 19a2 2 0 0 1-3.4 0" />
+          </svg>
+          {bell.unread > 0 ? (
+            <span
+              className="absolute -right-[1px] -top-[1px] flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-[4px] font-inter text-[10px] font-bold leading-none"
+              style={{
+                background: "var(--t-accent)",
+                color: "var(--t-on-accent)",
+                boxShadow: "0 0 0 2px var(--t-bg)",
+              }}
+            >
+              {bell.unread > 99 ? "99+" : bell.unread}
+            </span>
+          ) : null}
+        </Link>
+      ) : null}
     </div>
   );
 }
@@ -57,14 +125,26 @@ export function LapisStatusBar() {
 export function LapisHeader({
   profile,
   isOwner = false,
+  isFollowing = false,
+  isAuthed = false,
 }: {
   profile: Profile;
   /** Resolved on the server by comparing auth.uid() to this profile's owner.
    *  Never derive this client-side — the button must be absent, not hidden. */
   isOwner?: boolean;
+  /** Does the signed-in viewer already follow this profile? */
+  isFollowing?: boolean;
+  /** Signed in at all — decides whether Follow acts or routes to sign-in. */
+  isAuthed?: boolean;
 }) {
   const socials = (profile.socials ?? {}) as Record<string, string>;
-  const socialKeys = Object.keys(socials).filter((k) => socials[k]);
+  // Catalogue order first (so the row reads the same on every profile), then
+  // anything stored under a key the catalogue does not know about — those used
+  // to be dropped on the floor along with any platform this file had no glyph
+  // for, which is why only Instagram ever showed up.
+  const known = SOCIAL_PLATFORMS.map((p) => p.key as string).filter((k) => socials[k]);
+  const extra = Object.keys(socials).filter((k) => socials[k] && !known.includes(k));
+  const socialKeys = [...known, ...extra];
 
   return (
     <div className="flex flex-col gap-[12px] border-b-[0.5px] border-[var(--t-border)] bg-[var(--t-bg)] px-[16px] py-[10px]">
@@ -97,30 +177,26 @@ export function LapisHeader({
             Профайл засах
           </Link>
         ) : (
-          <button
-            className="h-[32px] w-[123px] rounded-[6px] font-inter text-[14px] font-semibold tracking-[-0.28px]"
-            style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
-          >
-            Follow
-          </button>
+          <FollowButton
+            handle={profile.handle}
+            initialFollowing={isFollowing}
+            isAuthed={isAuthed}
+          />
         )}
         {socialKeys.length > 0 ? (
           <div className="flex items-center gap-[13px]">
-            {socialKeys.map((k) => {
-              const glyph = SOCIAL_GLYPHS[k];
-              if (!glyph) return null;
-              return (
-                <a
-                  key={k}
-                  href={socials[k]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-[25px] w-[25px] items-center justify-center rounded-full bg-[var(--t-accent)] text-[var(--t-on-accent)]"
-                >
-                  {glyph}
-                </a>
-              );
-            })}
+            {socialKeys.map((k) => (
+              <a
+                key={k}
+                href={socials[k]}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={k}
+                className="flex h-[25px] w-[25px] items-center justify-center rounded-full bg-[var(--t-accent)] text-[var(--t-on-accent)]"
+              >
+                {socialGlyph(k, 13)}
+              </a>
+            ))}
           </div>
         ) : null}
       </div>
@@ -297,7 +373,7 @@ function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
           <ProductImage
             src={campaign.bannerImageUrl}
             alt={campaign.title}
-            sizes="382px"
+            sizes="330px"
           />
         ) : null}
         {/* Liquid-glass CTA pill, bottom-right on the banner. Fixed platform
@@ -311,8 +387,11 @@ function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
     </>
   );
 
+  // Sized so the NEXT campaign's edge is always visible at the right of a
+  // 402px frame — the full-bleed 382px card filled the viewport exactly and
+  // read as the only one there was.
   const cls =
-    "block w-[382px] max-w-[calc(100vw-20px)] shrink-0 snap-start";
+    "block w-[330px] max-w-[calc(100vw-72px)] shrink-0 snap-start";
 
   // The banner itself is the click target — tapping it goes straight to the
   // campaign's destination. No caption underneath.
@@ -526,28 +605,58 @@ export function LapisWishlist({
   );
 }
 
-// --- Links (kept for reference; no longer rendered on the public profile) ---
+// --- Quick Links -----------------------------------------------------------
 
-export function LapisLinks({ links }: { links: LinkRow[] }) {
+/**
+ * The creator's own links — YouTube channel, newsletter, whatever they added
+ * in the dashboard.
+ *
+ * These were being fetched and then thrown away: the page never rendered this
+ * component, so a creator could add a link, see it listed in their editor, and
+ * find no trace of it on the profile. It now sits directly under Ask, styled
+ * as a stack of full-width rows rather than a horizontal shelf — a link is
+ * read left-to-right and there are rarely more than a handful, so a scroll
+ * rail would hide most of them behind a swipe for no gain.
+ */
+export function LapisQuickLinks({ links }: { links: LinkRow[] }) {
   if (links.length === 0) return null;
   return (
     <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] px-[10px] py-[20px] font-malt">
-      <SectionTitle>LINKS</SectionTitle>
+      <SectionTitle>QUICK LINKS</SectionTitle>
       <div className="flex flex-col gap-[8px]">
-        {links.map((l) => (
-          <a
-            key={l.id}
-            href={l.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex min-h-[48px] items-center justify-between gap-3 rounded-[14px] bg-[var(--t-accent)]/12 px-4 py-3 ring-1 ring-inset ring-[var(--t-accent)]/25"
-          >
-            <span className="truncate text-[14px] font-semibold text-[var(--t-text)]">
-              {l.label}
-            </span>
-            <span className="shrink-0 text-[13px] text-[var(--t-accent)]">↗</span>
-          </a>
-        ))}
+        {links.map((l) => {
+          const host = socialHostOf(l.url);
+          return (
+            <a
+              key={l.id}
+              href={l.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-[58px] items-center gap-[12px] rounded-[14px] px-[12px] py-[10px] transition-transform active:scale-[0.99]"
+              style={{ background: "var(--t-card)", color: "var(--t-on-card)" }}
+            >
+              <span
+                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full"
+                style={{ background: "var(--t-card-btn)", color: "var(--t-on-card-btn)" }}
+              >
+                {socialGlyph(l.icon ?? detectLinkIcon(l.url), 17)}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[14px] font-bold leading-[17px] tracking-[-0.28px]">
+                  {l.label}
+                </span>
+                {host ? (
+                  <span className="truncate text-[11px] font-light leading-[14px] opacity-70">
+                    {host}
+                  </span>
+                ) : null}
+              </span>
+              <span className="shrink-0 pr-[4px] text-[13px] leading-none opacity-80" aria-hidden>
+                ↗
+              </span>
+            </a>
+          );
+        })}
       </div>
     </div>
   );
@@ -677,12 +786,3 @@ function Sparkle() {
   );
 }
 
-const SOCIAL_GLYPHS: Record<string, React.ReactNode> = {
-  facebook: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.5l.4-3h-2.9V8.2c0-.9.3-1.5 1.6-1.5H16.5V4.1C16.2 4 15.2 4 14.1 4c-2.3 0-3.9 1.4-3.9 4v2.9H7.6v3h2.6v8h3.3Z" /></svg>,
-  instagram: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" /></svg>,
-  tiktok: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.4 2.2 1.9 3.6 4 3.9v2.8c-1.5 0-2.9-.4-4-1.2v6.4c0 3.4-2.5 5.7-5.6 5.7-2.9 0-5.4-2.2-5.4-5.4 0-3.1 2.5-5.4 5.6-5.4.4 0 .8 0 1.2.1v2.9a2.6 2.6 0 1 0 1.5 2.4V3h2.7Z" /></svg>,
-  youtube: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M22 8.2a2.6 2.6 0 0 0-1.8-1.8C18.5 6 12 6 12 6s-6.5 0-8.2.4A2.6 2.6 0 0 0 2 8.2 27 27 0 0 0 1.6 12 27 27 0 0 0 2 15.8a2.6 2.6 0 0 0 1.8 1.8C5.5 18 12 18 12 18s6.5 0 8.2-.4a2.6 2.6 0 0 0 1.8-1.8A27 27 0 0 0 22.4 12 27 27 0 0 0 22 8.2ZM10 15V9l5 3-5 3Z" /></svg>,
-  x: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 3h3l-6.6 7.5L21.5 21h-5.9l-4.2-5.4L6.5 21H3.4l7-8L2.9 3h6l3.8 5 4.8-5Zm-1 16h1.6L8.1 4.7H6.3L16.5 19Z" /></svg>,
-  twitter: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 3h3l-6.6 7.5L21.5 21h-5.9l-4.2-5.4L6.5 21H3.4l7-8L2.9 3h6l3.8 5 4.8-5Zm-1 16h1.6L8.1 4.7H6.3L16.5 19Z" /></svg>,
-  linkedin: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.9 8.5H4V21h2.9V8.5ZM5.4 4a1.7 1.7 0 1 0 0 3.4 1.7 1.7 0 0 0 0-3.4ZM21 21h-2.9v-6.5c0-1.6-.6-2.5-1.9-2.5-1 0-1.6.7-1.9 1.4V21H11.5V8.5h2.8v1.6c.5-.9 1.6-1.6 3-1.6 2.2 0 3.7 1.4 3.7 4.3V21Z" /></svg>,
-};

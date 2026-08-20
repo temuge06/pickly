@@ -5,27 +5,15 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import { link } from "@/db/schema";
 import { requireCurrentProfile } from "@/lib/auth/session";
-
-function iconForUrl(url: string): string {
-  const u = url.toLowerCase();
-  if (u.includes("youtube") || u.includes("youtu.be")) return "youtube";
-  if (u.includes("tiktok")) return "tiktok";
-  if (u.includes("instagram")) return "instagram";
-  if (u.includes("substack") || u.includes("newsletter") || u.includes("mailchi"))
-    return "newsletter";
-  return "link";
-}
+import { detectLinkIcon, normalizeUrl } from "@/lib/socials";
 
 export async function createLink(label: string, url: string) {
   const profile = await requireCurrentProfile();
   const l = label.trim();
-  const u = url.trim();
+  // A creator pastes "youtube.com/@me" as often as a full URL; requiring the
+  // scheme by hand is friction with no upside, so it is added here instead.
+  const u = normalizeUrl(url);
   if (!l || !u) throw new Error("Нэр болон холбоос заавал.");
-  try {
-    new URL(u);
-  } catch {
-    throw new Error("Холбоос буруу байна.");
-  }
   const db = getDb();
   const posRows = await db
     .select({ maxPos: max(link.position) })
@@ -35,10 +23,11 @@ export async function createLink(label: string, url: string) {
     profileId: profile.id,
     label: l,
     url: u,
-    icon: iconForUrl(u),
+    icon: detectLinkIcon(u),
     position: (posRows[0]?.maxPos ?? -1) + 1,
   });
   revalidatePath("/dashboard");
+  revalidatePath(`/${profile.handle}`);
 }
 
 export async function deleteLink(id: string) {
@@ -48,6 +37,7 @@ export async function deleteLink(id: string) {
     .delete(link)
     .where(and(eq(link.id, id), eq(link.profileId, profile.id)));
   revalidatePath("/dashboard");
+  revalidatePath(`/${profile.handle}`);
 }
 
 export async function reorderLinks(orderedIds: string[]) {
@@ -62,4 +52,5 @@ export async function reorderLinks(orderedIds: string[]) {
     ),
   );
   revalidatePath("/dashboard");
+  revalidatePath(`/${profile.handle}`);
 }

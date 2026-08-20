@@ -22,11 +22,9 @@ import {
 } from "./lapis/ui";
 
 /**
- * Ask inbox, in the dashboard's own design language (#2a1617 surface, #fe7f42
- * accent, Montserrat Alternates). It previously used the older paper/marigold
- * palette, which left section headings almost invisible against the dark
- * shell — this reuses the same primitives as every other dashboard section so
- * it can't drift again.
+ * Ask inbox, in the dashboard's own design language. Every colour is a --t-*
+ * token from the creator's chosen theme, same as the rest of the editor, so a
+ * light palette does not leave this screen unreadable.
  */
 
 type Message = {
@@ -52,13 +50,13 @@ function Check({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 font-malt text-[13px] text-[#feedd5]/75">
+    <label className="flex cursor-pointer items-center gap-2 font-malt text-[13px] text-[var(--t-text)]">
       <input
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-[16px] w-[16px] shrink-0 accent-[#fe7f42]"
+        className="h-[16px] w-[16px] shrink-0 accent-[var(--t-accent)]"
       />
       {children}
     </label>
@@ -105,7 +103,7 @@ export function AskInbox({
           action={
             <button
               onClick={() => setShowHidden((v) => !v)}
-              className="rounded-full bg-[#fe7f42]/15 px-3 py-1.5 font-malt text-[12px] font-bold text-[#fe7f42] transition-colors active:bg-[#fe7f42]/25"
+              className="rounded-full bg-[color-mix(in_srgb,var(--t-accent)_15%,transparent)] px-3 py-1.5 font-malt text-[12px] font-bold text-[var(--t-accent)] transition-colors "
             >
               {showHidden ? "Нуух" : "Харах"}
             </button>
@@ -150,13 +148,13 @@ function AskSettings({
 
   return (
     <section className="animate-fade-up px-4">
-      <div className="flex flex-col gap-3.5 rounded-[16px] bg-white/[0.04] p-4">
+      <div className="flex flex-col gap-3.5 rounded-[16px] bg-[var(--t-well)] p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-malt text-[14.5px] font-bold text-[#feedd5]">
+            <p className="font-malt text-[14.5px] font-bold text-[var(--t-text)]">
               Ask идэвхтэй
             </p>
-            <p className="truncate font-malt text-[12px] text-[#feedd5]/45">
+            <p className="truncate font-malt text-[12px] text-[var(--t-muted)]">
               pickly.mn/{handle}/ask
             </p>
           </div>
@@ -170,7 +168,7 @@ function AskSettings({
             disabled={pending}
             onClick={toggle}
             className={`relative h-[28px] w-[48px] shrink-0 cursor-pointer rounded-full transition-colors duration-150 disabled:opacity-60 ${
-              enabled ? "bg-[#fe7f42]" : "bg-white/[0.16]"
+              enabled ? "bg-[var(--t-accent)]" : "bg-[var(--t-ring)]"
             }`}
           >
             <span
@@ -206,7 +204,7 @@ function AskSettings({
               Хадгалах
             </LButton>
             {saved && !pending ? (
-              <span className="font-malt text-[12.5px] font-bold text-[#8fe0a0]">
+              <span className="font-malt text-[12.5px] font-bold text-[var(--t-success)]">
                 ✓ Хадгаллаа
               </span>
             ) : null}
@@ -226,11 +224,11 @@ function NewMessage({ message }: { message: Message }) {
 
   return (
     <div
-      className={`flex flex-col gap-3 rounded-[16px] bg-white/[0.04] p-4 transition-opacity ${
+      className={`flex flex-col gap-3 rounded-[16px] bg-[var(--t-well)] p-4 transition-opacity ${
         pending ? "opacity-60" : ""
       }`}
     >
-      <p className="font-malt text-[14.5px] leading-relaxed text-[#feedd5]">
+      <p className="font-malt text-[14.5px] leading-relaxed text-[var(--t-text)]">
         {message.body}
       </p>
 
@@ -285,11 +283,11 @@ function NewMessage({ message }: { message: Message }) {
 function AnsweredMessage({ message }: { message: Message }) {
   const [pending, start] = useTransition();
   return (
-    <div className="flex flex-col gap-2 rounded-[16px] bg-white/[0.04] p-4">
-      <p className="font-malt text-[13.5px] leading-relaxed text-[#feedd5]/60">
+    <div className="flex flex-col gap-2 rounded-[16px] bg-[var(--t-well)] p-4">
+      <p className="font-malt text-[13.5px] leading-relaxed text-[var(--t-muted)]">
         {message.body}
       </p>
-      <p className="border-l-2 border-[#fe7f42]/70 pl-2.5 font-malt text-[14px] leading-relaxed text-[#feedd5]">
+      <p className="border-l-2 border-[var(--t-accent)] pl-2.5 font-malt text-[14px] leading-relaxed text-[var(--t-text)]">
         {message.answerBody}
       </p>
       <div className="flex items-center gap-2">
@@ -302,7 +300,7 @@ function AnsweredMessage({ message }: { message: Message }) {
         >
           Нийтэд харагдаж байна
         </Check>
-        {pending ? <Spinner className="h-3.5 w-3.5 text-[#feedd5]/40" /> : null}
+        {pending ? <Spinner className="h-3.5 w-3.5 text-[var(--t-muted)]" /> : null}
       </div>
     </div>
   );
@@ -311,20 +309,20 @@ function AnsweredMessage({ message }: { message: Message }) {
 function HiddenMessage({ message }: { message: Message }) {
   const [pending, start] = useTransition();
   return (
-    <div className="flex items-center justify-between gap-2 rounded-[16px] bg-white/[0.03] p-3">
-      <p className="min-w-0 flex-1 truncate font-malt text-[13px] text-[#feedd5]/50">
+    <div className="flex items-center justify-between gap-2 rounded-[16px] bg-[var(--t-well)] p-3">
+      <p className="min-w-0 flex-1 truncate font-malt text-[13px] text-[var(--t-muted)]">
         {message.body}
       </p>
       {message.status === "hidden" ? (
         <button
           disabled={pending}
           onClick={() => start(async () => void (await unhideAsk(message.id)))}
-          className="shrink-0 rounded-lg px-2 py-1 font-malt text-[11.5px] font-bold text-[#fe7f42] transition-colors active:bg-white/[0.05] disabled:opacity-50"
+          className="shrink-0 rounded-lg px-2 py-1 font-malt text-[11.5px] font-bold text-[var(--t-accent)] transition-colors active:bg-[var(--t-field)] disabled:opacity-50"
         >
           Сэргээх
         </button>
       ) : (
-        <span className="shrink-0 rounded-full bg-[#ff9a8a]/12 px-2 py-0.5 font-malt text-[10.5px] font-bold uppercase text-[#ff9a8a]">
+        <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--t-danger)_14%,transparent)] px-2 py-0.5 font-malt text-[10.5px] font-bold uppercase text-[var(--t-danger)]">
           Блоклосон
         </span>
       )}

@@ -17,6 +17,7 @@ const RESERVED = new Set([
   "_next",
   "favicon.ico",
   "admin",
+  "notifications",
   "settings",
   "about",
 ]);
