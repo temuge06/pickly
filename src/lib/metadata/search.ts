@@ -79,3 +79,61 @@ export async function searchBooks(query: string): Promise<MediaResult[]> {
     return [];
   }
 }
+
+/**
+ * A song from the iTunes Search API. Extends MediaResult with the two fields
+ * that only music carries: the 30s preview stream and the album it came from.
+ */
+export type MusicResult = MediaResult & {
+  /** Numeric iTunes track id — the dedupe key for a manually-added song. */
+  itunesTrackId: string;
+  album: string | null;
+  /** 30s AAC preview. Null on the small number of tracks Apple doesn't stream. */
+  previewUrl: string | null;
+};
+
+type ItunesTrack = {
+  trackId?: number;
+  trackName?: string;
+  artistName?: string;
+  collectionName?: string;
+  artworkUrl100?: string;
+  previewUrl?: string;
+  trackViewUrl?: string;
+};
+
+/**
+ * iTunes Search song lookup — no key required, so music search works on every
+ * deploy (unlike TMDB, which degrades to manual entry without one). Never
+ * throws to the caller; a dead upstream is an empty result list.
+ */
+export async function searchMusic(query: string): Promise<MusicResult[]> {
+  if (!query.trim()) return [];
+  try {
+    const url = new URL("https://itunes.apple.com/search");
+    url.searchParams.set("term", query);
+    url.searchParams.set("entity", "song");
+    url.searchParams.set("limit", "10");
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return [];
+    const json = (await res.json()) as { results?: ItunesTrack[] };
+    return (json.results ?? [])
+      .filter((r): r is ItunesTrack & { trackId: number; trackName: string } =>
+        typeof r.trackId === "number" && typeof r.trackName === "string",
+      )
+      .map((r) => ({
+        externalId: `itunes:${r.trackId}`,
+        itunesTrackId: String(r.trackId),
+        title: r.trackName,
+        subtitle: r.artistName ?? null,
+        album: r.collectionName ?? null,
+        // Apple serves artwork at whatever size the URL asks for. 100px is
+        // what the API hands back and it's visibly soft on a 102px @2x disc.
+        imageUrl: r.artworkUrl100?.replace(/\/100x100bb\.jpg$/, "/400x400bb.jpg") ?? null,
+        previewUrl: r.previewUrl ?? null,
+        externalUrl: r.trackViewUrl ?? null,
+      }));
+  } catch {
+    return [];
+  }
+}

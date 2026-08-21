@@ -158,6 +158,17 @@
     animation: spotly-shimmer 1.3s ease-in-out infinite;
   }
 
+  /* The CD behind a music card's cover, turning while its preview plays. Slow
+     enough to read as a record rather than a loading spinner. */
+  .animate-spin-disc {
+    animation: spotly-spin-disc 3.4s linear infinite;
+  }
+  @keyframes spotly-spin-disc {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .skeleton,
     .skeleton-dark,
@@ -165,7 +176,8 @@
       animation: none;
     }
     .animate-fade-up,
-    .animate-pop {
+    .animate-pop,
+    .animate-spin-disc {
       animation: none;
     }
   }

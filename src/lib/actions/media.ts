@@ -18,17 +18,22 @@ export async function searchBooksAction(query: string): Promise<MediaResult[]> {
 }
 
 /**
- * Add a manually-chosen film or book as an activity_item. Manual items have
- * provider 'manual' (film) / 'openlibrary'|'tmdb' external ids and no
- * connection, so they always show on the public page (no sync health gate).
+ * Add a manually-chosen song, film or book as an activity_item. Manual items
+ * have provider 'manual' and `tmdb:`/`openlibrary:`/`itunes:` external ids and
+ * no connection, so they always show on the public page (no sync health gate).
+ *
+ * `meta` carries whatever is specific to one kind and has no column of its own
+ * — for a song that is the iTunes track id, the album, and the 30s preview the
+ * public player streams.
  */
 export async function addMediaItem(input: {
-  kind: "film" | "book";
+  kind: "film" | "book" | "track";
   title: string;
   subtitle?: string | null;
   imageUrl?: string | null;
   externalUrl?: string | null;
   externalId?: string | null;
+  meta?: Record<string, unknown>;
 }) {
   const profile = await requireCurrentProfile();
   const title = input.title.trim();
@@ -49,7 +54,7 @@ export async function addMediaItem(input: {
       imageUrl: input.imageUrl?.trim() || null,
       externalUrl: input.externalUrl?.trim() || null,
       occurredAt: new Date(),
-      meta: {},
+      meta: input.meta ?? {},
     })
     .onConflictDoNothing();
   revalidatePath("/dashboard");

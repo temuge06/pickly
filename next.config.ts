@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "i.scdn.co" }, // Spotify album art
+      { protocol: "https", hostname: "**.mzstatic.com" }, // iTunes / Apple Music artwork
+      // Album art on songs added before the iTunes switch. The rows survived
+      // the migration, so their covers still have to load.
+      { protocol: "https", hostname: "i.scdn.co" },
       { protocol: "https", hostname: "a.ltrbxd.com" }, // Letterboxd posters
       { protocol: "https", hostname: "image.tmdb.org" }, // TMDB posters
       { protocol: "https", hostname: "covers.openlibrary.org" }, // Open Library covers
