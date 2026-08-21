@@ -26,13 +26,8 @@ export const env = {
 
   hasEncryptionKey: has("ENCRYPTION_KEY"),
 
-  // Spotify connect button hides entirely when absent.
-  hasSpotify: has(
-    "SPOTIFY_CLIENT_ID",
-    "SPOTIFY_CLIENT_SECRET",
-    "SPOTIFY_REDIRECT_URI",
-  ),
-
+  // Films degrade to manual entry without this. Music does not have an
+  // equivalent — iTunes Search needs no key, so song search always works.
   hasTmdb: has("TMDB_API_KEY"),
   hasCronSecret: has("CRON_SECRET"),
   hasAskSalt: has("ASK_DAILY_SALT"),

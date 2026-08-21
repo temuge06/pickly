@@ -101,22 +101,6 @@ async function main() {
   ]);
   await insertMany(schema.link, demoLinks);
 
-  // Active connections so the sync-health path has data to reason about, and
-  // so the "Listening/Watching are live" story is visible in the dashboard.
-  await db
-    .insert(schema.connection)
-    .values([
-      {
-        id: "cc000000-0000-4000-8000-000000000001",
-        profileId: demoProfile.id,
-        provider: "spotify",
-        externalUsername: "sarnai",
-        status: "active",
-        lastSyncAt: new Date(),
-      },
-    ])
-    .onConflictDoNothing();
-
   // A few Ask messages: two published (fixtures) plus a new one and a filtered
   // one, so the inbox demonstrates every state.
   await insertMany(schema.askMessage, demoAskMessages);

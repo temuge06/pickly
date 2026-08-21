@@ -4,11 +4,15 @@ import { SpotlySection } from "./SpotlySection";
 
 type Track = typeof activityItem.$inferSelect;
 
+function meta(track: Track): { note?: string; previewUrl?: string | null } {
+  return (track.meta ?? {}) as { note?: string; previewUrl?: string | null };
+}
+
 /**
  * ДУУ, ХӨГЖИМ (music) shelf — spotly design language, Figma 391:693/734.
  * Watermark "СОНСЛОО", header (🎵 ДУУ, ХӨГЖИМ), horizontal row of music cards.
- * The per-song quote in the design is a creator note not present in synced
- * track data, so it renders only when a note exists (meta.note).
+ * The per-song quote in the design is a creator note not present in the track
+ * data, so it renders only when a note exists (meta.note).
  */
 export function MusicShelf({ tracks }: { tracks: Track[] }) {
   if (tracks.length === 0) return null;
@@ -22,7 +26,8 @@ export function MusicShelf({ tracks }: { tracks: Track[] }) {
             title={track.title}
             artist={track.subtitle}
             albumUrl={track.imageUrl}
-            quote={(track.meta as { note?: string })?.note ?? null}
+            quote={meta(track).note ?? null}
+            previewUrl={meta(track).previewUrl ?? null}
           />
         ))}
       </div>

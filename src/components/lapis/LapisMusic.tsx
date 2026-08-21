@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from "react";
 import type { activityItem } from "@/db/schema";
+import { usePreviewAudio } from "@/lib/audio/preview";
 
 type Item = typeof activityItem.$inferSelect;
 
@@ -78,7 +79,11 @@ export function LapisMusic({
 // --- Дуу: music bar --------------------------------------------------------
 
 function MusicBar({ item }: { item: Item }) {
-  const note = (item.meta as { note?: string })?.note ?? null;
+  const meta = item.meta as { note?: string; previewUrl?: string | null } | null;
+  const note = meta?.note ?? null;
+  const previewUrl = typeof meta?.previewUrl === "string" ? meta.previewUrl : null;
+  const { playing, toggle } = usePreviewAudio();
+  const isPlaying = previewUrl !== null && playing === previewUrl;
   return (
     <div className="flex h-[112px] w-[230px] shrink-0 snap-start items-center rounded-[14px] bg-[var(--t-accent)] py-[5px] pl-[5px] pr-[4px] drop-shadow-[0px_0px_2.85px_white]">
       <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-[10px] bg-black/10">
@@ -107,8 +112,35 @@ function MusicBar({ item }: { item: Item }) {
         {/* The decorative waveform used to sit to the left of this button and
             was read as a play control it never was. Removing it frees the row,
             so сонсох — the one thing here that IS tappable — gets the full
-            width and a real tap target. */}
-        {item.externalUrl ? (
+            width and a real tap target.
+
+            It now plays the 30s preview in place rather than sending the
+            visitor to another app. Songs without one (the old synced rows) keep
+            the outbound link, so nothing that used to be tappable stopped
+            being tappable. */}
+        {previewUrl ? (
+          <button
+            onClick={() => toggle(previewUrl)}
+            aria-label={isPlaying ? `${item.title} зогсоох` : `${item.title} сонсох`}
+            className="absolute bottom-[6px] left-[5px] right-[1px] flex h-[28px] items-center justify-center gap-[4px] rounded-[14px] bg-[var(--t-on-accent)] text-[14px] font-bold capitalize tracking-[-0.28px] text-[var(--t-accent)] transition-transform active:scale-[0.97]"
+          >
+            {isPlaying ? (
+              <>
+                зогсоох
+                <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+                  <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" />
+                </svg>
+              </>
+            ) : (
+              <>
+                сонсох
+                <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+                  <path d="M2.5 1.2 L10 6 L2.5 10.8 Z" />
+                </svg>
+              </>
+            )}
+          </button>
+        ) : item.externalUrl ? (
           <a
             href={item.externalUrl}
             target="_blank"

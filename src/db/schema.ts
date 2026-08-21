@@ -40,7 +40,14 @@ const citext = customType<{ data: string }>({
 // Enums
 // ---------------------------------------------------------------------------
 
-/** Providers a creator can connect for auto-synced sections. */
+/**
+ * Providers a creator can connect for auto-synced sections.
+ *
+ * Both values are retired — letterboxd in migration 0008, spotify in 0010 —
+ * and no adapter is registered for either, so no row should carry them. They
+ * stay listed because dropping a value from a Postgres enum means recreating
+ * the type. Songs and films are entered by hand now (iTunes Search / TMDB).
+ */
 export const connectionProviderEnum = pgEnum("connection_provider", [
   "spotify",
   "letterboxd",
@@ -226,7 +233,7 @@ export const connection = pgTable("connection", {
   refreshTokenEnc: text("refresh_token_enc"),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   externalUsername: text("external_username"),
-  /** Space-delimited OAuth scopes granted, e.g. Spotify's scope string. */
+  /** Space-delimited OAuth scopes granted, for a future OAuth provider. */
   scopes: text("scopes"),
   lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
   status: connectionStatusEnum("status").notNull().default("active"),

@@ -255,9 +255,10 @@ export async function getNotifications(me: {
   const items: Notification[] = [];
 
   // --- Entertainment: grouped ------------------------------------------------
-  // A Spotify sync writes hundreds of tracks in one pass. Ungrouped, that is
-  // hundreds of identical-looking rows and the rest of the feed is gone. Items
-  // of the same kind from the same creator on the same day collapse into one.
+  // A creator filling in their profile adds songs, films and books in one
+  // sitting. Ungrouped, that is a run of near-identical rows and the rest of
+  // the feed is gone. Items of the same kind from the same creator on the same
+  // day collapse into one.
   const groups = new Map<
     string,
     { profileId: string; kind: string; at: Date; titles: string[]; images: string[] }

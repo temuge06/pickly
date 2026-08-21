@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  LapisSongs,
-  type SpotifyNotice,
-} from "@/components/dashboard/lapis/LapisConnections";
+import { LapisSongs } from "@/components/dashboard/lapis/LapisSongs";
 import { LapisLinks } from "@/components/dashboard/lapis/LapisLinks";
 import { LapisMedia } from "@/components/dashboard/lapis/LapisMedia";
 import { LapisProfile } from "@/components/dashboard/lapis/LapisProfile";
@@ -15,29 +12,14 @@ import { dashboardEnabled, env } from "@/lib/env";
 export const metadata = { title: "Профайл — Pickly" };
 export const dynamic = "force-dynamic";
 
-/** The OAuth callback comes back with one of these on the URL. */
-function spotifyNotice(params: Record<string, string | string[] | undefined>): SpotifyNotice {
-  if (params.connected === "spotify") return "connected";
-  const error = typeof params.error === "string" ? params.error : null;
-  if (error === "spotify_denied") return "denied";
-  if (error?.startsWith("spotify_")) return "failed";
-  return null;
-}
-
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function DashboardPage() {
   if (!dashboardEnabled) redirect("/sign-in");
   const profile = await getCurrentProfile();
   if (!profile) redirect("/onboarding");
 
   const data = await getDashboardData(profile);
-  const spotify = data.connections.find((c) => c.provider === "spotify") ?? null;
   const askNew = data.ask.new.length;
   const flags = data.flags;
-  const notice = spotifyNotice(await searchParams);
 
   return (
     // The editor wears the creator's own palette. Every colour below is a
@@ -99,12 +81,7 @@ export default async function DashboardPage({
             Entertainment surface, so all three settings areas go together. */}
         {flags.entertainment ? (
           <>
-            <LapisSongs
-              spotify={spotify}
-              trackCount={data.tracks.length}
-              configured={env.hasSpotify}
-              notice={notice}
-            />
+            <LapisSongs items={data.tracks} />
 
             <LapisMedia
               kind="film"

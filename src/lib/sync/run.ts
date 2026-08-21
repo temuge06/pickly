@@ -1,12 +1,17 @@
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { activityItem, connection } from "@/db/schema";
-import { spotifyAdapter } from "./spotify";
 import { RevokedError, type Connection, type ProviderAdapter } from "./types";
 
-const ADAPTERS: Record<string, ProviderAdapter> = {
-  spotify: spotifyAdapter,
-};
+/**
+ * Provider adapters, keyed by `connection.provider`.
+ *
+ * Empty since music moved to manual iTunes entries and films to manual TMDB
+ * ones — there is no OAuth provider left to pull from. The runner below is
+ * kept as the seam a future adapter plugs into: implement ProviderAdapter,
+ * register it here, and the cron and the public page need no changes.
+ */
+const ADAPTERS: Record<string, ProviderAdapter> = {};
 
 export type SyncOutcome = {
   connectionId: string;

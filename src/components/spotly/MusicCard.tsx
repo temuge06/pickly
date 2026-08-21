@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { usePreviewAudio } from "@/lib/audio/preview";
 import { PlayTriangle } from "./icons";
 
 /**
@@ -10,18 +13,27 @@ import { PlayTriangle } from "./icons";
  * artist (Regular 11px black/50, −0.22px), quote (Light 10px black/75, −0.2px).
  * "Сонсох" pill (391:700): bg black/10, radius 13, h18, play triangle + label
  * (Regular 9px black/75). SF Pro Rounded → Nunito (font-header).
+ *
+ * The pill was decoration — it looked like a control and did nothing. It now
+ * plays the song's 30s iTunes preview, and the disc behind the cover spins
+ * while it does, which is the whole reason the design puts a CD there.
  */
 export function MusicCard({
   title,
   artist,
   albumUrl,
   quote,
+  previewUrl,
 }: {
   title: string;
   artist?: string | null;
   albumUrl?: string | null;
   quote?: string | null;
+  previewUrl?: string | null;
 }) {
+  const { playing, toggle } = usePreviewAudio();
+  const isPlaying = previewUrl != null && playing === previewUrl;
+
   return (
     <div
       className="relative h-[134px] w-[230px] shrink-0 snap-start rounded-[10px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.08)]"
@@ -31,7 +43,11 @@ export function MusicCard({
       }}
     >
       {/* CD disc peeking behind the cover */}
-      <div className="absolute left-[43px] top-[-18px] size-[102px] overflow-hidden rounded-full ring-1 ring-black/5">
+      <div
+        className={`absolute left-[43px] top-[-18px] size-[102px] overflow-hidden rounded-full ring-1 ring-black/5 ${
+          isPlaying ? "animate-spin-disc" : ""
+        }`}
+      >
         {albumUrl ? (
           <Image src={albumUrl} alt="" fill sizes="102px" className="object-cover" />
         ) : (
@@ -61,12 +77,31 @@ export function MusicCard({
         </p>
       ) : null}
 
-      <div className="absolute left-[130px] top-[100px] flex h-[18px] w-[58px] items-center gap-[4px] rounded-[13px] bg-black/10 px-[6px]">
-        <PlayTriangle className="text-black/75" />
-        <span className="font-header text-[9px] leading-[9px] tracking-[-0.18px] text-black/75">
-          Сонсох
-        </span>
-      </div>
+      {previewUrl ? (
+        <button
+          onClick={() => toggle(previewUrl)}
+          aria-label={isPlaying ? `${title} зогсоох` : `${title} сонсох`}
+          className="absolute left-[130px] top-[100px] flex h-[18px] w-[58px] items-center gap-[4px] rounded-[13px] bg-black/10 px-[6px] transition-transform active:scale-95"
+        >
+          {isPlaying ? (
+            <svg viewBox="0 0 8 8" width="8" height="8" fill="currentColor" className="text-black/75" aria-hidden>
+              <rect x="1" y="1" width="6" height="6" rx="1" />
+            </svg>
+          ) : (
+            <PlayTriangle className="text-black/75" />
+          )}
+          <span className="font-header text-[9px] leading-[9px] tracking-[-0.18px] text-black/75">
+            {isPlaying ? "Зогсоох" : "Сонсох"}
+          </span>
+        </button>
+      ) : (
+        <div className="absolute left-[130px] top-[100px] flex h-[18px] w-[58px] items-center gap-[4px] rounded-[13px] bg-black/10 px-[6px] opacity-50">
+          <PlayTriangle className="text-black/75" />
+          <span className="font-header text-[9px] leading-[9px] tracking-[-0.18px] text-black/75">
+            Сонсох
+          </span>
+        </div>
+      )}
     </div>
   );
 }
