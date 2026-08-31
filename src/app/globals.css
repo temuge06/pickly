@@ -1,71 +1,5 @@
 @import "tailwindcss";
 
-/* --- GIP: the MVP design's typeface (Figma JLqMihd0UwHkxgu9f1TbNX, MVP1) ----
-   A licensed Mongolian foundry face, so it is self-hosted rather than pulled
-   from Google Fonts. See public/fonts/gip/README.md for the expected files.
-
-   Declared with plain @font-face rather than next/font/local on purpose: a
-   next/font/local source that is not on disk is a BUILD failure, whereas a
-   missing @font-face src is a silent 404 the browser recovers from by moving
-   down the stack. That keeps the repo buildable before the licensed files are
-   dropped in, and makes adding them a pure asset commit with no code change. */
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-ultralight.woff2") format("woff2");
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-light.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-italic.woff2") format("woff2");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-semibold.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "GIP";
-  src: url("/fonts/gip/gip-black.woff2") format("woff2");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* Tokens from DESIGN.md. Every color/font utility used in components should
    trace back to one of these — no ad hoc hex or font-family in component
    code. */
@@ -79,31 +13,45 @@
   --color-jade: #2f8f7a;
   --color-berry: #a15361;
 
-  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-golos), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jbmono), ui-monospace, "SF Mono", monospace;
+  /* --- Type: SF Pro, everywhere -------------------------------------------
+     SF Pro is not self-hosted: Apple licenses it for designing and developing
+     for Apple platforms, not for redistribution from a web server. The system
+     stack below is the supported way to use it — `-apple-system` and
+     `BlinkMacSystemFont` resolve to the real SF Pro on macOS, iOS and iPadOS,
+     which is where the overwhelming majority of this audience reads a creator
+     profile. Everywhere else it falls through to that platform's own UI face
+     (Roboto on Android, Segoe UI on Windows), which is the closest match
+     available and costs zero bytes.
 
-  /* --- spotly design language (Figma frame 391-680) --- */
-  /* Raw hex from Figma (no named variables existed in the file). */
-  --color-spotly-ink: #151515; /* section header text */
-  --color-spotly-accent: #e94f7a; /* "See all" / links */
-  --color-spotly-bg: #ffffff; /* page/card background */
-  --font-header: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
-  --font-condensed: var(--font-pt-narrow), "SF Pro Condensed", ui-sans-serif,
-    system-ui, sans-serif;
-  --font-watermark: var(--font-oswald), ui-sans-serif, system-ui, sans-serif;
+     Naming the "SF Pro Text"/"SF Pro Display" faces explicitly picks them up
+     for anyone who has installed them from Apple's developer downloads.
 
-  /* --- lapis design language (Figma frame 694-12989) --- */
-  --font-inter: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-malt: var(--font-mont-alt), ui-sans-serif, system-ui, sans-serif;
-  --font-mont: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+     SF Pro covers Cyrillic, so Mongolian renders in the real face rather than
+     falling back per-glyph.
 
-  /* --- LinkSpot MVP design language (Figma section MVP1, 1208-9475) ---
-     One family for the whole product. Montserrat Alternates is the stand-in
-     until the licensed GIP files land in public/fonts/gip — it is the closest
-     Cyrillic-capable match (single-storey `a` and `g`), so a missing GIP only
-     changes the letterforms, never the metrics-driven layout. */
-  --font-gip: "GIP", var(--font-mont-alt), ui-sans-serif, system-ui, sans-serif;
+     Every legacy token below is an alias of this one stack. The codebase has
+     ~280 `font-*` utilities across ten names from three earlier design
+     languages; pointing the tokens here turns all of them into SF Pro without
+     touching a single component, and leaves one place to change if the type
+     direction moves again. */
+  --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "SF Pro", "Helvetica Neue", system-ui, ui-sans-serif, sans-serif;
+
+  --font-display: var(--font-sf);
+  --font-body: var(--font-sf);
+  --font-header: var(--font-sf);
+  --font-condensed: var(--font-sf);
+  --font-watermark: var(--font-sf);
+  --font-inter: var(--font-sf);
+  --font-malt: var(--font-sf);
+  --font-mont: var(--font-sf);
+  --font-gip: var(--font-sf);
+
+  /* The one exception, and it is still the SF family: these are deliberately
+     monospaced labels (prices, codes, captions) whose columns line up because
+     the digits are fixed width. SF Mono is San Francisco's monospace sibling,
+     so the family stays consistent while the alignment survives. */
+  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, monospace;
 
   /* The brand green. A literal here, not a theme token: this is the fallback
      for surfaces rendered OUTSIDE a themed profile root (auth, admin, the
@@ -123,11 +71,7 @@
   body {
     background-color: var(--color-wall);
     color: var(--color-paper);
-    /* GIP is the product typeface now, so it is the default rather than
-       something each component opts into. Screens still on an older design
-       language (the spotly dashboard, the staff console) keep their explicit
-       font-* utility and are unaffected. */
-    font-family: var(--font-gip);
+    font-family: var(--font-sf);
   }
 
   :focus-visible {
