@@ -21,13 +21,24 @@ export function OnboardingForm({ username }: { username: string }) {
     setUploading(true);
     const fd = new FormData();
     fd.set("file", file);
-    const res = await uploadOnboardingAvatar(fd);
-    setUploading(false);
-    if (res.error) {
-      setUploadErr(res.error);
-      return;
+    // try/finally, not a bare await: a Server Action can fail BEFORE its body
+    // runs — the framework rejects an oversized body with a 413, and the
+    // network can drop — in which case the await throws and never returns a
+    // result object. Without this, `setUploading(false)` was unreachable and
+    // the spinner ran forever with no error shown, which is indistinguishable
+    // from a very slow upload.
+    try {
+      const res = await uploadOnboardingAvatar(fd);
+      if (res.error) {
+        setUploadErr(res.error);
+        return;
+      }
+      if (res.url) setAvatarUrl(res.url);
+    } catch {
+      setUploadErr("Зураг илгээгдсэнгүй. Дахин оролдоно уу.");
+    } finally {
+      setUploading(false);
     }
-    if (res.url) setAvatarUrl(res.url);
   }
 
   return (

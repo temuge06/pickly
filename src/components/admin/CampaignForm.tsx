@@ -45,9 +45,16 @@ export function CampaignForm({
     const fd = new FormData();
     fd.set("file", new File([blob], "banner.webp", { type: "image/webp" }));
     startUpload(async () => {
-      const res = await uploadCampaignBanner(fd);
-      if (res.error) setError(res.error);
-      else if (res.url) setBanner(res.url);
+      // A Server Action that fails before its body runs (oversized body → 413,
+      // dropped connection) rejects rather than returning { error }, so an
+      // unguarded await leaves the control stuck in its uploading state.
+      try {
+        const res = await uploadCampaignBanner(fd);
+        if (res.error) setError(res.error);
+        else if (res.url) setBanner(res.url);
+      } catch {
+        setError("Зураг илгээгдсэнгүй. Дахин оролдоно уу.");
+      }
     });
   }
 

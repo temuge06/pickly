@@ -5,6 +5,22 @@ const nextConfig: NextConfig = {
   // Pins the workspace root to this project — a stray lockfile in a parent
   // directory otherwise makes Next.js guess (and warn) about the wrong root.
   outputFileTracingRoot: path.join(__dirname),
+  experimental: {
+    serverActions: {
+      // Avatar and campaign-banner uploads post the raw file to a Server
+      // Action. Next.js caps Server Action bodies at 1 MB by default, which is
+      // below what the actions themselves accept (8 MB, enforced in
+      // src/lib/actions/avatar.ts), so every ordinary phone photo was rejected
+      // with a 413 before the action body ran — the upload appeared to hang
+      // rather than fail, because the framework rejected the request rather
+      // than the code returning an error.
+      //
+      // 10mb, not 8mb: multipart FormData adds encoding overhead on top of the
+      // file itself, so a limit set exactly at the file cap still rejects a
+      // file that is legally at the cap.
+      bodySizeLimit: "10mb",
+    },
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.mzstatic.com" }, // iTunes / Apple Music artwork

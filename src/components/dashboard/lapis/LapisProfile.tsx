@@ -41,10 +41,18 @@ export function LapisProfile({ profile }: { profile: Profile }) {
     setAvatarError(null);
     const fd = new FormData();
     fd.set("file", file);
+    // Same failure mode as the onboarding uploader: an oversized body is
+    // rejected by the framework with a 413 before the action runs, so the
+    // await throws instead of returning { error }. Catching it here is what
+    // turns a silent stuck spinner into a message the creator can act on.
     startUpload(async () => {
-      const res = await uploadAvatar(fd);
-      if (res.error) setAvatarError(res.error);
-      else if (res.url) setAvatar(res.url);
+      try {
+        const res = await uploadAvatar(fd);
+        if (res.error) setAvatarError(res.error);
+        else if (res.url) setAvatar(res.url);
+      } catch {
+        setAvatarError("Зураг илгээгдсэнгүй. Дахин оролдоно уу.");
+      }
     });
   }
 

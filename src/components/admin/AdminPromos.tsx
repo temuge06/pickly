@@ -171,9 +171,16 @@ function PromoForm({
     const fd = new FormData();
     fd.set("file", new File([blob], "promo.webp", { type: "image/webp" }));
     startUpload(async () => {
-      const res = await uploadPromoImage(fd);
-      if (res.error) setUploadError(res.error);
-      else if (res.url) setImage(res.url);
+      // A Server Action that fails before its body runs (oversized body → 413,
+      // dropped connection) rejects rather than returning { error }, so an
+      // unguarded await leaves the control stuck in its uploading state.
+      try {
+        const res = await uploadPromoImage(fd);
+        if (res.error) setUploadError(res.error);
+        else if (res.url) setImage(res.url);
+      } catch {
+        setUploadError("Зураг илгээгдсэнгүй. Дахин оролдоно уу.");
+      }
     });
   }
 
