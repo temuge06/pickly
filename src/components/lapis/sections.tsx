@@ -438,15 +438,16 @@ export function LapisTopPicks({
 }
 
 /**
- * Banner aspect ratio.
+ * Banner aspect ratio, matching the MVP design's short 382×102 strip
+ * (Figma 1208:11883 and siblings).
  *
- * The MVP design draws these as short 382×102 strips, but every banner in the
- * library is authored at 382×305 (public/campaigns/* are all 1528×1220). Cropping
- * live artwork to a third of its height would cut the headline off every one of
- * them, so the shelf keeps the ratio the assets are drawn at. Change this one
- * constant to "382/102" once the short banners exist — nothing else needs to move.
+ * Every banner currently in public/campaigns/ is authored at 382×305
+ * (1528×1220), so those older assets are centre-cropped to a third of their
+ * height by `object-cover` and will lose whatever sits above and below the
+ * middle band. New artwork wants to be drawn at 382×102 — roughly 1528×408 at
+ * 4x — for the design to land as intended.
  */
-const CAMPAIGN_ASPECT = "382/305";
+const CAMPAIGN_ASPECT = "382/102";
 
 function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
   const inner = (
@@ -462,13 +463,11 @@ function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
             sizes="330px"
           />
         ) : null}
-        {/* Liquid-glass CTA pill, bottom-right on the banner. Fixed platform
-            copy, not per-campaign. The backdrop blur is load-bearing as well
-            as decorative: it softens whatever artwork sits behind the pill so
-            the label stays readable on any creative. */}
-        <span className="absolute bottom-[17px] right-[12px] flex h-[37px] w-[162px] items-center justify-center rounded-[20px] border border-white/45 bg-gradient-to-b from-white/25 to-white/5 backdrop-blur-[10px] backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_-2px_4px_-1px_rgba(0,0,0,0.3),0_6px_16px_-4px_rgba(0,0,0,0.45)] text-[14px] font-bold text-white [text-shadow:0px_1px_3px_rgba(0,0,0,0.5)]">
-          Дэлгэрэнгүй Үзэх
-        </span>
+        {/* No CTA pill. The MVP design draws these banners as artwork alone,
+            and on a 102px-tall strip the old 37px pill inset 17px from the
+            bottom occupied over half the card's height — it covered the
+            creative it was meant to sit on. The banner is the click target, so
+            nothing that was tappable stopped being tappable. */}
       </div>
     </>
   );
