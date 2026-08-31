@@ -166,6 +166,16 @@ export const profile = pgTable("profile", {
   theme: profileThemeEnum("theme").notNull().default("on_fire"),
   /** e.g. { instagram: "...", tiktok: "...", youtube: "..." } */
   socials: jsonb("socials").$type<Record<string, string>>().default({}),
+  /**
+   * Up to three short self-descriptors shown as chips under the username on
+   * the bio shelf — the MVP design's "ENTJ / Marketing / Boxing" row.
+   *
+   * text[] rather than a child table: they are free text with no identity of
+   * their own, they are never queried across profiles, and the cap is three,
+   * so a join table would buy nothing and cost a query on every page render.
+   * Order is meaningful — the first chip is the filled one.
+   */
+  tags: text("tags").array().$type<string[]>().notNull().default(sql`'{}'::text[]`),
   // --- Ask feature (v2) ---
   askEnabled: boolean("ask_enabled").notNull().default(true),
   /** Public-facing prompt on /[handle]/ask. Null → UI default. */

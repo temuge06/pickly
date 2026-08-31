@@ -4,7 +4,7 @@ import { dashboardEnabled } from "@/lib/env";
 import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
 import { OnboardingForm } from "./OnboardingForm";
 
-export const metadata = { title: "Эхлэх — Pickly" };
+export const metadata = { title: "Эхлэх — LinkSpot" };
 
 export default async function OnboardingPage() {
   if (!dashboardEnabled) redirect("/sign-in");

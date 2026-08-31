@@ -67,7 +67,7 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
   );
 
   const copyClass =
-    "flex h-[18px] shrink-0 items-center justify-center gap-[3px] rounded-[5px] px-[6px] font-malt text-[8px] font-medium leading-none transition-transform active:scale-95";
+    "flex h-[18px] shrink-0 items-center justify-center gap-[3px] rounded-[5px] px-[6px] text-[10px] font-medium leading-none transition-transform active:scale-95";
   const copyStyle = {
     background: "var(--t-promo-btn)",
     color: "var(--t-promo-on-btn)",
@@ -79,7 +79,7 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
       style={{ background: "var(--t-promo-bg)" }}
     >
       {/* Artwork — 114 of the 267 width, per the spec */}
-      <div className="relative h-full w-[114px] shrink-0 overflow-hidden bg-black/10">
+      <div className="relative h-full w-[114px] shrink-0 overflow-hidden rounded-l-[15px] bg-black/10">
         {promo.imageUrl ? (
           <ProductImage src={promo.imageUrl} alt={promo.headline} sizes="114px" />
         ) : null}
@@ -99,14 +99,14 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
           headline ~161px, and 12px squeezed both into truncation. */}
       <div className="flex min-w-0 flex-1 flex-col px-[7px] py-[11px]">
         <p
-          className="truncate text-center font-malt text-[35px] font-bold uppercase leading-[36px] tracking-[-1.75px]"
+          className="truncate text-center text-[35px] font-bold uppercase leading-[36px] tracking-[-1.75px]"
           style={{ color: "var(--t-promo-headline)" }}
         >
           {promo.headline}
         </p>
         {promo.description ? (
           <p
-            className="mt-[2px] line-clamp-2 text-center font-malt text-[8px] font-bold leading-[10px] lowercase"
+            className="mt-[4px] line-clamp-2 text-[12px] leading-[13px]"
             style={{ color: "var(--t-promo-text)" }}
           >
             {promo.description}
@@ -114,7 +114,7 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
         ) : null}
 
         <p
-          className="mt-auto font-malt text-[8px] font-bold uppercase leading-[12px]"
+          className="mt-auto text-[12px] font-bold uppercase leading-[19px]"
           style={{ color: "var(--t-promo-text)" }}
         >
           promo code
@@ -123,7 +123,10 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
           className="mt-[2px] flex h-[24px] items-center gap-[6px] rounded-[5px] pl-[8px] pr-[3px]"
           style={{ background: "var(--t-promo-chip)" }}
         >
-          <span className="min-w-0 flex-1 truncate font-malt text-[20px] uppercase leading-[24px] text-white">
+          <span
+            className="min-w-0 flex-1 truncate text-[20px] font-semibold uppercase leading-[24px]"
+            style={{ color: "var(--t-promo-on-chip)" }}
+          >
             {promo.code}
           </span>
           {promo.url ? (
@@ -146,7 +149,7 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
         </div>
         {promo.expiresAt ? (
           <p
-            className="mt-[3px] text-right font-malt text-[8px] uppercase leading-[12px]"
+            className="mt-[3px] text-right text-[10px] uppercase leading-[19px]"
             style={{ color: "var(--t-promo-text)" }}
           >
             {formatExpiry(promo.expiresAt)}

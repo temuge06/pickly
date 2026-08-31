@@ -3,7 +3,7 @@ import { AuthShell, AuthHeader } from "@/components/auth/AuthShell";
 import { dashboardEnabled } from "@/lib/env";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
-export const metadata = { title: "Нууц үг мартсан — Pickly" };
+export const metadata = { title: "Нууц үг мартсан — LinkSpot" };
 
 export default function ForgotPasswordPage() {
   if (!dashboardEnabled) redirect("/sign-in");

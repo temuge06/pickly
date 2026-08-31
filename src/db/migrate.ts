@@ -31,6 +31,26 @@ async function main() {
   await sql.unsafe(rls);
   console.log("RLS policies applied.");
 
+  // Storage buckets, same deal: outside the journal because they live in
+  // Supabase's `storage` schema, idempotent so every migrate re-asserts them.
+  // A fresh project has no bucket, and without one every image upload fails at
+  // runtime — so this belongs in the provisioning command, not in a README.
+  //
+  // Tolerated rather than fatal: some Postgres targets (a plain local Postgres,
+  // or a role without rights on `storage`) have no such schema, and the app
+  // still runs fine there — only image upload is unavailable.
+  try {
+    const storage = readFileSync(join(__dirname, "storage.sql"), "utf-8");
+    await sql.unsafe(storage);
+    console.log("Storage buckets applied.");
+  } catch (err) {
+    console.warn(
+      "Storage buckets skipped (no `storage` schema or insufficient rights). " +
+        "Image uploads will fail until the `pick-images` public bucket exists.",
+      err instanceof Error ? err.message : err,
+    );
+  }
+
   await sql.end();
 }
 

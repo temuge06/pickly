@@ -9,7 +9,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { dashboardEnabled, env } from "@/lib/env";
 
-export const metadata = { title: "Профайл — Pickly" };
+export const metadata = { title: "Профайл — LinkSpot" };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {

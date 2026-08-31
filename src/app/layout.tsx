@@ -86,7 +86,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pickly",
+  title: "LinkSpot",
   description: "What Mongolian creators actually use, listen to, watch and read.",
 };
 

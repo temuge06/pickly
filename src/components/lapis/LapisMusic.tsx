@@ -8,12 +8,18 @@ import { usePreviewAudio } from "@/lib/audio/preview";
 type Item = typeof activityItem.$inferSelect;
 
 /**
- * MMB section (Figma 731:14227, all 3 variants) wired to real activity_items.
- * The Дуу / Кино / Ном tabs each have their own card design:
- *   Дуу  — "Music bar" (orange #fe7f42, 230×112) with album art + сонсох
- *   Кино — poster card (cream #feedd5, 110×161, radius 19)
- *   Ном  — wooden bookshelf: 68×100 covers on a #c4956a→#a8784e shelf,
- *          colored-spine fallback for coverless books
+ * MMB section, rebuilt to the MVP design (Figma 1208:14758 / component
+ * 685:5028). One segmented control over three shelves:
+ *
+ *   Дуу  — portrait "Music bar", 121×161: cover art with a CD peeking out
+ *          behind it, a сонсох pill on the artwork, title + artist below
+ *   Кино — poster card, 110×161
+ *   Ном  — bookshelf: 68×100 covers on a wooden rail
+ *
+ * The music card is mounted on `--t-media` (white on both design variants)
+ * rather than on the theme accent the old orange bar used: album art is
+ * photographic and needs a neutral plate behind it, and a white card is what
+ * separates this shelf from the product shelves further down the page.
  */
 export function LapisMusic({
   tracks,
@@ -35,36 +41,48 @@ export function LapisMusic({
   const current = tabs.find((t) => t.key === active) ?? tabs[0]!;
 
   return (
-    <div className="flex flex-col gap-[16px] bg-[var(--t-bg)] py-[17px]">
-      {/* Tabs (Figma 731:14235) */}
-      {/* mx-auto, not mx-[26px]: the pill is only as wide as its tabs, so a
-          fixed left margin parked it off-centre by however much the row was
-          narrower than the frame. */}
-      <div className="mx-auto flex w-fit items-center gap-[16px] rounded-[19px] border border-[var(--t-accent)] bg-[var(--t-bg)] p-[3px] drop-shadow-[0px_0px_1.65px_rgba(192,0,59,0.31)]">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActive(t.key)}
-            className={`flex items-center justify-center rounded-[14px] px-[30px] py-[7px] text-[14px] font-bold capitalize leading-[13px] transition-colors ${
-              active === t.key
-                ? "bg-[var(--t-accent)] text-[var(--t-on-accent)]"
-                : "text-[var(--t-muted)]"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+    <div className="flex flex-col gap-[18px] border-b-[0.58px] border-[var(--t-border)] bg-[var(--t-bg)] py-[17px]">
+      {/* Segmented control (Figma 685:5021). One rail 350px wide with the tabs
+          spread across it, so the control keeps the same footprint whether a
+          creator has one shelf or three — it used to shrink to fit and moved
+          under the reader's thumb as tabs appeared. */}
+      <div
+        className="mx-auto flex w-[350px] max-w-[calc(100%-32px)] items-center rounded-[19px] bg-[var(--t-bg)] p-[3px]"
+        style={{
+          boxShadow: "0 0 0 0.5px color-mix(in srgb, var(--t-accent) 42%, transparent)",
+        }}
+        role="tablist"
+      >
+        {tabs.map((t) => {
+          const isActive = active === t.key;
+          return (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActive(t.key)}
+              className="flex flex-1 items-center justify-center rounded-[14px] px-[8px] py-[7px] text-[14px] font-bold capitalize leading-[13px] transition-colors"
+              style={
+                isActive
+                  ? { background: "var(--t-accent)", color: "var(--t-on-accent)" }
+                  : { color: "color-mix(in srgb, var(--t-accent) 40%, transparent)" }
+              }
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Cards — per-tab layout */}
       {current.key === "track" ? (
-        <div className="no-scrollbar flex gap-[7px] overflow-x-auto scroll-pl-[29px] px-[29px]">
+        <div className="no-scrollbar flex gap-[7px] overflow-x-auto scroll-pl-[17px] px-[17px]">
           {current.items.map((it) => (
             <MusicBar key={it.id} item={it} />
           ))}
         </div>
       ) : current.key === "film" ? (
-        <div className="no-scrollbar flex gap-[7px] overflow-x-auto scroll-pl-[29px] px-[29px] py-[2px]">
+        <div className="no-scrollbar flex gap-[7px] overflow-x-auto scroll-pl-[17px] px-[17px] py-[2px]">
           {current.items.map((it) => (
             <MoviePoster key={it.id} item={it} />
           ))}
@@ -84,71 +102,88 @@ function MusicBar({ item }: { item: Item }) {
   const previewUrl = typeof meta?.previewUrl === "string" ? meta.previewUrl : null;
   const { playing, toggle } = usePreviewAudio();
   const isPlaying = previewUrl !== null && playing === previewUrl;
+
+  // The сонсох control overlaps the cover art in the design, so it is
+  // positioned rather than laid out. Both branches share everything but the
+  // label and the handler.
+  const pillClass =
+    "absolute left-[30px] top-[98px] z-20 flex h-[20px] items-center justify-center gap-[4px] rounded-[10px] bg-black px-[8px] text-[13px] font-semibold capitalize leading-[13px] tracking-[-0.52px] text-white";
+
   return (
-    <div className="flex h-[112px] w-[230px] shrink-0 snap-start items-center rounded-[14px] bg-[var(--t-accent)] py-[5px] pl-[5px] pr-[4px] drop-shadow-[0px_0px_2.85px_white]">
-      <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-[10px] bg-black/10">
+    <div
+      className="relative h-[161px] w-[121px] shrink-0 snap-start overflow-hidden rounded-[14px]"
+      style={{ background: "var(--t-media)", color: "var(--t-on-media)" }}
+      title={note ?? undefined}
+    >
+      {/* The CD (Figma "image 17": 90×90 at 15,66). It sits BEHIND the cover
+          and pokes out below it, which is what gives the card its depth — a
+          disc tucked fully behind the artwork would be invisible. Drawn in CSS
+          rather than shipped as an asset so it can spin while the preview
+          plays, and so it stays light enough for the title to read over it. */}
+      <span
+        aria-hidden
+        className={`absolute left-[15px] top-[66px] z-0 h-[90px] w-[90px] rounded-full ${
+          isPlaying ? "animate-spin-disc" : ""
+        }`}
+        style={{
+          background:
+            "repeating-radial-gradient(circle at 50% 50%, rgba(0,0,0,0.10) 0 1.5px, rgba(0,0,0,0.04) 1.5px 3px)",
+        }}
+      >
+        <span className="absolute left-1/2 top-1/2 h-[20px] w-[20px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--t-media)]" />
+      </span>
+
+      <div className="absolute left-[5px] top-[6px] z-10 h-[102px] w-[107px] overflow-hidden rounded-[10px] bg-black/10">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
         ) : null}
       </div>
-      <div className="relative h-[102px] w-[114px] shrink-0 pl-[5px]">
-        <div className="flex flex-col gap-[9px] pt-[6px]">
-          <div>
-            <p className="line-clamp-1 text-[14px] font-bold leading-[16px] tracking-[-0.7px] text-[var(--t-on-accent)]">
-              {item.title}
-            </p>
-            {item.subtitle ? (
-              <p className="line-clamp-1 text-[8px] font-extralight tracking-[-0.16px] text-[var(--t-on-accent)]/70">
-                {item.subtitle}
-              </p>
-            ) : null}
-          </div>
-          {note ? (
-            <p className="line-clamp-3 w-[104px] text-[10px] font-light leading-[11px] tracking-[-0.2px] text-[var(--t-on-accent)]">
-              “{note}”
-            </p>
-          ) : null}
-        </div>
-        {/* The decorative waveform used to sit to the left of this button and
-            was read as a play control it never was. Removing it frees the row,
-            so сонсох — the one thing here that IS tappable — gets the full
-            width and a real tap target.
 
-            It now plays the 30s preview in place rather than sending the
-            visitor to another app. Songs without one (the old synced rows) keep
-            the outbound link, so nothing that used to be tappable stopped
-            being tappable. */}
-        {previewUrl ? (
-          <button
-            onClick={() => toggle(previewUrl)}
-            aria-label={isPlaying ? `${item.title} зогсоох` : `${item.title} сонсох`}
-            className="absolute bottom-[6px] left-[5px] right-[1px] flex h-[28px] items-center justify-center gap-[4px] rounded-[14px] bg-[var(--t-on-accent)] text-[14px] font-bold capitalize tracking-[-0.28px] text-[var(--t-accent)] transition-transform active:scale-[0.97]"
+      {/* The 30s preview plays in place. Songs without one (older synced rows)
+          keep the outbound link, so nothing that used to be tappable stopped
+          being tappable. */}
+      {previewUrl ? (
+        <button
+          onClick={() => toggle(previewUrl)}
+          aria-label={isPlaying ? `${item.title} зогсоох` : `${item.title} сонсох`}
+          className={`${pillClass} transition-transform active:scale-[0.97]`}
+        >
+          {isPlaying ? "зогсоох" : "сонсох"}
+          {isPlaying ? (
+            <svg width="7" height="7" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+              <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" />
+            </svg>
+          ) : (
+            <svg width="7" height="7" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+              <path d="M2.5 1.2 L10 6 L2.5 10.8 Z" />
+            </svg>
+          )}
+        </button>
+      ) : item.externalUrl ? (
+        <a
+          href={item.externalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={pillClass}
+        >
+          сонсох
+          <span className="text-[9px] leading-none" aria-hidden>
+            ↗
+          </span>
+        </a>
+      ) : null}
+
+      <div className="absolute left-[9px] top-[122px] z-10 w-[106px]">
+        <p className="line-clamp-1 text-[14px] font-bold leading-[18px] tracking-[-0.7px]">
+          {item.title}
+        </p>
+        {item.subtitle ? (
+          <p
+            className="line-clamp-1 text-[12px] font-light leading-[14px] tracking-[-0.24px]"
+            style={{ color: "var(--t-on-media-muted)" }}
           >
-            {isPlaying ? (
-              <>
-                зогсоох
-                <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
-                  <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" />
-                </svg>
-              </>
-            ) : (
-              <>
-                сонсох
-                <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
-                  <path d="M2.5 1.2 L10 6 L2.5 10.8 Z" />
-                </svg>
-              </>
-            )}
-          </button>
-        ) : item.externalUrl ? (
-          <a
-            href={item.externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute bottom-[6px] left-[5px] right-[1px] flex h-[28px] items-center justify-center gap-[3px] rounded-[14px] bg-[var(--t-on-accent)] text-[14px] font-bold capitalize tracking-[-0.28px] text-[var(--t-accent)]"
-          >
-            сонсох<span className="text-[10px]">↗</span>
-          </a>
+            {item.subtitle}
+          </p>
         ) : null}
       </div>
     </div>
@@ -163,14 +198,17 @@ function MoviePoster({ item }: { item: Item }) {
       {item.imageUrl ? (
         <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
       ) : (
-        <span className="flex h-full w-full items-center justify-center p-2 text-center font-malt text-[12px] font-bold uppercase text-[#b22c20]">
+        <span className="flex h-full w-full items-center justify-center p-2 text-center text-[12px] font-bold">
           {item.title}
         </span>
       )}
     </>
   );
+  // Same `media` plate as the music card: both shelves sit in the one MMB
+  // strip, and a poster on `card` was a different colour from the album art
+  // beside it every time a theme gave `card` a gradient.
   const cls =
-    "h-[161px] w-[110px] shrink-0 snap-start overflow-hidden rounded-[19px] bg-[var(--t-card)] text-[var(--t-on-card)] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)]";
+    "h-[161px] w-[110px] shrink-0 snap-start overflow-hidden rounded-[14px] bg-[var(--t-media)] text-[var(--t-on-media)] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)]";
   return item.externalUrl ? (
     <a href={item.externalUrl} target="_blank" rel="noopener noreferrer" className={cls}>
       {inner}
@@ -184,7 +222,7 @@ function MoviePoster({ item }: { item: Item }) {
 
 function Bookshelf({ books }: { books: Item[] }) {
   return (
-    <div className="no-scrollbar overflow-x-auto scroll-pl-[20px] px-[20px]">
+    <div className="no-scrollbar overflow-x-auto scroll-pl-[17px] px-[17px]">
       <div className="flex h-[108px] items-end gap-[10px]">
         {books.map((b) => (
           <BookCover key={b.id} item={b} />
@@ -209,11 +247,11 @@ function BookCover({ item }: { item: Item }) {
               "linear-gradient(151.84deg, #b91c1c 8.49%, #7f1d1d 91.51%)",
           }}
         >
-          <p className="text-center font-header text-[8.5px] font-black leading-[10.6px] text-[#3a0512]">
+          <p className="text-center text-[8.5px] font-black leading-[10.6px] text-[#3a0512]">
             {item.title}
           </p>
           {author ? (
-            <p className="text-center font-header text-[7px] font-semibold leading-[10.5px] text-[#fca5a5]">
+            <p className="text-center text-[7px] font-semibold leading-[10.5px] text-[#fca5a5]">
               {author}
             </p>
           ) : null}

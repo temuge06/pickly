@@ -43,6 +43,7 @@ export const demoProfile: Profile = {
     tiktok: "https://tiktok.com/@sarnai.mn",
     youtube: "https://youtube.com/@sarnai.mn",
   },
+  tags: ["INFP", "Skincare", "Кофе"],
   askEnabled: true,
   askPrompt: "Асуух зүйл байна уу?",
   isMinor: false,

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/auth/admin";
 import { dashboardEnabled } from "@/lib/env";
 
-export const metadata = { title: "Staff — Pickly" };
+export const metadata = { title: "Staff — LinkSpot" };
 export const dynamic = "force-dynamic";
 
 /**
@@ -29,7 +29,7 @@ export default async function AdminLayout({
       <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#0f1115]/90 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-5 py-3.5">
           <Link href="/admin" className="flex items-center gap-2.5">
-            <span className="font-inter text-[15px] font-bold text-white">Pickly</span>
+            <span className="text-[15px] font-bold text-white">LinkSpot</span>
             <span className="rounded-[6px] bg-[#fe7f42]/15 px-2 py-0.5 font-malt text-[11px] font-black uppercase tracking-wide text-[#fe7f42]">
               Staff
             </span>

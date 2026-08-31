@@ -13,7 +13,13 @@ import type { profile } from "@/db/schema";
  * Two annotation labels in the Figma sheets contradict their own swatches
  * (On Fire's background label reads #FEEDD5, Dalai #2's reads #0B1014). The
  * swatches and the rendered mocks agree with each other, so the values below
- * follow the swatches: #2A1617 and #FFFFFF respectively.
+ * follow the swatches.
+ *
+ * The MVP redesign (section MVP1, node 1208-9475) is drawn only on the dark
+ * "Dalai #1" and light "Dalai #2" variants. Those two therefore carry the
+ * design's literal values; On Fire and Coral Wave fill the same enlarged token
+ * contract from their own palettes, which is what lets one set of components
+ * render the new layout in all four.
  */
 
 export type ThemeKey = (typeof profile.$inferSelect)["theme"];
@@ -23,6 +29,18 @@ export type ThemeTokens = {
   bg: string;
   /** Hairline dividers between sections. */
   border: string;
+  /**
+   * The signature "pop" of the palette: the wordmark's arrow, the rule under
+   * the top bar, and the first tag chip on the bio shelf.
+   *
+   * On the two Dalai palettes this is LinkSpot green (#0ad85b) exactly as the
+   * MVP design specifies. The two warm palettes take their own hero colour
+   * instead — a green arrow over On Fire's rust would read as a foreign logo
+   * pasted onto the page rather than as part of it.
+   */
+  brand: string;
+  /** Text/glyphs sitting ON a brand-filled surface. */
+  onBrand: string;
   /** Username, bio, icons, section titles, entertainment strip. */
   accent: string;
   /** Text/glyphs sitting ON an accent-filled surface. */
@@ -44,11 +62,37 @@ export type ThemeTokens = {
    *  replace the old three-colour rotation with a single Category swatch. */
   category: string;
   onCategory: string;
+  /**
+   * The bright card the entertainment strip and Quick Links rows sit on. The
+   * MVP design keeps these white on BOTH the black and the white variant —
+   * album art and favicons are photographic and need a neutral mount — so this
+   * is its own token rather than a reuse of `card`.
+   */
+  media: string;
+  onMedia: string;
+  /** Secondary line on a media card (artist, host). */
+  onMediaMuted: string;
+  /**
+   * Social row on the bio shelf. The design draws bare glyphs on the dark
+   * variant and filled discs on the light one; both fall out of these two
+   * values, with a transparent `socialBg` meaning "no disc".
+   */
+  socialBg: string;
+  onSocial: string;
+  /** The composer input inside the Ask card, and its placeholder. */
+  askField: string;
+  onAskField: string;
   /** Inset panel behind the Similar shelf. */
   panel: string;
   /** Fallback circle behind an initial when a creator has no avatar. */
   avatarBg: string;
-  /** Follow button — a neutral inverse of the background in every theme. */
+  /**
+   * Follow button. The MVP design draws it as a near-black pill with white
+   * type on BOTH variants — it is the page's one hard call to action and does
+   * not soften with the palette — so this is an ink, not an inverse of `bg`.
+   * Coral Wave substitutes its own crimson ink for the same reason On Fire
+   * keeps a green-free logo: pure black is foreign to that palette.
+   */
   btn: string;
   onBtn: string;
   /** Promo ticket: card body, the chip the code sits on, the Copy control,
@@ -58,6 +102,8 @@ export type ThemeTokens = {
    *  light one). */
   promoBg: string;
   promoChip: string;
+  /** The code itself, which sits ON `promoChip`. */
+  promoOnChip: string;
   promoBtn: string;
   promoOnBtn: string;
   promoHeadline: string;
@@ -102,6 +148,8 @@ export const THEMES: Theme[] = [
     tokens: {
       bg: "#2a1617",
       border: "#7b4c46",
+      brand: "#fe7f42",
+      onBrand: "#2a1617",
       accent: "#fe7f42",
       onAccent: "#ffffff",
       text: "#feedd5",
@@ -114,12 +162,20 @@ export const THEMES: Theme[] = [
       onOthers: "#ffffff",
       category: "#fffb97",
       onCategory: "#2a1617",
+      media: "#feedd5",
+      onMedia: "#2a1617",
+      onMediaMuted: "rgba(42,22,23,0.62)",
+      socialBg: "#fe7f42",
+      onSocial: "#ffffff",
+      askField: "rgba(254,237,213,0.14)",
+      onAskField: "rgba(254,237,213,0.6)",
       panel: "#1c0f0f",
       avatarBg: "#42282a",
-      btn: "#ffffff",
-      onBtn: "#0a0a0a",
+      btn: "#0a0a0a",
+      onBtn: "#ffffff",
       promoBg: "#fe7f42",
       promoChip: "#b22c20",
+      promoOnChip: "#feedd5",
       promoBtn: "#feedd5",
       promoOnBtn: "#1a1a1a",
       promoHeadline: "#ffe500",
@@ -140,6 +196,8 @@ export const THEMES: Theme[] = [
     tokens: {
       bg: "#feedd5",
       border: "rgba(177,25,63,0.22)",
+      brand: "#b1193f",
+      onBrand: "#ffffff",
       accent: "#b1193f",
       onAccent: "#ffffff",
       text: "#b1193f",
@@ -152,12 +210,20 @@ export const THEMES: Theme[] = [
       onOthers: "#ffffff",
       category: "#fe5f63",
       onCategory: "#ffffff",
+      media: "#ffffff",
+      onMedia: "#b1193f",
+      onMediaMuted: "rgba(177,25,63,0.62)",
+      socialBg: "#b1193f",
+      onSocial: "#ffffff",
+      askField: "rgba(255,255,255,0.88)",
+      onAskField: "rgba(177,25,63,0.5)",
       panel: "rgba(177,25,63,0.08)",
       avatarBg: "rgba(177,25,63,0.14)",
-      btn: "#ffffff",
-      onBtn: "#b1193f",
+      btn: "#b1193f",
+      onBtn: "#ffffff",
       promoBg: "#c0003b",
       promoChip: "#ff605f",
+      promoOnChip: "#ffffff",
       promoBtn: "#feedd5",
       promoOnBtn: "#1a1a1a",
       promoHeadline: "#ffe500",
@@ -177,7 +243,9 @@ export const THEMES: Theme[] = [
     label: "Dalai #1",
     tokens: {
       bg: "#0b1014",
-      border: "rgba(255,255,255,0.16)",
+      border: "#323232",
+      brand: "#0ad85b",
+      onBrand: "#0b1014",
       accent: "#ffffff",
       onAccent: "#0b1014",
       text: "#ffffff",
@@ -190,12 +258,20 @@ export const THEMES: Theme[] = [
       onOthers: "#0b1014",
       category: "#ffffff",
       onCategory: "#0b1014",
+      media: "#ffffff",
+      onMedia: "#0b1014",
+      onMediaMuted: "#343434",
+      socialBg: "transparent",
+      onSocial: "#ffffff",
+      askField: "#f6f6f6",
+      onAskField: "#ababab",
       panel: "#1e1e1e",
       avatarBg: "#1e1e1e",
-      btn: "#ffffff",
-      onBtn: "#0b1014",
+      btn: "#0a0a0a",
+      onBtn: "#ffffff",
       promoBg: "#222222",
       promoChip: "#3f3f3f",
+      promoOnChip: "#ffffff",
       promoBtn: "#ffe500",
       promoOnBtn: "#1a1a1a",
       promoHeadline: "#ffe500",
@@ -214,36 +290,51 @@ export const THEMES: Theme[] = [
     key: "dalai_2",
     label: "Dalai #2",
     tokens: {
-      bg: "#ffffff",
-      border: "rgba(0,0,0,0.12)",
-      accent: "#000000",
+      // The MVP design's light variant ("Tsagaan"/"White") inverts the figure
+      // and ground of the black one rather than merely lightening it: the PAGE
+      // is #f6f6f6 and the CARDS are pure white, so a card still reads as
+      // raised. The previous white-page/grey-card pairing did the opposite and
+      // made every section look recessed.
+      bg: "#f6f6f6",
+      border: "#e3e3e3",
+      brand: "#0ad85b",
+      onBrand: "#0b1014",
+      accent: "#0b1014",
       onAccent: "#ffffff",
-      text: "#000000",
-      muted: "rgba(0,0,0,0.55)",
-      card: "#f7f7f7",
-      onCard: "#000000",
-      ask: "#f7f7f7",
-      onAsk: "#000000",
-      others: "#f7f7f7",
-      onOthers: "#000000",
-      category: "#000000",
+      text: "#0b1014",
+      muted: "rgba(11,16,20,0.55)",
+      card: "#ffffff",
+      onCard: "#0b1014",
+      ask: "#ffffff",
+      onAsk: "#0b1014",
+      others: "#ffffff",
+      onOthers: "#0b1014",
+      category: "#0b1014",
       onCategory: "#ffffff",
-      panel: "#f7f7f7",
-      avatarBg: "#f0f0f0",
-      btn: "#000000",
+      media: "#ffffff",
+      onMedia: "#0b1014",
+      onMediaMuted: "#343434",
+      socialBg: "#0b1014",
+      onSocial: "#ffffff",
+      askField: "#f6f6f6",
+      onAskField: "#ababab",
+      panel: "#ffffff",
+      avatarBg: "#e9e9e9",
+      btn: "#0b1014",
       onBtn: "#ffffff",
-      promoBg: "#e7e7e7",
-      promoChip: "#9a9a9a",
-      promoBtn: "#ffffff",
-      promoOnBtn: "#1a1a1a",
-      promoHeadline: "#000000",
-      promoText: "#000000",
-      cardBtn: "#000000",
+      promoBg: "#ffffff",
+      promoChip: "#f6f6f6",
+      promoOnChip: "#222222",
+      promoBtn: "#0ad85b",
+      promoOnBtn: "#0b1014",
+      promoHeadline: "#0ad85b",
+      promoText: "#9b9b9b",
+      cardBtn: "#0b1014",
       onCardBtn: "#ffffff",
-      cardBtnBorder: "#000000",
-      well: "rgba(0,0,0,0.04)",
-      field: "rgba(0,0,0,0.06)",
-      ring: "rgba(0,0,0,0.12)",
+      cardBtnBorder: "#0b1014",
+      well: "rgba(11,16,20,0.04)",
+      field: "#ffffff",
+      ring: "rgba(11,16,20,0.10)",
       danger: "#c62828",
       success: "#127a4e",
     },
@@ -266,6 +357,8 @@ export function themeStyle(key: string | null | undefined): React.CSSProperties 
   return {
     "--t-bg": t.bg,
     "--t-border": t.border,
+    "--t-brand": t.brand,
+    "--t-on-brand": t.onBrand,
     "--t-accent": t.accent,
     "--t-on-accent": t.onAccent,
     "--t-text": t.text,
@@ -278,12 +371,20 @@ export function themeStyle(key: string | null | undefined): React.CSSProperties 
     "--t-on-others": t.onOthers,
     "--t-category": t.category,
     "--t-on-category": t.onCategory,
+    "--t-media": t.media,
+    "--t-on-media": t.onMedia,
+    "--t-on-media-muted": t.onMediaMuted,
+    "--t-social-bg": t.socialBg,
+    "--t-on-social": t.onSocial,
+    "--t-ask-field": t.askField,
+    "--t-on-ask-field": t.onAskField,
     "--t-panel": t.panel,
     "--t-avatar-bg": t.avatarBg,
     "--t-btn": t.btn,
     "--t-on-btn": t.onBtn,
     "--t-promo-bg": t.promoBg,
     "--t-promo-chip": t.promoChip,
+    "--t-promo-on-chip": t.promoOnChip,
     "--t-promo-btn": t.promoBtn,
     "--t-promo-on-btn": t.promoOnBtn,
     "--t-promo-headline": t.promoHeadline,

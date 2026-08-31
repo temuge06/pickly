@@ -6,7 +6,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { dashboardEnabled } from "@/lib/env";
 
-export const metadata = { title: "Ask — Pickly" };
+export const metadata = { title: "Ask — LinkSpot" };
 export const dynamic = "force-dynamic";
 
 export default async function AskInboxPage() {

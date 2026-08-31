@@ -11,8 +11,10 @@ import type {
   wishlistItem,
 } from "@/db/schema";
 import { ProductImage } from "@/components/ui/ProductImage";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { socialGlyph } from "@/components/social-icons";
 import { SOCIAL_PLATFORMS, detectLinkIcon, hostOf as socialHostOf } from "@/lib/socials";
+import { getTheme } from "@/lib/themes";
 import { FollowButton } from "./FollowButton";
 import { PromoCard, type PublicPromo } from "./PromoCard";
 
@@ -26,13 +28,6 @@ type WishlistItem = typeof wishlistItem.$inferSelect;
 // --- Status bar ------------------------------------------------------------
 
 /**
- * The wordmark follows the creator's theme, but the arrow does NOT — it is a
- * fixed brand orange in every theme mock, so it stays a constant rather than a
- * token. It sits as a superscript at the wordmark's cap height.
- */
-const LOGO_ARROW = "#ff5106";
-
-/**
  * Top bar: the wordmark, plus whichever navigation the viewer is entitled to.
  *
  *   own profile      → bell (with an unread dot)
@@ -43,6 +38,10 @@ const LOGO_ARROW = "#ff5106";
  * The bell is rendered only for the owner and the count is resolved
  * server-side, so a visitor's HTML contains no trace of it — nothing to reveal
  * by editing the DOM.
+ *
+ * The green hairline along the bottom is the design's one piece of persistent
+ * brand colour (Figma 1208:11762) and is what separates the bar from the bio
+ * shelf below, which shares its background.
  */
 export function LapisStatusBar({
   bell,
@@ -54,12 +53,12 @@ export function LapisStatusBar({
   backTo?: string | null;
 } = {}) {
   return (
-    <div className="flex h-[54px] items-center gap-[8px] bg-[var(--t-bg)] px-[10px]">
+    <div className="flex h-[54px] items-center gap-[8px] border-b border-[var(--t-brand)] bg-[var(--t-bg)] px-[15px]">
       {backTo ? (
         <Link
           href={`/${backTo}`}
           aria-label="Миний профайл руу буцах"
-          className="-ml-[2px] flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full text-[var(--t-accent)] transition-transform active:scale-95"
+          className="-ml-[6px] flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full text-[var(--t-accent)] transition-transform active:scale-95"
           style={{ background: "color-mix(in srgb, var(--t-accent) 12%, transparent)" }}
         >
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -68,24 +67,7 @@ export function LapisStatusBar({
         </Link>
       ) : null}
 
-      <span className="flex items-center">
-        <span className="font-inter text-[16px] font-bold text-[var(--t-accent)]">Pickly</span>
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden
-          className="ml-[1px] h-[10px] w-[10px] -translate-y-[4px]"
-          fill="none"
-          stroke={LOGO_ARROW}
-          strokeWidth={4.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* diagonal shaft */}
-          <path d="M5.5 18.5 L18 6" />
-          {/* corner-bracket head */}
-          <path d="M8.5 6 H18 V15.5" />
-        </svg>
-      </span>
+      <Wordmark height={21} className="shrink-0 text-[var(--t-accent)]" title="LinkSpot" />
 
       {bell ? (
         <Link
@@ -146,23 +128,32 @@ export function LapisHeader({
   const extra = Object.keys(socials).filter((k) => socials[k] && !known.includes(k));
   const socialKeys = [...known, ...extra];
 
+  const tags = (profile.tags ?? []).filter((t) => t.trim());
+  // The dark mock draws bare social glyphs, the light one draws filled discs.
+  // Rather than hardcode that split, ask the palette: a transparent socialBg
+  // IS the "no disc" instruction, so a future theme gets the right treatment
+  // by setting one token.
+  const bareSocials = getTheme(profile.theme).tokens.socialBg === "transparent";
+
   return (
-    <div className="flex flex-col gap-[12px] border-b-[0.5px] border-[var(--t-border)] bg-[var(--t-bg)] px-[16px] py-[10px]">
+    <div className="flex flex-col gap-[12px] bg-[var(--t-bg)] px-[16px] py-[10px]">
       <div className="flex flex-col gap-[8px]">
         <div className="flex items-center gap-[23px]">
           <Avatar name={profile.displayName} url={profile.avatarUrl} />
-          <div className="flex min-w-0 flex-col gap-[6px]">
-            <p className="font-inter text-[19px] font-semibold leading-none tracking-[-0.38px] text-[var(--t-accent)]">
+          {/* The design collapses the old name-over-@handle stack into a single
+              identity line with the tag chips beneath it. The handle is already
+              in the address bar and on every card that links here, so spending
+              a second line on it pushed the chips off the shelf. */}
+          <div className="flex min-w-0 flex-col gap-[12px]">
+            <p className="truncate text-[19px] font-bold leading-[16px] tracking-[-0.38px] text-[var(--t-accent)]">
               {profile.displayName}
             </p>
-            <p className="font-inter text-[14px] leading-none tracking-[-0.28px] text-[var(--t-muted)]">
-              @{profile.handle}
-            </p>
+            <TagChips tags={tags} />
           </div>
         </div>
         {/* Bio: real profile.bio only — no placeholder, renders nothing when empty. */}
         {profile.bio?.trim() ? (
-          <p className="font-inter text-[14px] leading-[18px] tracking-[-0.28px] text-[var(--t-text)]">
+          <p className="text-[14px] leading-[16px] tracking-[-0.28px] text-[var(--t-text)]">
             {profile.bio}
           </p>
         ) : null}
@@ -171,7 +162,7 @@ export function LapisHeader({
         {isOwner ? (
           <Link
             href="/dashboard"
-            className="flex h-[32px] w-[123px] items-center justify-center rounded-[6px] font-inter text-[14px] font-semibold tracking-[-0.28px]"
+            className="flex h-[32px] w-[123px] items-center justify-center rounded-[6px] text-[14px] font-bold tracking-[-0.28px]"
             style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
           >
             Профайл засах
@@ -184,7 +175,7 @@ export function LapisHeader({
           />
         )}
         {socialKeys.length > 0 ? (
-          <div className="flex items-center gap-[13px]">
+          <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-[14px] overflow-x-auto">
             {socialKeys.map((k) => (
               <a
                 key={k}
@@ -192,14 +183,53 @@ export function LapisHeader({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={k}
-                className="flex h-[25px] w-[25px] items-center justify-center rounded-full bg-[var(--t-accent)] text-[var(--t-on-accent)]"
+                className="flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-full"
+                style={{ background: "var(--t-social-bg)", color: "var(--t-on-social)" }}
               >
-                {socialGlyph(k, 13)}
+                {/* Bare glyphs fill the 25px box; a glyph inside a disc has to
+                    sit back from its edge. Both mocks draw a 25px target, so
+                    the target never changes — only what is inside it. */}
+                {socialGlyph(k, bareSocials ? 24 : 14)}
               </a>
             ))}
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The self-descriptor row under the username (Figma 1291:10350). The FIRST
+ * chip is filled with the theme's brand colour and the rest are outlined —
+ * that is the design's way of giving one tag primacy without asking the
+ * creator to choose a "main" one, so it is derived from position, not stored.
+ */
+function TagChips({ tags }: { tags: string[] }) {
+  if (tags.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-[4px]">
+      {tags.map((tag, i) => (
+        <span
+          key={`${tag}-${i}`}
+          className="flex h-[21px] items-center justify-center rounded-[10px] border-[0.5px] px-[13px] text-[12px] leading-[20px]"
+          style={
+            i === 0
+              ? {
+                  background: "var(--t-brand)",
+                  color: "var(--t-on-brand)",
+                  borderColor: "var(--t-brand)",
+                }
+              : {
+                  background: "transparent",
+                  color: "var(--t-accent)",
+                  borderColor: "var(--t-accent)",
+                }
+          }
+        >
+          {tag}
+        </span>
+      ))}
     </div>
   );
 }
@@ -216,19 +246,59 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
     );
   }
   return (
-    <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-[var(--t-avatar-bg)] font-inter text-[30px] font-semibold text-[var(--t-accent)]">
+    <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-[var(--t-avatar-bg)] text-[30px] font-bold text-[var(--t-accent)]">
       {name.trim().charAt(0).toUpperCase() || "?"}
     </div>
   );
 }
 
-// --- Section title (After → Montserrat Alternates 800) ---------------------
+// --- Section chrome --------------------------------------------------------
 
+/**
+ * Every section heading on the page (Figma 1275:8202 and siblings): 20px bold,
+ * sentence case, on the theme's accent.
+ *
+ * Sentence case, not the old uppercase: the MVP design sets these in title
+ * case, and Mongolian Cyrillic loses its ascender shapes when it is uppercased
+ * wholesale, which is what made "УРАМШУУЛЛЫН КОД" read as a block of noise.
+ */
 function SectionTitle({ children }: { children: string }) {
   return (
-    <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-[var(--t-accent)]">
+    <p className="text-[20px] font-bold leading-[16px] tracking-[-0.4px] text-[var(--t-accent)]">
       {children}
     </p>
+  );
+}
+
+/**
+ * The standard section shell: heading indented 12px, content below it, and an
+ * optional hairline rule at the bottom. `bleed` drops the horizontal padding
+ * on the content so a shelf can run to the edge of the frame and hint at what
+ * is off-screen, which is how every horizontally-scrolling section in the
+ * design is drawn.
+ */
+function Section({
+  title,
+  divider = false,
+  bleed = false,
+  children,
+}: {
+  title: string;
+  divider?: boolean;
+  bleed?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className={`flex flex-col gap-[14px] bg-[var(--t-bg)] py-[17px] ${
+        divider ? "border-b-[0.58px] border-[var(--t-border)]" : ""
+      }`}
+    >
+      <div className="px-[12px]">
+        <SectionTitle>{title}</SectionTitle>
+      </div>
+      <div className={bleed ? "" : "px-[11px]"}>{children}</div>
+    </section>
   );
 }
 
@@ -325,7 +395,7 @@ function rotate<T>(arr: T[], n: number): T[] {
 
 function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
   return (
-    <div className="no-scrollbar flex items-stretch gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+    <div className="no-scrollbar flex items-stretch gap-[8px] overflow-x-auto scroll-pl-[10px] px-[10px]">
       {picks.map((p) => (
         <PickCard key={p.id} pick={p} muted={muted} />
       ))}
@@ -353,22 +423,38 @@ export function LapisTopPicks({
   handle: string;
 }) {
   if (campaigns.length === 0) return null;
+  // "Bilguundalai's Picks" in the mock — the possessive leads with a capital
+  // even though a handle is stored lowercase.
+  const owner = handle.charAt(0).toLocaleUpperCase() + handle.slice(1);
   return (
-    <div className="flex flex-col gap-[18px] border-b-[0.5px] border-[var(--t-border)] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
-      <SectionTitle>{`${handle}'s picks`}</SectionTitle>
-      <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+    <Section title={`${owner}'s Picks`} divider bleed>
+      <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[8px] overflow-x-auto scroll-pl-[10px] px-[10px]">
         {campaigns.map((c) => (
           <CampaignCard key={c.id} campaign={c} />
         ))}
       </div>
-    </div>
+    </Section>
   );
 }
+
+/**
+ * Banner aspect ratio.
+ *
+ * The MVP design draws these as short 382×102 strips, but every banner in the
+ * library is authored at 382×305 (public/campaigns/* are all 1528×1220). Cropping
+ * live artwork to a third of its height would cut the headline off every one of
+ * them, so the shelf keeps the ratio the assets are drawn at. Change this one
+ * constant to "382/102" once the short banners exist — nothing else needs to move.
+ */
+const CAMPAIGN_ASPECT = "382/305";
 
 function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
   const inner = (
     <>
-      <div className="relative aspect-[382/305] w-full overflow-hidden rounded-[20px] bg-black/10">
+      <div
+        className="relative w-full overflow-hidden rounded-[20px] bg-black/10"
+        style={{ aspectRatio: CAMPAIGN_ASPECT }}
+      >
         {campaign.bannerImageUrl ? (
           <ProductImage
             src={campaign.bannerImageUrl}
@@ -493,10 +579,7 @@ export function LapisMyPicks({
         : "grid-cols-2 grid-rows-2";
 
   return (
-    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] px-[10px] py-[20px] font-malt">
-      <p className="font-malt text-[20px] font-extrabold uppercase leading-[16px] tracking-[-0.4px] text-[var(--t-accent)]">
-        MY PICKS
-      </p>
+    <Section title="My Picks">
       <div className={`grid gap-x-[6px] gap-y-[12px] ${gridCls}`} style={{ height: 254 }}>
         {groups.map((c, i) => {
           const picks = picksByCollection[c.id]!;
@@ -516,7 +599,7 @@ export function LapisMyPicks({
           );
         })}
       </div>
-    </div>
+    </Section>
   );
 }
 
@@ -525,10 +608,9 @@ export function LapisMyPicks({
 export function LapisNotForMe({ picks }: { picks: Pick[] }) {
   if (picks.length === 0) return null;
   return (
-    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
-      <SectionTitle>NOT FOR ME</SectionTitle>
+    <Section title="Not For Me" bleed>
       <PickRow picks={picks} muted />
-    </div>
+    </Section>
   );
 }
 
@@ -539,14 +621,13 @@ export function LapisNotForMe({ picks }: { picks: Pick[] }) {
 export function LapisPromos({ promos }: { promos: PublicPromo[] }) {
   if (promos.length === 0) return null;
   return (
-    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
-      <SectionTitle>PROMO CODES</SectionTitle>
-      <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+    <Section title="Promo Code" bleed>
+      <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[14px] overflow-x-auto scroll-pl-[12px] px-[12px]">
         {promos.map((p) => (
           <PromoCard key={p.id} promo={p} />
         ))}
       </div>
-    </div>
+    </Section>
   );
 }
 
@@ -562,9 +643,8 @@ export function LapisWishlist({
   if (items.length === 0) return null;
   const pool = recommenders ?? [];
   return (
-    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[10px] font-malt">
-      <SectionTitle>WISHLIST</SectionTitle>
-      <div className="no-scrollbar flex gap-[8px] overflow-x-auto scroll-pl-[10px] pr-[10px]">
+    <Section title="Wishlist" bleed>
+      <div className="no-scrollbar flex gap-[8px] overflow-x-auto scroll-pl-[10px] px-[10px]">
         {items.map((w, i) => {
           const source = hostOf(w.url);
           const recs = pool.length ? rotate(pool, i).slice(0, 3) : [];
@@ -601,7 +681,7 @@ export function LapisWishlist({
           );
         })}
       </div>
-    </div>
+    </Section>
   );
 }
 
@@ -621,8 +701,7 @@ export function LapisWishlist({
 export function LapisQuickLinks({ links }: { links: LinkRow[] }) {
   if (links.length === 0) return null;
   return (
-    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] px-[10px] py-[20px] font-malt">
-      <SectionTitle>QUICK LINKS</SectionTitle>
+    <Section title="Quick Links">
       <div className="flex flex-col gap-[8px]">
         {links.map((l) => {
           const host = socialHostOf(l.url);
@@ -632,33 +711,41 @@ export function LapisQuickLinks({ links }: { links: LinkRow[] }) {
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-[58px] items-center gap-[12px] rounded-[14px] px-[12px] py-[10px] transition-transform active:scale-[0.99]"
-              style={{ background: "var(--t-card)", color: "var(--t-on-card)" }}
+              className="flex min-h-[50px] items-center gap-[13px] rounded-[10px] px-[10px] py-[5px] transition-transform active:scale-[0.99]"
+              // Quick Links ride the bright `media` surface, not `card`: the
+              // design mounts them on the same white plate as the album art,
+              // which is what keeps the row legible in all four palettes even
+              // when `card` is a gradient.
+              style={{ background: "var(--t-media)", color: "var(--t-on-media)" }}
             >
+              {/* Filled square, not a circle — the design's 40px tile. Colours
+                  are the inverse of the row so the tile reads as a stamp on it
+                  regardless of which theme painted the row. */}
               <span
-                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full"
-                style={{ background: "var(--t-card-btn)", color: "var(--t-on-card-btn)" }}
+                className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[8px]"
+                style={{ background: "var(--t-on-media)", color: "var(--t-media)" }}
               >
-                {socialGlyph(l.icon ?? detectLinkIcon(l.url), 17)}
+                {socialGlyph(l.icon ?? detectLinkIcon(l.url), 20)}
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[14px] font-bold leading-[17px] tracking-[-0.28px]">
+                <span className="truncate text-[14px] font-semibold leading-[17px] tracking-[-0.28px]">
                   {l.label}
                 </span>
                 {host ? (
-                  <span className="truncate text-[11px] font-light leading-[14px] opacity-70">
+                  <span
+                    className="truncate text-[11px] leading-[13px]"
+                    style={{ color: "var(--t-on-media-muted)" }}
+                  >
                     {host}
                   </span>
                 ) : null}
               </span>
-              <span className="shrink-0 pr-[4px] text-[13px] leading-none opacity-80" aria-hidden>
-                ↗
-              </span>
+              <ArrowOut className="mr-[8px] shrink-0" />
             </a>
           );
         })}
       </div>
-    </div>
+    </Section>
   );
 }
 
@@ -666,49 +753,103 @@ export function LapisQuickLinks({ links }: { links: LinkRow[] }) {
 
 export function LapisAsk({
   handle,
+  avatarUrl,
+  displayName,
   askEnabled,
   questions,
 }: {
   handle: string;
+  /** The creator's picture, shown beside the Q&A label on the composer. */
+  avatarUrl?: string | null;
+  displayName?: string;
   askEnabled: boolean;
   questions: Ask[];
 }) {
   if (!askEnabled) return null;
   const published = questions.filter((q) => q.isPublic && q.status === "answered");
   return (
-    <div className="flex flex-col gap-[18px] bg-[var(--t-bg)] py-[20px] pl-[12px] font-malt">
-      <SectionTitle>Ask Me Anything!</SectionTitle>
-      <div className="no-scrollbar flex gap-[16px] overflow-x-auto pr-[12px]">
-        <Link
-          href={`/${handle}/ask`}
-          className="flex h-[222px] w-[171px] shrink-0 flex-col rounded-[16px] p-[12px]"
-          style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
-        >
-          <span className="w-fit rounded-full bg-[var(--t-accent)] px-[10px] py-[3px] text-[12px] font-bold text-[var(--t-on-accent)]">
-            Q&amp;A
-          </span>
-          <span className="mt-3 text-[13px] text-black/35">Асуулт үлдээх</span>
-        </Link>
-        {published.map((q) => (
-          <div
-            key={q.id}
-            className="relative flex h-[222px] w-[166px] shrink-0 flex-col overflow-hidden rounded-[16px] p-[14px]"
+    <Section title="Ask Me Anything!" divider bleed>
+      <div className="flex flex-col gap-[10px]">
+        {/* Composer. A full-width card in the design rather than the first tile
+            of the shelf — asking is the point of the section, so it does not
+            compete for space with the answers and does not scroll away. */}
+        <div className="px-[11px]">
+          <Link
+            href={`/${handle}/ask`}
+            className="flex flex-col rounded-[13px] px-[12px] pb-[17px] pt-[16px] transition-transform active:scale-[0.995]"
             style={{ background: "var(--t-ask)", color: "var(--t-on-ask)" }}
           >
-            <Sparkle />
-            <p className="mt-[8px] text-[14px] font-semibold text-[var(--t-on-ask)]">Асуулт</p>
-            <p className="mt-[6px] line-clamp-4 text-[15px] font-light italic leading-[1.05] text-[var(--t-on-ask)]">
-              “{q.body}”
-            </p>
-            {q.answerBody ? (
-              <p className="mt-1 line-clamp-3 text-[12px] font-light text-[var(--t-text)]">
-                {q.answerBody}
-              </p>
-            ) : null}
+            <span className="flex items-center gap-[10px]">
+              <span
+                className="flex h-[40px] w-[40px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[16px] font-bold"
+                style={{ background: "var(--t-avatar-bg)", color: "var(--t-accent)" }}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (displayName ?? handle).trim().charAt(0).toUpperCase()
+                )}
+              </span>
+              <span className="text-[18px] font-bold leading-[14px]">Q&amp;A</span>
+            </span>
+            {/* Looks like the input it leads to, but is not one: the real
+                composer lives on /[handle]/ask behind the rate limiter and the
+                wordlist filter, so this stays a link and the page keeps
+                rendering on the server. */}
+            <span
+              className="mt-[16px] flex h-[45px] items-center rounded-[13px] px-[14px] text-[18px] leading-[14px]"
+              style={{ background: "var(--t-ask-field)", color: "var(--t-on-ask-field)" }}
+            >
+              Асуулт үлдээх
+            </span>
+          </Link>
+        </div>
+
+        {published.length > 0 ? (
+          <div className="no-scrollbar flex gap-[5px] overflow-x-auto scroll-pl-[11px] px-[11px]">
+            {published.map((q) => (
+              <AskCard key={q.id} question={q} />
+            ))}
           </div>
-        ))}
+        ) : null}
       </div>
-    </div>
+    </Section>
+  );
+}
+
+/**
+ * One published question (Figma 1208:14888). The mock draws it as a two-sided
+ * card — question on the front, answer on the back — so the answer is rendered
+ * here as a labelled block beneath the quote rather than as a separate tile,
+ * which keeps both halves reachable without a flip interaction the section has
+ * no room to teach.
+ */
+function AskCard({ question }: { question: Ask }) {
+  return (
+    <article
+      className="flex h-[222px] w-[166px] shrink-0 flex-col overflow-hidden rounded-[13px] px-[15px] pb-[7px] pt-[16px]"
+      style={{ background: "var(--t-ask)", color: "var(--t-on-ask)" }}
+    >
+      <Sparkle />
+      <p className="mt-[6px] text-[14px] font-bold leading-[1.2] tracking-[-0.28px]">
+        Асуулт
+      </p>
+      <p className="mt-[6px] line-clamp-4 text-[14px] italic leading-[1.15] tracking-[-0.28px]">
+        “{question.body}”
+      </p>
+      {question.answerBody ? (
+        <p className="mt-[6px] line-clamp-3 text-[12px] leading-[1.15] opacity-75">
+          {question.answerBody}
+        </p>
+      ) : null}
+      {/* The mock puts a "Pinned" chip opposite the timestamp. There is no
+          pinning in the data model and this change is a restyle, not a feature
+          — so the row carries the age alone rather than a chip that would be
+          decorative on every card. */}
+      <p className="mt-auto text-[8.74px] leading-[1.2] tracking-[-0.17px] opacity-70">
+        {relativeDays(question.createdAt)}
+      </p>
+    </article>
   );
 }
 
@@ -752,17 +893,35 @@ export function LapisSimilar({ creators }: { creators: Creator[] }) {
               <p className="mt-[11px] text-[14px] font-semibold text-[var(--t-on-others)]">
                 {c.handle}
               </p>
-              <p className="mt-[5px] line-clamp-2 w-[132px] px-1 text-center text-[10px] font-light uppercase leading-[16px] text-[var(--t-on-others)]/85">
-                {c.bio ?? `${c.displayName} in da Pickly`}
+              <p className="mt-[5px] line-clamp-2 w-[132px] px-1 text-center text-[10px] font-light leading-[16px] text-[var(--t-on-others)]/85">
+                {c.bio ?? `${c.displayName} on LinkSpot`}
               </p>
-              <span className="mb-[12px] mt-auto rounded-[8px] bg-black/25 px-[14px] py-[4px] text-[13px] font-semibold uppercase text-[var(--t-on-others)]">
-                pICKLY ҮЗЭХ
+              <span className="mb-[12px] mt-auto rounded-[8px] bg-black/25 px-[14px] py-[4px] text-[13px] font-semibold text-[var(--t-on-others)]">
+                LinkSpot үзэх
               </span>
             </Link>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+// --- Footer ----------------------------------------------------------------
+
+/**
+ * Closes the page with the mark and the year the product started (Figma
+ * 1208:14891). Deliberately the only place on a creator's profile that names
+ * the platform in body copy — everything above it belongs to the creator.
+ */
+export function LapisFooter() {
+  return (
+    <footer className="flex h-[75px] flex-col items-center justify-center gap-[6px] bg-[var(--t-bg)]">
+      <Wordmark height={19} className="text-[var(--t-accent)]" title="LinkSpot" />
+      <p className="text-[10px] uppercase leading-none text-[var(--t-accent)]">
+        since 2026
+      </p>
+    </footer>
   );
 }
 
@@ -777,10 +936,50 @@ function hostOf(url: string | null | undefined): string | null {
   }
 }
 
+/**
+ * "N өдрийн өмнө" — the age of a question, in the mock's own wording. Days
+ * only: the shelf shows answered questions, which are rarely minutes old, and
+ * a finer unit would just be noise at 8.74px.
+ */
+function relativeDays(at: Date | string): string {
+  const then = typeof at === "string" ? new Date(at) : at;
+  if (Number.isNaN(then.getTime())) return "";
+  const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
+  if (days <= 0) return "өнөөдөр";
+  if (days === 1) return "өчигдөр";
+  return `${days} өдрийн өмнө`;
+}
+
+/** The design's outbound corner-arrow, drawn as three bars rather than a glyph
+ *  so it keeps its exact weight at 6px where a text "↗" turns to mush. */
+function ArrowOut({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 8 8"
+      width="8"
+      height="8"
+      className={className}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M0.9 0h6.2v1.8H0.9z" />
+      <path d="M5.3 0h1.8v6.2H5.3z" />
+      <path d="M0 5.9 5.9 0l1.3 1.3L1.3 7.2z" />
+    </svg>
+  );
+}
+
 const iconStyle: CSSProperties = { width: 21, height: 21 };
 function Sparkle() {
   return (
-    <svg width="46" height="46" viewBox="0 0 46 46" className="mx-auto" fill="white" aria-hidden>
+    <svg
+      width="46"
+      height="46"
+      viewBox="0 0 46 46"
+      className="-ml-[4px]"
+      fill="currentColor"
+      aria-hidden
+    >
       <path d="M23 0c.8 14 1.5 16 23 23-21.5 7-22.2 9-23 23-.8-14-1.5-16-23-23 21.5-7 22.2-9 23-23Z" />
     </svg>
   );

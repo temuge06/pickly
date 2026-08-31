@@ -138,6 +138,7 @@ async function main() {
         instagram: "https://instagram.com/tuguldur",
         youtube: "https://youtube.com/@tuguldur",
       },
+      tags: ["INTP", "Кино", "Vinyl"],
       askEnabled: true,
       askPrompt: "Кино, ном асуувал зохино 🎬",
       isMinor: false,

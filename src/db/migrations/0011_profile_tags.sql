@@ -1,0 +1,11 @@
+-- Bio-shelf tag chips (MVP design, Figma JLqMihd0UwHkxgu9f1TbNX node 1291:10350).
+--
+-- Up to three short self-descriptors under the username — "ENTJ", "Marketing",
+-- "Boxing" in the mock. text[] rather than a child table: free text with no
+-- identity of its own, never queried across profiles, hard-capped at three by
+-- the write path, and needed on every profile render — a join table would add
+-- a query per page view and buy nothing.
+--
+-- NOT NULL DEFAULT '{}' so reads never have to distinguish "no tags" from
+-- NULL, and so the column is a no-op for every existing profile.
+ALTER TABLE "profile" ADD COLUMN IF NOT EXISTS "tags" text[] NOT NULL DEFAULT '{}'::text[];

@@ -2,7 +2,7 @@
  * Staff-area primitives. Deliberately a cooler, flatter surface (#0f1115 /
  * slate) than the creator dashboard's warm #2a1617 — an admin is often looking
  * at someone else's data, and the chrome should never be mistakable for their
- * own profile. Accent stays Pickly orange.
+ * own profile. Accent stays the staff orange.
  */
 
 export function Panel({

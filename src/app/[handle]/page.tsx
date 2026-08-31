@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { LapisMusic } from "@/components/lapis/LapisMusic";
 import {
   LapisAsk,
+  LapisFooter,
   LapisHeader,
   LapisMyPicks,
   LapisNotForMe,
@@ -89,7 +90,7 @@ export default async function ProfilePage({
       {/* Full-bleed on a phone; the 402px "device frame" is a desktop-only
           treatment. Capping the width on mobile left the neutral backdrop
           showing as grey margins down both edges. */}
-      <div className="relative mx-auto flex min-h-dvh w-full flex-col overflow-x-clip bg-[var(--t-bg)] font-malt sm:min-h-0 sm:max-w-[402px] sm:shadow-[0_0_80px_rgba(0,0,0,0.4)]">
+      <div className="relative mx-auto flex min-h-dvh w-full flex-col overflow-x-clip bg-[var(--t-bg)] font-gip sm:min-h-0 sm:max-w-[402px] sm:shadow-[0_0_80px_rgba(0,0,0,0.4)]">
         <div className="flex-1">
           <LapisStatusBar
             bell={isOwner ? { unread } : null}
@@ -101,19 +102,29 @@ export default async function ProfilePage({
             isFollowing={following}
             isAuthed={viewer !== null}
           />
-          {/* Flags are resolved server-side: a disabled section is not rendered
-              at all, and getPublicProfile already skipped its query, so the
-              viewer receives no trace of it. */}
+          {/* Section order follows the MVP design (Figma MVP1, 1208:9944):
+              Quick Links sit directly under the bio shelf, because they are
+              the creator's own destinations and the design treats them as part
+              of the identity block rather than as an exit at the bottom of the
+              page. The three product shelves and Similar are not drawn in the
+              MVP frames; they keep their existing relative order and slot in
+              after the promo tickets, so nothing that used to be on the page
+              has moved past a section it used to precede.
+
+              Flags are resolved server-side: a disabled section is not
+              rendered at all, and getPublicProfile already skipped its query,
+              so the viewer receives no trace of it. */}
+          <LapisQuickLinks links={links} />
           {flags.entertainment ? (
             <LapisMusic tracks={tracks} films={films} books={books} />
           ) : null}
           {flags.top_picks ? (
             <LapisTopPicks campaigns={campaigns} handle={profile.handle} />
           ) : null}
+          <LapisPromos promos={promos} />
           {flags.my_picks ? (
             <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
           ) : null}
-          <LapisPromos promos={promos} />
           {flags.wishlist ? (
             <LapisWishlist items={wishlist} recommenders={recommenderAvatars} />
           ) : null}
@@ -123,16 +134,15 @@ export default async function ProfilePage({
           {flags.ask ? (
             <LapisAsk
               handle={profile.handle}
+              avatarUrl={profile.avatarUrl}
+              displayName={profile.displayName}
               askEnabled={profile.askEnabled}
               questions={askMessages}
             />
           ) : null}
-          {/* Under Ask, above Similar: the creator's own links are the last
-              thing they want a visitor to leave through, and the section is
-              absent (not empty) when they have added none. */}
-          <LapisQuickLinks links={links} />
           <LapisSimilar creators={creators} />
         </div>
+        <LapisFooter />
       </div>
     </div>
   );

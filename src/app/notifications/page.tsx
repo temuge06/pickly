@@ -5,7 +5,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { getNotifications, markNotificationsSeen } from "@/lib/data/notifications";
 import { getTheme, themeStyle } from "@/lib/themes";
 
-export const metadata = { title: "Мэдэгдэл — Pickly" };
+export const metadata = { title: "Мэдэгдэл — LinkSpot" };
 export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {

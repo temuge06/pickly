@@ -243,7 +243,7 @@ function NewMessage({ message }: { message: Message }) {
         Профайл дээр нийтлэх
       </Check>
       <Check checked={flagForPick} onChange={setFlagForPick} disabled={pending}>
-        Барааны асуулт — Pickly-ийн багт илгээх
+        Барааны асуулт — LinkSpot-ийн багт илгээх
       </Check>
 
       <div className="flex flex-wrap items-center gap-2">

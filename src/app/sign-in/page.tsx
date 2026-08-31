@@ -5,7 +5,7 @@ import { dashboardEnabled } from "@/lib/env";
 import { getSessionUser } from "@/lib/auth/session";
 import { SignInForm } from "./SignInForm";
 
-export const metadata = { title: "Sign in — Pickly" };
+export const metadata = { title: "Sign in — LinkSpot" };
 
 export default async function SignInPage({
   searchParams,

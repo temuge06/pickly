@@ -7,7 +7,12 @@ import { profile } from "@/db/schema";
 import { requireCurrentProfile } from "@/lib/auth/session";
 import { SOCIAL_KEYS, isSocialKey, normalizeSocial } from "@/lib/socials";
 import { THEMES, type ThemeKey } from "@/lib/themes";
-import { bioSchema, displayNameSchema } from "@/lib/validation";
+import {
+  MAX_PROFILE_TAGS,
+  bioSchema,
+  displayNameSchema,
+  profileTagsSchema,
+} from "@/lib/validation";
 
 export type ProfileUpdateResult = { error?: string; ok?: boolean };
 
@@ -45,6 +50,21 @@ export async function updateProfile(
     if (url) socials[key] = url;
   }
 
+  // Tag chips. The editor submits one `tag` entry per row it is showing —
+  // including empty ones, so clearing a chip and saving actually removes it.
+  // The schema does the normalising (blank/duplicate/overflow), which means an
+  // empty row set legitimately saves an empty array.
+  const tags = profileTagsSchema.safeParse(
+    formData.getAll("tag").filter((v): v is string => typeof v === "string"),
+  );
+  if (!tags.success) {
+    return {
+      error:
+        tags.error.issues[0]?.message ??
+        `Таг хамгийн ихдээ ${MAX_PROFILE_TAGS} байна.`,
+    };
+  }
+
   const db = getDb();
   // NOTE: avatar_url is intentionally NOT set here. The avatar is managed by
   // its own flow (uploadAvatar / removeAvatar); including it in this update
@@ -58,6 +78,7 @@ export async function updateProfile(
       accentColor:
         (formData.get("accentColor") as string | null)?.trim() || null,
       socials,
+      tags: tags.data,
     })
     .where(eq(profile.id, me.id));
 

@@ -13,6 +13,7 @@ import {
   type SocialKey,
 } from "@/lib/socials";
 import { THEMES, type ThemeKey } from "@/lib/themes";
+import { MAX_PROFILE_TAGS } from "@/lib/validation";
 import { useDashboardTheme } from "./ThemeShell";
 import { LButton, LInput, LLabel, LTextArea, LSection, Spinner, Well } from "./ui";
 
@@ -24,6 +25,7 @@ type Profile = {
   accentColor: string | null;
   theme: ThemeKey;
   socials: Record<string, string> | null;
+  tags: string[] | null;
 };
 
 export function LapisProfile({ profile }: { profile: Profile }) {
@@ -132,6 +134,8 @@ export function LapisProfile({ profile }: { profile: Profile }) {
             />
           </div>
 
+          <TagsEditor tags={profile.tags ?? []} />
+
           <SocialsEditor socials={profile.socials ?? {}} />
 
           <input type="hidden" name="accentColor" value={profile.accentColor ?? ""} />
@@ -154,6 +158,58 @@ export function LapisProfile({ profile }: { profile: Profile }) {
         </form>
       </Well>
     </LSection>
+  );
+}
+
+/**
+ * The three tag chips shown under the username on the public profile.
+ *
+ * Rendered as a fixed row of MAX_PROFILE_TAGS inputs rather than an
+ * add/remove list: the cap is small and the row is always the same shape, so
+ * an "add a tag" affordance would be three taps of ceremony for a field that
+ * is already visible. Every slot submits `tag`, including the empty ones, so
+ * clearing a chip and saving actually removes it — the action's schema drops
+ * blanks and duplicates.
+ *
+ * The first slot is labelled as the highlighted one because that is what the
+ * public page does with position, and a creator typing into an unlabelled row
+ * has no way to know one of the three will come out filled.
+ */
+function TagsEditor({ tags }: { tags: string[] }) {
+  const slots = Array.from(
+    { length: MAX_PROFILE_TAGS },
+    (_, i) => tags[i] ?? "",
+  );
+  const [values, setValues] = useState(slots);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <LLabel>Таг (нэмэх сонголт)</LLabel>
+      <div className="flex gap-2">
+        {values.map((value, i) => (
+          <input
+            key={i}
+            name="tag"
+            value={value}
+            onChange={(e) =>
+              setValues((v) => v.map((x, j) => (j === i ? e.target.value : x)))
+            }
+            maxLength={16}
+            placeholder={i === 0 ? "ENTJ" : i === 1 ? "Marketing" : "Boxing"}
+            aria-label={i === 0 ? "Таг 1 (өнгөтэй)" : `Таг ${i + 1}`}
+            className="min-w-0 flex-1 rounded-[12px] bg-[var(--t-field)] px-3 py-2 text-center text-[14px] text-[var(--t-text)] outline-none ring-1 ring-inset ring-[var(--t-ring)] placeholder:text-[var(--t-muted)] placeholder:opacity-55"
+            style={
+              i === 0
+                ? { boxShadow: "inset 0 0 0 1.5px var(--t-brand)" }
+                : undefined
+            }
+          />
+        ))}
+      </div>
+      <p className="text-[11.5px] text-[var(--t-muted)]">
+        Профайл дээр нэрийн доор харагдана. Эхний таг өнгөтэй.
+      </p>
+    </div>
   );
 }
 

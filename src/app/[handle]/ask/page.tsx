@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
-  return { title: `Ask @${handle} — Pickly` };
+  return { title: `Ask @${handle} — LinkSpot` };
 }
 
 export default async function AskPage({

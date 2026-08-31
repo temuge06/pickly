@@ -1,5 +1,71 @@
 @import "tailwindcss";
 
+/* --- GIP: the MVP design's typeface (Figma JLqMihd0UwHkxgu9f1TbNX, MVP1) ----
+   A licensed Mongolian foundry face, so it is self-hosted rather than pulled
+   from Google Fonts. See public/fonts/gip/README.md for the expected files.
+
+   Declared with plain @font-face rather than next/font/local on purpose: a
+   next/font/local source that is not on disk is a BUILD failure, whereas a
+   missing @font-face src is a silent 404 the browser recovers from by moving
+   down the stack. That keeps the repo buildable before the licensed files are
+   dropped in, and makes adding them a pure asset commit with no code change. */
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-ultralight.woff2") format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GIP";
+  src: url("/fonts/gip/gip-black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Tokens from DESIGN.md. Every color/font utility used in components should
    trace back to one of these — no ad hoc hex or font-family in component
    code. */
@@ -31,6 +97,18 @@
   --font-inter: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-malt: var(--font-mont-alt), ui-sans-serif, system-ui, sans-serif;
   --font-mont: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+
+  /* --- LinkSpot MVP design language (Figma section MVP1, 1208-9475) ---
+     One family for the whole product. Montserrat Alternates is the stand-in
+     until the licensed GIP files land in public/fonts/gip — it is the closest
+     Cyrillic-capable match (single-storey `a` and `g`), so a missing GIP only
+     changes the letterforms, never the metrics-driven layout. */
+  --font-gip: "GIP", var(--font-mont-alt), ui-sans-serif, system-ui, sans-serif;
+
+  /* The brand green. A literal here, not a theme token: this is the fallback
+     for surfaces rendered OUTSIDE a themed profile root (auth, admin, the
+     staff console), where --t-brand is not defined. */
+  --color-brand: #0ad85b;
 }
 
 @layer base {
@@ -45,7 +123,11 @@
   body {
     background-color: var(--color-wall);
     color: var(--color-paper);
-    font-family: var(--font-body);
+    /* GIP is the product typeface now, so it is the default rather than
+       something each component opts into. Screens still on an older design
+       language (the spotly dashboard, the staff console) keep their explicit
+       font-* utility and are unaffected. */
+    font-family: var(--font-gip);
   }
 
   :focus-visible {
