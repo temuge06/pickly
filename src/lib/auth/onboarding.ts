@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { getDb } from "@/db";
 import { profile } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth/session";
-import { displayNameSchema, handleSchema } from "@/lib/validation";
+import {
+  displayNameSchema,
+  handleSchema,
+  interestsSchema,
+  mbtiSchema,
+} from "@/lib/validation";
 
 export type OnboardingResult = { error: string } | never;
 
@@ -38,6 +43,15 @@ export async function completeOnboarding(
   const avatarUrl =
     (formData.get("avatarUrl") as string | null)?.trim() || null;
 
+  // Both pickers are optional, so a parse failure here means a tampered
+  // payload rather than a mistake a real form could produce — fall back to
+  // empty instead of blocking a signup over a field the creator could have
+  // skipped entirely.
+  const mbti = mbtiSchema.safeParse(formData.get("mbti") ?? "");
+  const interests = interestsSchema.safeParse(
+    formData.getAll("interest").filter((v): v is string => typeof v === "string"),
+  );
+
   const db = getDb();
 
   // One profile per user — if they somehow already have one, go home.
@@ -64,6 +78,8 @@ export async function completeOnboarding(
       handle,
       displayName,
       avatarUrl,
+      mbti: mbti.success ? mbti.data : null,
+      interests: interests.success ? interests.data : [],
     });
   } catch {
     // Unique index caught a race — surface as a friendly retry.

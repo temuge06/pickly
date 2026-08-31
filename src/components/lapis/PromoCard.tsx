@@ -35,7 +35,18 @@ function formatExpiry(value: Date | string): string {
  * what popup blockers stop. Letting the browser follow a real link keeps the
  * navigation native and unblockable, and the copy runs alongside it.
  */
-export function PromoCard({ promo }: { promo: PublicPromo }) {
+export function PromoCard({
+  promo,
+  copyLabel = "Copy",
+  copiedLabel = "Copied",
+  codeLabel = "promo code",
+}: {
+  promo: PublicPromo;
+  /** Localised on the server and passed down — see FollowButton. */
+  copyLabel?: string;
+  copiedLabel?: string;
+  codeLabel?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -62,7 +73,7 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
           <path d="M15.5 5.5H6A2.5 2.5 0 0 0 3.5 8v9.5" strokeLinecap="round" />
         </svg>
       )}
-      {copied ? "Copied" : "Copy"}
+      {copied ? copiedLabel : copyLabel}
     </>
   );
 
@@ -117,7 +128,7 @@ export function PromoCard({ promo }: { promo: PublicPromo }) {
           className="mt-auto text-[12px] font-bold uppercase leading-[19px]"
           style={{ color: "var(--t-promo-text)" }}
         >
-          promo code
+          {codeLabel}
         </p>
         <div
           className="mt-[2px] flex h-[24px] items-center gap-[6px] rounded-[5px] pl-[8px] pr-[3px]"

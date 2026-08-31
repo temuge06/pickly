@@ -8,10 +8,10 @@ import { requireCurrentProfile } from "@/lib/auth/session";
 import { SOCIAL_KEYS, isSocialKey, normalizeSocial } from "@/lib/socials";
 import { THEMES, type ThemeKey } from "@/lib/themes";
 import {
-  MAX_PROFILE_TAGS,
   bioSchema,
   displayNameSchema,
-  profileTagsSchema,
+  interestsSchema,
+  mbtiSchema,
 } from "@/lib/validation";
 
 export type ProfileUpdateResult = { error?: string; ok?: boolean };
@@ -50,20 +50,17 @@ export async function updateProfile(
     if (url) socials[key] = url;
   }
 
-  // Tag chips. The editor submits one `tag` entry per row it is showing —
-  // including empty ones, so clearing a chip and saving actually removes it.
-  // The schema does the normalising (blank/duplicate/overflow), which means an
-  // empty row set legitimately saves an empty array.
-  const tags = profileTagsSchema.safeParse(
-    formData.getAll("tag").filter((v): v is string => typeof v === "string"),
-  );
-  if (!tags.success) {
-    return {
-      error:
-        tags.error.issues[0]?.message ??
-        `Таг хамгийн ихдээ ${MAX_PROFILE_TAGS} байна.`,
-    };
+  // Chip fields. The editor always submits both — an unset MBTI arrives as ""
+  // and no `interest` entries arrive as an empty list — so clearing either one
+  // and saving actually clears it, rather than the absent key silently keeping
+  // the old value.
+  const mbti = mbtiSchema.safeParse(formData.get("mbti") ?? "");
+  if (!mbti.success) {
+    return { error: mbti.error.issues[0]?.message ?? "MBTI төрөл буруу." };
   }
+  const interests = interestsSchema.safeParse(
+    formData.getAll("interest").filter((v): v is string => typeof v === "string"),
+  );
 
   const db = getDb();
   // NOTE: avatar_url is intentionally NOT set here. The avatar is managed by
@@ -78,7 +75,8 @@ export async function updateProfile(
       accentColor:
         (formData.get("accentColor") as string | null)?.trim() || null,
       socials,
-      tags: tags.data,
+      mbti: mbti.data,
+      interests: interests.success ? interests.data : [],
     })
     .where(eq(profile.id, me.id));
 

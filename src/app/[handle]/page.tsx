@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { LapisMusic } from "@/components/lapis/LapisMusic";
 import {
@@ -18,6 +19,7 @@ import { isFollowing } from "@/lib/data/follow";
 import { getOtherCreators, getPublicProfile } from "@/lib/data/public-profile";
 import { getUnreadNotificationCount } from "@/lib/data/notifications";
 import { getTheme, themeStyle } from "@/lib/themes";
+import { LOCALE_COOKIE, parseLocale, translator } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,11 @@ export default async function ProfilePage({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
+  // Locale is a cookie read during the render, not client state: the page is a
+  // server component, so this is what puts the right language in the first byte
+  // of HTML instead of flashing Mongolian and then swapping.
+  const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
+  const t = translator(locale);
   const data = await getPublicProfile(handle);
   if (!data) notFound();
 
@@ -95,12 +102,14 @@ export default async function ProfilePage({
           <LapisStatusBar
             bell={isOwner ? { unread } : null}
             backTo={backTo}
+            locale={locale}
           />
           <LapisHeader
             profile={profile}
             isOwner={isOwner}
             isFollowing={following}
             isAuthed={viewer !== null}
+            locale={locale}
           />
           {/* Section order follows the MVP design (Figma MVP1, 1208:9944):
               Quick Links sit directly under the bio shelf, because they are
@@ -114,22 +123,33 @@ export default async function ProfilePage({
               Flags are resolved server-side: a disabled section is not
               rendered at all, and getPublicProfile already skipped its query,
               so the viewer receives no trace of it. */}
-          <LapisQuickLinks links={links} />
+          <LapisQuickLinks links={links} locale={locale} />
           {flags.entertainment ? (
-            <LapisMusic tracks={tracks} films={films} books={books} />
+            <LapisMusic
+              tracks={tracks}
+              films={films}
+              books={books}
+              labels={{
+                music: t("tabMusic"),
+                films: t("tabFilms"),
+                books: t("tabBooks"),
+                listen: t("listen"),
+                stop: t("stop"),
+              }}
+            />
           ) : null}
           {flags.top_picks ? (
-            <LapisTopPicks campaigns={campaigns} handle={profile.handle} />
+            <LapisTopPicks campaigns={campaigns} handle={profile.handle} locale={locale} />
           ) : null}
-          <LapisPromos promos={promos} />
+          <LapisPromos promos={promos} locale={locale} />
           {flags.my_picks ? (
-            <LapisMyPicks collections={collections} picksByCollection={picksByCollection} />
+            <LapisMyPicks collections={collections} picksByCollection={picksByCollection} locale={locale} />
           ) : null}
           {flags.wishlist ? (
-            <LapisWishlist items={wishlist} recommenders={recommenderAvatars} />
+            <LapisWishlist items={wishlist} recommenders={recommenderAvatars} locale={locale} />
           ) : null}
           {flags.not_for_me ? (
-            <LapisNotForMe picks={notForMe} />
+            <LapisNotForMe picks={notForMe} locale={locale} />
           ) : null}
           {flags.ask ? (
             <LapisAsk
@@ -138,11 +158,12 @@ export default async function ProfilePage({
               displayName={profile.displayName}
               askEnabled={profile.askEnabled}
               questions={askMessages}
+              locale={locale}
             />
           ) : null}
-          <LapisSimilar creators={creators} />
+          <LapisSimilar creators={creators} locale={locale} />
         </div>
-        <LapisFooter />
+        <LapisFooter locale={locale} />
       </div>
     </div>
   );

@@ -19,10 +19,16 @@ export function FollowButton({
   handle,
   initialFollowing,
   isAuthed,
+  followLabel = "Дагах",
+  followingLabel = "Дагаж байна",
 }: {
   handle: string;
   initialFollowing: boolean;
   isAuthed: boolean;
+  /** Passed in rather than looked up here: this is a client component, and
+   *  importing the string table would ship both languages to every visitor. */
+  followLabel?: string;
+  followingLabel?: string;
 }) {
   const router = useRouter();
   const [following, setFollowing] = useState(initialFollowing);
@@ -77,10 +83,10 @@ export function FollowButton({
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="m5 12.5 4.5 4.5L19 7.5" />
             </svg>
-            Дагаж байна
+            {followingLabel}
           </>
         ) : (
-          "Follow"
+          followLabel
         )}
       </button>
       {error ? (

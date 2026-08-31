@@ -167,15 +167,23 @@ export const profile = pgTable("profile", {
   /** e.g. { instagram: "...", tiktok: "...", youtube: "..." } */
   socials: jsonb("socials").$type<Record<string, string>>().default({}),
   /**
-   * Up to three short self-descriptors shown as chips under the username on
-   * the bio shelf — the MVP design's "ENTJ / Marketing / Boxing" row.
-   *
-   * text[] rather than a child table: they are free text with no identity of
-   * their own, they are never queried across profiles, and the cap is three,
-   * so a join table would buy nothing and cost a query on every page render.
-   * Order is meaningful — the first chip is the filled one.
+   * Myers-Briggs type, collected at onboarding and shown as the filled chip on
+   * the bio shelf. Nullable because the step is skippable — a creator who does
+   * not know theirs gets a link to a test rather than a blocked signup.
+   * Constrained to the sixteen valid types by a CHECK (migration 0012) as well
+   * as by zod, so a bad value cannot arrive through any path.
    */
-  tags: text("tags").array().$type<string[]>().notNull().default(sql`'{}'::text[]`),
+  mbti: text("mbti"),
+  /**
+   * Interest keys from the catalogue in src/lib/personality.ts, in the order
+   * the creator picked them. Keys, not labels, so the profile can render them
+   * in either language and re-wording a label never orphans a row.
+   *
+   * text[] rather than a join table: a closed vocabulary capped at five, read
+   * on every profile render and never queried independently, so a join would
+   * add a query per page view and buy nothing.
+   */
+  interests: text("interests").array().$type<string[]>().notNull().default(sql`'{}'::text[]`),
   // --- Ask feature (v2) ---
   askEnabled: boolean("ask_enabled").notNull().default(true),
   /** Public-facing prompt on /[handle]/ask. Null → UI default. */

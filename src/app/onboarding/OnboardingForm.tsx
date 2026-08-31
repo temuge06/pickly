@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useActionState, useRef, useState } from "react";
 import { LButton, LInput, LLabel, Hint, Spinner } from "@/components/dashboard/lapis/ui";
+import { InterestsPicker, MbtiPicker } from "@/components/onboarding/Pickers";
 import { uploadOnboardingAvatar } from "@/lib/actions/avatar";
 import { completeOnboarding } from "@/lib/auth/onboarding";
 
@@ -105,6 +106,11 @@ export function OnboardingForm({ username }: { username: string }) {
           placeholder="Сарнай Бат-Эрдэнэ"
         />
       </div>
+
+      {/* Personality + interests. Both are optional and both feed the same
+          thing: the chip row under the username on the public profile. */}
+      <MbtiPicker />
+      <InterestsPicker />
 
       {state?.error ? (
         <p className="font-malt text-[13.5px] text-[#ff9a8a]">{state.error}</p>

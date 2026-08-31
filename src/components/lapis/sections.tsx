@@ -15,6 +15,9 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { socialGlyph } from "@/components/social-icons";
 import { SOCIAL_PLATFORMS, detectLinkIcon, hostOf as socialHostOf } from "@/lib/socials";
 import { getTheme } from "@/lib/themes";
+import { DEFAULT_LOCALE, translator, type Locale } from "@/lib/i18n";
+import { profileChips } from "@/lib/personality";
+import { LangToggle } from "./LangToggle";
 import { FollowButton } from "./FollowButton";
 import { PromoCard, type PublicPromo } from "./PromoCard";
 
@@ -46,18 +49,21 @@ type WishlistItem = typeof wishlistItem.$inferSelect;
 export function LapisStatusBar({
   bell,
   backTo,
+  locale = DEFAULT_LOCALE,
 }: {
   /** Owner only. `unread` drives the dot. */
   bell?: { unread: number } | null;
   /** Signed-in viewer's own handle, when they are looking at someone else. */
   backTo?: string | null;
+  locale?: Locale;
 } = {}) {
+  const t = translator(locale);
   return (
     <div className="flex h-[54px] items-center gap-[8px] border-b border-[var(--t-brand)] bg-[var(--t-bg)] px-[15px]">
       {backTo ? (
         <Link
           href={`/${backTo}`}
-          aria-label="Миний профайл руу буцах"
+          aria-label={t("backToMine")}
           className="-ml-[6px] flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full text-[var(--t-accent)] transition-transform active:scale-95"
           style={{ background: "color-mix(in srgb, var(--t-accent) 12%, transparent)" }}
         >
@@ -69,15 +75,20 @@ export function LapisStatusBar({
 
       <Wordmark height={21} className="shrink-0 text-[var(--t-accent)]" title="LinkSpot" />
 
+      {/* Pushed to the right edge, and always present — a visitor who cannot
+          read the current language needs the switch before anything else. */}
+      <div className="ml-auto flex items-center gap-[8px]">
+        <LangToggle locale={locale} />
+
       {bell ? (
         <Link
           href="/notifications"
           aria-label={
             bell.unread > 0
-              ? `Мэдэгдэл — ${bell.unread} шинэ`
-              : "Мэдэгдэл"
+              ? `${t("notifications")} — ${bell.unread}`
+              : t("notifications")
           }
-          className="relative ml-auto flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-[var(--t-accent)] transition-transform active:scale-95"
+          className="relative flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-[var(--t-accent)] transition-transform active:scale-95"
           style={{ background: "color-mix(in srgb, var(--t-accent) 12%, transparent)" }}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -98,6 +109,7 @@ export function LapisStatusBar({
           ) : null}
         </Link>
       ) : null}
+      </div>
     </div>
   );
 }
@@ -109,7 +121,9 @@ export function LapisHeader({
   isOwner = false,
   isFollowing = false,
   isAuthed = false,
+  locale = DEFAULT_LOCALE,
 }: {
+  locale?: Locale;
   profile: Profile;
   /** Resolved on the server by comparing auth.uid() to this profile's owner.
    *  Never derive this client-side — the button must be absent, not hidden. */
@@ -128,7 +142,10 @@ export function LapisHeader({
   const extra = Object.keys(socials).filter((k) => socials[k] && !known.includes(k));
   const socialKeys = [...known, ...extra];
 
-  const tags = (profile.tags ?? []).filter((t) => t.trim());
+  const t = translator(locale);
+  // MBTI first, then the leading interests — the design's filled-then-outlined
+  // row falls out of that order rather than being stored.
+  const chips = profileChips(profile.mbti, profile.interests, locale);
   // The dark mock draws bare social glyphs, the light one draws filled discs.
   // Rather than hardcode that split, ask the palette: a transparent socialBg
   // IS the "no disc" instruction, so a future theme gets the right treatment
@@ -148,7 +165,7 @@ export function LapisHeader({
             <p className="truncate text-[19px] font-bold leading-[16px] tracking-[-0.38px] text-[var(--t-accent)]">
               {profile.displayName}
             </p>
-            <TagChips tags={tags} />
+            <TagChips chips={chips} />
           </div>
         </div>
         {/* Bio: real profile.bio only — no placeholder, renders nothing when empty. */}
@@ -165,13 +182,15 @@ export function LapisHeader({
             className="flex h-[32px] w-[123px] items-center justify-center rounded-[6px] text-[14px] font-bold tracking-[-0.28px]"
             style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
           >
-            Профайл засах
+            {t("editProfile")}
           </Link>
         ) : (
           <FollowButton
             handle={profile.handle}
             initialFollowing={isFollowing}
             isAuthed={isAuthed}
+            followLabel={t("follow")}
+            followingLabel={t("following")}
           />
         )}
         {socialKeys.length > 0 ? (
@@ -205,13 +224,13 @@ export function LapisHeader({
  * that is the design's way of giving one tag primacy without asking the
  * creator to choose a "main" one, so it is derived from position, not stored.
  */
-function TagChips({ tags }: { tags: string[] }) {
-  if (tags.length === 0) return null;
+function TagChips({ chips }: { chips: string[] }) {
+  if (chips.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-[4px]">
-      {tags.map((tag, i) => (
+      {chips.map((chip, i) => (
         <span
-          key={`${tag}-${i}`}
+          key={`${chip}-${i}`}
           className="flex h-[21px] items-center justify-center rounded-[10px] border-[0.5px] px-[13px] text-[12px] leading-[20px]"
           style={
             i === 0
@@ -227,7 +246,7 @@ function TagChips({ tags }: { tags: string[] }) {
                 }
           }
         >
-          {tag}
+          {chip}
         </span>
       ))}
     </div>
@@ -326,9 +345,11 @@ function Recommenders({ avatars }: { avatars: string[] }) {
 function PickCard({
   pick,
   muted = false,
+  locale = DEFAULT_LOCALE,
 }: {
   pick: Pick;
   muted?: boolean;
+  locale?: Locale;
 }) {
   const source = hostOf(pick.outboundUrl ?? pick.sourceUrl);
   return (
@@ -366,7 +387,7 @@ function PickCard({
               borderColor: "var(--t-card-btn-border)",
             }}
           >
-            Дэлгэрэнгүй үзэх
+            {translator(locale)("viewMore")}
             <span className="text-[10px] leading-none" aria-hidden>
               ↗
             </span>
@@ -393,11 +414,19 @@ function rotate<T>(arr: T[], n: number): T[] {
   return [...arr.slice(k), ...arr.slice(0, k)];
 }
 
-function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
+function PickRow({
+  picks,
+  muted,
+  locale = DEFAULT_LOCALE,
+}: {
+  picks: Pick[];
+  muted?: boolean;
+  locale?: Locale;
+}) {
   return (
     <div className="no-scrollbar flex items-stretch gap-[8px] overflow-x-auto scroll-pl-[10px] px-[10px]">
       {picks.map((p) => (
-        <PickCard key={p.id} pick={p} muted={muted} />
+        <PickCard key={p.id} pick={p} muted={muted} locale={locale} />
       ))}
     </div>
   );
@@ -417,17 +446,20 @@ function PickRow({ picks, muted }: { picks: Pick[]; muted?: boolean }) {
 export function LapisTopPicks({
   campaigns,
   handle,
+  locale = DEFAULT_LOCALE,
 }: {
   campaigns: ProfileCampaign[];
   /** Titles the shelf after its owner — "temuge's picks". */
   handle: string;
+  locale?: Locale;
 }) {
+  const t = translator(locale);
   if (campaigns.length === 0) return null;
   // "Bilguundalai's Picks" in the mock — the possessive leads with a capital
   // even though a handle is stored lowercase.
   const owner = handle.charAt(0).toLocaleUpperCase() + handle.slice(1);
   return (
-    <Section title={`${owner}'s Picks`} divider bleed>
+    <Section title={`${owner}${t("picksSuffix")}`} divider bleed>
       <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[8px] overflow-x-auto scroll-pl-[10px] px-[10px]">
         {campaigns.map((c) => (
           <CampaignCard key={c.id} campaign={c} />
@@ -531,12 +563,14 @@ function Polaroids({ images, tall }: { images: string[]; tall: boolean }) {
 function CategoryCard({
   title,
   count,
+  countLabel,
   images,
   tall,
   spanRows,
 }: {
   title: string;
   count: number;
+  countLabel: string;
   images: string[];
   tall: boolean;
   spanRows?: boolean;
@@ -551,7 +585,8 @@ function CategoryCard({
       </p>
       <Polaroids images={images} tall={tall} />
       <p className="absolute bottom-[12px] left-[13px] text-[14px] leading-[12px] tracking-[-0.28px] opacity-70">
-        {count} picks
+        {count}
+        {countLabel}
       </p>
     </div>
   );
@@ -560,10 +595,13 @@ function CategoryCard({
 export function LapisMyPicks({
   collections,
   picksByCollection,
+  locale = DEFAULT_LOCALE,
 }: {
   collections: Collection[];
   picksByCollection: Record<string, Pick[]>;
+  locale?: Locale;
 }) {
+  const t = translator(locale);
   const groups = collections
     .filter((c) => (picksByCollection[c.id]?.length ?? 0) > 0)
     .slice(0, 3);
@@ -578,7 +616,7 @@ export function LapisMyPicks({
         : "grid-cols-2 grid-rows-2";
 
   return (
-    <Section title="My Picks">
+    <Section title={t("myPicks")}>
       <div className={`grid gap-x-[6px] gap-y-[12px] ${gridCls}`} style={{ height: 254 }}>
         {groups.map((c, i) => {
           const picks = picksByCollection[c.id]!;
@@ -591,6 +629,7 @@ export function LapisMyPicks({
               key={c.id}
               title={c.title}
               count={picks.length}
+              countLabel={t("picksCount")}
               images={images}
               tall={tall}
               spanRows={n === 3 && i === 0}
@@ -604,11 +643,17 @@ export function LapisMyPicks({
 
 // --- Not For Me: wont_rebuy picks ------------------------------------------
 
-export function LapisNotForMe({ picks }: { picks: Pick[] }) {
+export function LapisNotForMe({
+  picks,
+  locale = DEFAULT_LOCALE,
+}: {
+  picks: Pick[];
+  locale?: Locale;
+}) {
   if (picks.length === 0) return null;
   return (
-    <Section title="Not For Me" bleed>
-      <PickRow picks={picks} muted />
+    <Section title={translator(locale)("notForMe")} bleed>
+      <PickRow picks={picks} muted locale={locale} />
     </Section>
   );
 }
@@ -617,13 +662,26 @@ export function LapisNotForMe({ picks }: { picks: Pick[] }) {
 
 /** Staff-authored discount tickets. Hidden entirely when a creator has none,
  *  same rule as every other section. */
-export function LapisPromos({ promos }: { promos: PublicPromo[] }) {
+export function LapisPromos({
+  promos,
+  locale = DEFAULT_LOCALE,
+}: {
+  promos: PublicPromo[];
+  locale?: Locale;
+}) {
   if (promos.length === 0) return null;
+  const t = translator(locale);
   return (
-    <Section title="Promo Code" bleed>
+    <Section title={t("promoCode")} bleed>
       <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[14px] overflow-x-auto scroll-pl-[12px] px-[12px]">
         {promos.map((p) => (
-          <PromoCard key={p.id} promo={p} />
+          <PromoCard
+            key={p.id}
+            promo={p}
+            copyLabel={t("copy")}
+            copiedLabel={t("copied")}
+            codeLabel={t("promoCodeLabel")}
+          />
         ))}
       </div>
     </Section>
@@ -635,14 +693,17 @@ export function LapisPromos({ promos }: { promos: PublicPromo[] }) {
 export function LapisWishlist({
   items,
   recommenders,
+  locale = DEFAULT_LOCALE,
 }: {
   items: WishlistItem[];
   recommenders?: string[];
+  locale?: Locale;
 }) {
   if (items.length === 0) return null;
+  const t = translator(locale);
   const pool = recommenders ?? [];
   return (
-    <Section title="Wishlist" bleed>
+    <Section title={t("wishlist")} bleed>
       <div className="no-scrollbar flex gap-[8px] overflow-x-auto scroll-pl-[10px] px-[10px]">
         {items.map((w, i) => {
           const source = hostOf(w.url);
@@ -664,7 +725,7 @@ export function LapisWishlist({
                 <div className="mt-auto flex items-center gap-[10px]">
                   {w.url ? (
                     <a href={w.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center rounded-[10px] bg-[var(--t-card-btn)] text-[var(--t-on-card-btn)] px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px]">
-                      үзэх<span className="ml-0.5 text-[9px]">↗</span>
+                      {t("view")}<span className="ml-0.5 text-[9px]">↗</span>
                     </a>
                   ) : null}
                   <Recommenders avatars={recs} />
@@ -697,10 +758,16 @@ export function LapisWishlist({
  * read left-to-right and there are rarely more than a handful, so a scroll
  * rail would hide most of them behind a swipe for no gain.
  */
-export function LapisQuickLinks({ links }: { links: LinkRow[] }) {
+export function LapisQuickLinks({
+  links,
+  locale = DEFAULT_LOCALE,
+}: {
+  links: LinkRow[];
+  locale?: Locale;
+}) {
   if (links.length === 0) return null;
   return (
-    <Section title="Quick Links">
+    <Section title={translator(locale)("quickLinks")}>
       <div className="flex flex-col gap-[8px]">
         {links.map((l) => {
           const host = socialHostOf(l.url);
@@ -756,7 +823,9 @@ export function LapisAsk({
   displayName,
   askEnabled,
   questions,
+  locale = DEFAULT_LOCALE,
 }: {
+  locale?: Locale;
   handle: string;
   /** The creator's picture, shown beside the Q&A label on the composer. */
   avatarUrl?: string | null;
@@ -765,9 +834,10 @@ export function LapisAsk({
   questions: Ask[];
 }) {
   if (!askEnabled) return null;
+  const t = translator(locale);
   const published = questions.filter((q) => q.isPublic && q.status === "answered");
   return (
-    <Section title="Ask Me Anything!" divider bleed>
+    <Section title={t("askMeAnything")} divider bleed>
       <div className="flex flex-col gap-[10px]">
         {/* Composer. A full-width card in the design rather than the first tile
             of the shelf — asking is the point of the section, so it does not
@@ -799,7 +869,7 @@ export function LapisAsk({
               className="mt-[16px] flex h-[45px] items-center rounded-[13px] px-[14px] text-[18px] leading-[14px]"
               style={{ background: "var(--t-ask-field)", color: "var(--t-on-ask-field)" }}
             >
-              Асуулт үлдээх
+              {t("askPlaceholder")}
             </span>
           </Link>
         </div>
@@ -807,7 +877,7 @@ export function LapisAsk({
         {published.length > 0 ? (
           <div className="no-scrollbar flex gap-[5px] overflow-x-auto scroll-pl-[11px] px-[11px]">
             {published.map((q) => (
-              <AskCard key={q.id} question={q} />
+              <AskCard key={q.id} question={q} locale={locale} />
             ))}
           </div>
         ) : null}
@@ -823,7 +893,14 @@ export function LapisAsk({
  * which keeps both halves reachable without a flip interaction the section has
  * no room to teach.
  */
-function AskCard({ question }: { question: Ask }) {
+function AskCard({
+  question,
+  locale = DEFAULT_LOCALE,
+}: {
+  question: Ask;
+  locale?: Locale;
+}) {
+  const t = translator(locale);
   return (
     <article
       className="flex h-[222px] w-[166px] shrink-0 flex-col overflow-hidden rounded-[13px] px-[15px] pb-[7px] pt-[16px]"
@@ -831,7 +908,7 @@ function AskCard({ question }: { question: Ask }) {
     >
       <Sparkle />
       <p className="mt-[6px] text-[14px] font-bold leading-[1.2] tracking-[-0.28px]">
-        Асуулт
+        {t("question")}
       </p>
       <p className="mt-[6px] line-clamp-4 text-[14px] italic leading-[1.15] tracking-[-0.28px]">
         “{question.body}”
@@ -846,7 +923,7 @@ function AskCard({ question }: { question: Ask }) {
           — so the row carries the age alone rather than a chip that would be
           decorative on every card. */}
       <p className="mt-auto text-[8.74px] leading-[1.2] tracking-[-0.17px] opacity-70">
-        {relativeDays(question.createdAt)}
+        {relativeDays(question.createdAt, locale)}
       </p>
     </article>
   );
@@ -867,8 +944,15 @@ const SIMILAR_STYLE = {
   color: "var(--t-on-others)",
 } as const;
 
-export function LapisSimilar({ creators }: { creators: Creator[] }) {
+export function LapisSimilar({
+  creators,
+  locale = DEFAULT_LOCALE,
+}: {
+  creators: Creator[];
+  locale?: Locale;
+}) {
   if (creators.length === 0) return null;
+  const t = translator(locale);
   return (
     <div className="bg-[var(--t-bg)] p-[10px] font-malt">
       <div className="overflow-hidden rounded-[16px] bg-[var(--t-panel)] p-[15px]">
@@ -893,10 +977,10 @@ export function LapisSimilar({ creators }: { creators: Creator[] }) {
                 {c.handle}
               </p>
               <p className="mt-[5px] line-clamp-2 w-[132px] px-1 text-center text-[10px] font-light leading-[16px] text-[var(--t-on-others)]/85">
-                {c.bio ?? `${c.displayName} on LinkSpot`}
+                {c.bio ?? `${c.displayName} ${t("onLinkspot")}`}
               </p>
               <span className="mb-[12px] mt-auto rounded-[8px] bg-black/25 px-[14px] py-[4px] text-[13px] font-semibold text-[var(--t-on-others)]">
-                LinkSpot үзэх
+                {t("viewProfile")}
               </span>
             </Link>
           ))}
@@ -913,12 +997,12 @@ export function LapisSimilar({ creators }: { creators: Creator[] }) {
  * 1208:14891). Deliberately the only place on a creator's profile that names
  * the platform in body copy — everything above it belongs to the creator.
  */
-export function LapisFooter() {
+export function LapisFooter({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
   return (
     <footer className="flex h-[75px] flex-col items-center justify-center gap-[6px] bg-[var(--t-bg)]">
       <Wordmark height={19} className="text-[var(--t-accent)]" title="LinkSpot" />
       <p className="text-[10px] uppercase leading-none text-[var(--t-accent)]">
-        since 2026
+        {translator(locale)("since")}
       </p>
     </footer>
   );
@@ -940,13 +1024,14 @@ function hostOf(url: string | null | undefined): string | null {
  * only: the shelf shows answered questions, which are rarely minutes old, and
  * a finer unit would just be noise at 8.74px.
  */
-function relativeDays(at: Date | string): string {
+function relativeDays(at: Date | string, locale: Locale): string {
   const then = typeof at === "string" ? new Date(at) : at;
   if (Number.isNaN(then.getTime())) return "";
+  const t = translator(locale);
   const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
-  if (days <= 0) return "өнөөдөр";
-  if (days === 1) return "өчигдөр";
-  return `${days} өдрийн өмнө`;
+  if (days <= 0) return t("today");
+  if (days === 1) return t("yesterday");
+  return `${days}${t("daysAgoSuffix")}`;
 }
 
 /** The design's outbound corner-arrow, drawn as three bars rather than a glyph

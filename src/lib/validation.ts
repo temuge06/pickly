@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  MAX_INTERESTS,
+  isInterestKey,
+  isMbtiType,
+  type MbtiType,
+} from "@/lib/personality";
 
 /**
  * Handle rules: lowercase [a-z0-9_], 3–24 chars. Stored citext so lookups are
@@ -40,41 +46,37 @@ export const displayNameSchema = z
 export const bioSchema = z.string().trim().max(160).optional();
 
 /**
- * Bio-shelf tag chips. The design lays out three chips on one 197px row, so
- * the cap is a layout constraint as much as a product one — a fourth chip
- * wraps under the username and breaks the header's height.
+ * MBTI type. Optional at every entry point: onboarding lets it be skipped, and
+ * an empty string from a form means "cleared", not "invalid".
  */
-export const MAX_PROFILE_TAGS = 3;
-
-/** One chip. Short enough to stay on a single line at 12px. */
-export const profileTagSchema = z
+export const mbtiSchema = z
   .string()
   .trim()
-  .min(1)
-  .max(16, "Таг хамгийн ихдээ 16 тэмдэгт.");
+  .toUpperCase()
+  .refine((v) => v === "" || isMbtiType(v), "MBTI төрөл буруу байна.")
+  .transform((v) => (v === "" ? null : (v as MbtiType)))
+  .nullable();
 
 /**
- * The whole chip row, normalised: blanks dropped, duplicates collapsed
- * case-insensitively (so "Boxing" and "boxing" cannot both occupy the row),
- * and truncated to the cap. Order is preserved because the first chip is the
- * filled one on the public page.
+ * Interest keys, normalised: anything outside the catalogue is dropped rather
+ * than rejected, duplicates collapse, and the list is capped. Dropping instead
+ * of erroring matters because the catalogue can shrink — a creator whose saved
+ * interest was retired should keep the rest, not be unable to save at all.
+ * Order is preserved, since the leading entries are the ones that reach the
+ * public chip row.
  */
-export const profileTagsSchema = z
-  .array(profileTagSchema.or(z.string().trim().max(16)))
-  .transform((values) => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const raw of values) {
-      const tag = raw.trim();
-      if (!tag) continue;
-      const key = tag.toLocaleLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(tag);
-      if (out.length === MAX_PROFILE_TAGS) break;
-    }
-    return out;
-  });
+export const interestsSchema = z.array(z.string()).transform((values) => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of values) {
+    const key = raw.trim();
+    if (!key || seen.has(key) || !isInterestKey(key)) continue;
+    seen.add(key);
+    out.push(key);
+    if (out.length === MAX_INTERESTS) break;
+  }
+  return out;
+});
 
 /** My Picks shows at most three collection boxes. */
 export const MAX_COLLECTIONS = 3;

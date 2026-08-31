@@ -25,15 +25,32 @@ export function LapisMusic({
   tracks,
   films,
   books,
+  labels,
 }: {
   tracks: Item[];
   films: Item[];
   books: Item[];
+  /** Localised on the server and passed in, so this client component never
+   *  imports the string table and neither language ships twice. */
+  labels?: {
+    music: string;
+    films: string;
+    books: string;
+    listen: string;
+    stop: string;
+  };
 }) {
+  const L = labels ?? {
+    music: "Дуу",
+    films: "Кино",
+    books: "Ном",
+    listen: "сонсох",
+    stop: "зогсоох",
+  };
   const tabs = [
-    { key: "track" as const, label: "дуу", items: tracks },
-    { key: "film" as const, label: "Кино", items: films },
-    { key: "book" as const, label: "Ном", items: books },
+    { key: "track" as const, label: L.music, items: tracks },
+    { key: "film" as const, label: L.films, items: films },
+    { key: "book" as const, label: L.books, items: books },
   ].filter((t) => t.items.length > 0);
 
   const [active, setActive] = useState(tabs[0]?.key ?? "track");
@@ -78,7 +95,7 @@ export function LapisMusic({
       {current.key === "track" ? (
         <div className="no-scrollbar flex gap-[7px] overflow-x-auto scroll-pl-[17px] px-[17px]">
           {current.items.map((it) => (
-            <MusicBar key={it.id} item={it} />
+            <MusicBar key={it.id} item={it} listen={L.listen} stop={L.stop} />
           ))}
         </div>
       ) : current.key === "film" ? (
@@ -96,7 +113,15 @@ export function LapisMusic({
 
 // --- Дуу: music bar --------------------------------------------------------
 
-function MusicBar({ item }: { item: Item }) {
+function MusicBar({
+  item,
+  listen,
+  stop,
+}: {
+  item: Item;
+  listen: string;
+  stop: string;
+}) {
   const meta = item.meta as { note?: string; previewUrl?: string | null } | null;
   const note = meta?.note ?? null;
   const previewUrl = typeof meta?.previewUrl === "string" ? meta.previewUrl : null;
@@ -145,10 +170,10 @@ function MusicBar({ item }: { item: Item }) {
       {previewUrl ? (
         <button
           onClick={() => toggle(previewUrl)}
-          aria-label={isPlaying ? `${item.title} зогсоох` : `${item.title} сонсох`}
+          aria-label={`${item.title} ${isPlaying ? stop : listen}`}
           className={`${pillClass} transition-transform active:scale-[0.97]`}
         >
-          {isPlaying ? "зогсоох" : "сонсох"}
+          {isPlaying ? stop : listen}
           {isPlaying ? (
             <svg width="7" height="7" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
               <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" />
@@ -166,7 +191,7 @@ function MusicBar({ item }: { item: Item }) {
           rel="noopener noreferrer"
           className={pillClass}
         >
-          сонсох
+          {listen}
           <span className="text-[9px] leading-none" aria-hidden>
             ↗
           </span>
