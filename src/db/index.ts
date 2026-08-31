@@ -16,9 +16,14 @@ import * as schema from "./schema";
  * `EMAXCONNSESSION: max clients reached in session mode`.
  *
  * One connection per instance does serialise the queries inside Promise.all,
- * but now that functions run in the database's region (vercel.json `regions`)
- * a round trip is ~5ms rather than ~220ms, so the whole batch costs tens of
- * milliseconds. The region was the real fix; this knob was not.
+ * but as long as functions run in the database's region (vercel.json
+ * `regions`) a round trip is ~5ms rather than ~220ms, so the whole batch costs
+ * tens of milliseconds. The region was the real fix; this knob was not.
+ *
+ * That makes `regions` and DATABASE_URL a COUPLED PAIR, and moving one without
+ * the other silently costs ~200ms per query on every page. They are currently
+ * Sydney on both sides: `syd1` and Supabase `ap-southeast-2`. If the database
+ * ever moves, move `regions` with it.
  *
  * To genuinely parallelise, move DATABASE_URL to the transaction pooler on
  * port 6543 — that mode is built for serverless fan-out — and only then raise
