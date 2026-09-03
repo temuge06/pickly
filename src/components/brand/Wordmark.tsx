@@ -5,17 +5,27 @@
  *
  * Two colour roles, deliberately kept separate:
  *   - the letterforms take `currentColor`, so the mark inherits whatever text
- *     colour the surface around it uses and reads correctly on all four themes;
- *   - the arrow is the brand pop and reads `--t-brand` — the theme's signature
- *     accent, which is LinkSpot green on the two Dalai palettes.
+ *     colour the surface around it uses and reads correctly on either theme;
+ *   - the arrow is the brand pop and reads `--t-brand` — LinkSpot green on
+ *     both the dark and the light palette.
  *
  * Sized by height alone; width follows the 89:21 aspect ratio so the lockup can
  * never be stretched.
+ *
+ * `thin` erodes the letterforms by painting a hairline of the surface colour
+ * OVER the fill — SVG's default paint order is fill, then stroke — which takes
+ * strokeWidth/2 off every edge and lands a genuinely lighter weight without a
+ * second set of outlines to keep in sync. It is opt-in, and only correct on a
+ * flat background, so `thinOn` names the colour to erode with; the footer
+ * passes its own --t-bg. The design review asked for exactly this on the
+ * footer lockup, where the mark sat heavier than the small caps beneath it.
  */
 export function Wordmark({
   height = 21,
   className,
   title,
+  thin = false,
+  thinOn = "var(--t-bg)",
 }: {
   /** Rendered height in px. Width follows from the aspect ratio. */
   height?: number;
@@ -23,7 +33,17 @@ export function Wordmark({
   /** Gives the mark an accessible name. The footer sets it; the header does
    *  not, because its wrapping link is already labelled. */
   title?: string;
+  /** Lighter letterforms. Only use on a flat, known background. */
+  thin?: boolean;
+  /** The background to erode against. Ignored unless `thin`. */
+  thinOn?: string;
 }) {
+  // In viewBox units: the mark is 21 units tall, so 0.5 takes 0.25 off each
+  // side of a stem — a visible step down in weight that still leaves the
+  // counters open at footer size.
+  const erode = thin
+    ? { stroke: thinOn, strokeWidth: 0.5, strokeLinejoin: "round" as const }
+    : undefined;
   return (
     <svg
       viewBox="0 0 89 21"
@@ -34,7 +54,7 @@ export function Wordmark({
       aria-hidden={title ? undefined : true}
       aria-label={title}
     >
-      <g fill="currentColor">
+      <g fill="currentColor" {...erode}>
         <path d="M0 2.03226H1.79712V15.3548H9.00864V16.9355H0V2.03226Z" />
         <path d="M9.67356 5.93871H11.4476V16.9355H9.67356V5.93871ZM10.5721 3.00323C10.2035 3.00323 9.8886 2.8828 9.62748 2.64194C9.36636 2.40108 9.2358 2.1 9.2358 1.73871C9.2358 1.39247 9.36636 1.09893 9.62748 0.858065C9.8886 0.602151 10.2035 0.474194 10.5721 0.474194C10.9254 0.474194 11.2326 0.602151 11.4937 0.858065C11.7548 1.09893 11.8854 1.39247 11.8854 1.73871C11.8854 2.1 11.7548 2.40108 11.4937 2.64194C11.248 2.8828 10.9408 3.00323 10.5721 3.00323Z" />
         <path d="M18.6152 5.69032C19.9208 5.69032 20.9423 6.08925 21.6796 6.8871C22.4168 7.68495 22.7855 8.73118 22.7855 10.0258V16.9355H21.0114V10.229C21.0114 9.35591 20.758 8.64839 20.2511 8.10645C19.7596 7.56452 19.0837 7.29355 18.2236 7.29355C17.3634 7.29355 16.6568 7.57204 16.1039 8.12903C15.5509 8.67097 15.2744 9.37097 15.2744 10.229V16.9355H13.5004V5.93871H15.1592V7.1129C15.574 6.66129 16.0732 6.31505 16.6568 6.07419C17.2559 5.81828 17.9087 5.69032 18.6152 5.69032Z" />
@@ -44,7 +64,7 @@ export function Wordmark({
         <path d="M64.5977 17.1839C63.4764 17.1839 62.4473 16.928 61.5103 16.4161C60.5887 15.8892 59.8591 15.1817 59.3215 14.2935C58.7839 13.3903 58.5151 12.4043 58.5151 11.3355C58.5151 10.2667 58.7839 9.28817 59.3215 8.4C59.8591 7.49677 60.5964 6.78925 61.5334 6.27742C62.4703 5.76559 63.4995 5.50968 64.6207 5.50968C65.742 5.50968 66.7711 5.77312 67.7081 6.3C68.6451 6.81183 69.3823 7.51183 69.9199 8.4C70.4729 9.28817 70.7494 10.2667 70.7494 11.3355C70.7494 12.4043 70.4729 13.3903 69.9199 14.2935C69.3823 15.1817 68.6374 15.8892 67.6851 16.4161C66.7481 16.928 65.719 17.1839 64.5977 17.1839ZM64.6207 14.3839C65.4655 14.3839 66.1644 14.0978 66.7174 13.5258C67.2857 12.9538 67.5699 12.2312 67.5699 11.3581C67.5699 10.4849 67.2857 9.75484 66.7174 9.16774C66.1644 8.58064 65.4655 8.2871 64.6207 8.2871C63.7606 8.2871 63.054 8.58064 62.5011 9.16774C61.9481 9.73978 61.6716 10.4699 61.6716 11.3581C61.6716 12.2312 61.9481 12.9538 62.5011 13.5258C63.054 14.0978 63.7606 14.3839 64.6207 14.3839Z" />
         <path d="M79.3525 14.3839V16.9355C78.6152 17.1161 77.901 17.2065 77.2098 17.2065C75.7659 17.2065 74.6446 16.8602 73.8459 16.1677C73.0472 15.4602 72.6478 14.4065 72.6478 13.0065V8.33226H70.8507V5.75806H72.6478V2.93548H75.7582V5.75806H78.9838V8.33226H75.7582V12.7355C75.7582 13.3677 75.9272 13.8194 76.2651 14.0903C76.603 14.3462 77.1406 14.4742 77.8779 14.4742C78.0622 14.4742 78.5538 14.4441 79.3525 14.3839Z" />
       </g>
-      <g fill="var(--t-brand, #0ad85b)">
+      <g fill="var(--t-brand, #0ad85b)" {...erode}>
         <path d="M86.9282 0.297113H88.9999V6.59124H86.9282V0.297113Z" />
         <path d="M87.0658 0.757119L88.5307 2.1928L83.2712 7.34741L81.8063 5.91173L87.0658 0.757119Z" />
         <path d="M82.5778 0.297113H88.9999L89 2.32748H82.5778V0.297113Z" />

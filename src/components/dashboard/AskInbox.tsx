@@ -6,16 +6,14 @@ import {
   blockAsker,
   hideAsk,
   setAskEnabled,
-  setAskFlaggedForPick,
-  setAskPrompt,
   toggleAskPublic,
   unhideAsk,
 } from "@/lib/actions/ask";
+import { MAX_ASK_ANSWER } from "@/lib/validation";
 import {
   Empty,
   Hint,
   LButton,
-  LInput,
   LSection,
   LTextArea,
   Spinner,
@@ -33,7 +31,6 @@ type Message = {
   status: string;
   answerBody: string | null;
   isPublic: boolean;
-  flaggedForPick: boolean;
   createdAt: Date;
 };
 
@@ -66,19 +63,17 @@ function Check({
 export function AskInbox({
   handle,
   askEnabled,
-  askPrompt,
   messages,
 }: {
   handle: string;
   askEnabled: boolean;
-  askPrompt: string | null;
   messages: { new: Message[]; answered: Message[]; hidden: Message[] };
 }) {
   const [showHidden, setShowHidden] = useState(false);
 
   return (
     <div className="flex flex-col gap-7">
-      <AskSettings handle={handle} askEnabled={askEnabled} askPrompt={askPrompt} />
+      <AskSettings handle={handle} askEnabled={askEnabled} />
 
       <LSection icon="✉️" title={`Шинэ (${messages.new.length})`}>
         {messages.new.length === 0 ? (
@@ -120,18 +115,25 @@ export function AskInbox({
   );
 }
 
+/**
+ * The one switch that matters: whether the public /[handle]/ask page accepts
+ * questions at all.
+ *
+ * The custom prompt field that used to sit under it is gone. It asked the
+ * creator to write marketing copy for a page most of them never open, its
+ * value showed up nowhere in the editor, and the design review asked for this
+ * card to be the toggle and nothing else. The column stays (profile.ask_prompt)
+ * and the public page still renders a saved value — this only stops the
+ * dashboard from asking for one.
+ */
 function AskSettings({
   handle,
   askEnabled,
-  askPrompt,
 }: {
   handle: string;
   askEnabled: boolean;
-  askPrompt: string | null;
 }) {
-  const [prompt, setPrompt] = useState(askPrompt ?? "");
   const [enabled, setEnabled] = useState(askEnabled);
-  const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
 
   function toggle() {
@@ -148,69 +150,34 @@ function AskSettings({
 
   return (
     <section className="animate-fade-up px-4">
-      <div className="flex flex-col gap-3.5 rounded-[16px] bg-[var(--t-well)] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-malt text-[14.5px] font-bold text-[var(--t-text)]">
-              Ask идэвхтэй
-            </p>
-            <p className="truncate font-malt text-[12px] text-[var(--t-muted)]">
-              pickly.mn/{handle}/ask
-            </p>
-          </div>
-          {/* left-[3px] is load-bearing: a <button> centres its content, so an
-              absolutely-positioned knob with `left: auto` takes its origin from
-              the track's midpoint and lands outside it. */}
-          <button
-            role="switch"
-            aria-checked={enabled}
-            aria-label="Ask идэвхтэй"
-            disabled={pending}
-            onClick={toggle}
-            className={`relative h-[28px] w-[48px] shrink-0 cursor-pointer rounded-full transition-colors duration-150 disabled:opacity-60 ${
-              enabled ? "bg-[var(--t-accent)]" : "bg-[var(--t-ring)]"
+      <div className="flex items-center justify-between gap-3 rounded-[16px] bg-[var(--t-well)] p-4">
+        <div className="min-w-0">
+          <p className="font-malt text-[14.5px] font-bold text-[var(--t-text)]">
+            Ask идэвхтэй
+          </p>
+          <p className="truncate font-malt text-[12px] text-[var(--t-muted)]">
+            pickly.mn/{handle}/ask
+          </p>
+        </div>
+        {/* left-[3px] is load-bearing: a <button> centres its content, so an
+            absolutely-positioned knob with `left: auto` takes its origin from
+            the track's midpoint and lands outside it. */}
+        <button
+          role="switch"
+          aria-checked={enabled}
+          aria-label="Ask идэвхтэй"
+          disabled={pending}
+          onClick={toggle}
+          className={`relative h-[28px] w-[48px] shrink-0 cursor-pointer rounded-full transition-colors duration-150 disabled:opacity-60 ${
+            enabled ? "bg-[var(--t-accent)]" : "bg-[var(--t-ring)]"
+          }`}
+        >
+          <span
+            className={`absolute left-[3px] top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-transform duration-150 ${
+              enabled ? "translate-x-[20px]" : "translate-x-0"
             }`}
-          >
-            <span
-              className={`absolute left-[3px] top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-transform duration-150 ${
-                enabled ? "translate-x-[20px]" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <LInput
-            value={prompt}
-            onChange={(e) => {
-              setPrompt(e.target.value);
-              setSaved(false);
-            }}
-            placeholder="Асуух зүйл байна уу?"
-            aria-label="Асуултын урилга"
           />
-          <div className="flex items-center gap-2">
-            <LButton
-              variant="soft"
-              loading={pending}
-              disabled={pending}
-              onClick={() =>
-                start(async () => {
-                  await setAskPrompt(prompt);
-                  setSaved(true);
-                })
-              }
-            >
-              Хадгалах
-            </LButton>
-            {saved && !pending ? (
-              <span className="font-malt text-[12.5px] font-bold text-[var(--t-success)]">
-                ✓ Хадгаллаа
-              </span>
-            ) : null}
-          </div>
-          <Hint>Энэ бичиг таны Ask хуудсан дээр урилга болж харагдана.</Hint>
-        </div>
+        </button>
       </div>
     </section>
   );
@@ -219,8 +186,11 @@ function AskSettings({
 function NewMessage({ message }: { message: Message }) {
   const [answer, setAnswer] = useState("");
   const [makePublic, setMakePublic] = useState(false);
-  const [flagForPick, setFlagForPick] = useState(message.flaggedForPick);
   const [pending, start] = useTransition();
+  // Warn before the cap rather than only at it: a creator who has been typing
+  // for a while should see the limit coming, not discover it when the field
+  // stops accepting keystrokes.
+  const remaining = MAX_ASK_ANSWER - answer.length;
 
   return (
     <div
@@ -232,18 +202,25 @@ function NewMessage({ message }: { message: Message }) {
         {message.body}
       </p>
 
-      <LTextArea
-        rows={2}
-        value={answer}
-        onChange={(e) => setAnswer(e.target.value)}
-        placeholder="Хариултаа бичих…"
-      />
+      <div className="flex flex-col gap-1">
+        <LTextArea
+          rows={2}
+          value={answer}
+          maxLength={MAX_ASK_ANSWER}
+          onChange={(e) => setAnswer(e.target.value)}
+          placeholder="Хариултаа бичих…"
+        />
+        <span
+          className={`self-end font-malt text-[11.5px] tabular-nums ${
+            remaining <= 20 ? "text-[var(--t-danger)]" : "text-[var(--t-muted)]"
+          }`}
+        >
+          {answer.length}/{MAX_ASK_ANSWER}
+        </span>
+      </div>
 
       <Check checked={makePublic} onChange={setMakePublic} disabled={pending}>
         Профайл дээр нийтлэх
-      </Check>
-      <Check checked={flagForPick} onChange={setFlagForPick} disabled={pending}>
-        Барааны асуулт — LinkSpot-ийн багт илгээх
       </Check>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -251,12 +228,7 @@ function NewMessage({ message }: { message: Message }) {
           loading={pending}
           disabled={pending || !answer.trim()}
           onClick={() =>
-            start(async () => {
-              await answerAsk(message.id, answer, makePublic);
-              // A separate write, so the answer still lands even if the
-              // creator never ticked the box.
-              if (flagForPick) await setAskFlaggedForPick(message.id, true);
-            })
+            start(async () => void (await answerAsk(message.id, answer, makePublic)))
           }
         >
           Хариулах

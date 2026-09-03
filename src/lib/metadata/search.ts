@@ -6,16 +6,29 @@ export type MediaResult = {
   subtitle: string | null; // year (films) / author (books)
   imageUrl: string | null;
   externalUrl: string | null;
+  /** Films only: a TV series rather than a movie. Undefined everywhere else. */
+  isSeries?: boolean;
 };
 
 /**
- * TMDB movie search. Returns [] when TMDB_API_KEY is absent (manual entry still
- * works). Never throws to the caller.
+ * TMDB search over movies AND television, ranked together.
+ *
+ * `search/multi` rather than `search/movie` because the design review asked for
+ * series to be addable: one request keeps a creator typing "Severance" from
+ * getting an empty shelf, and TMDB's own relevance ordering decides whether the
+ * movie or the show of the same name comes first. People (`media_type: person`)
+ * are dropped — the section is a shelf of things watched.
+ *
+ * Series keep their own `tmdb:tv:` id prefix so a movie and a show that happen
+ * to share a numeric TMDB id cannot collide on the dedupe index.
+ *
+ * Returns [] when TMDB_API_KEY is absent (manual entry still works). Never
+ * throws to the caller.
  */
 export async function searchFilms(query: string): Promise<MediaResult[]> {
   if (!env.hasTmdb || !query.trim()) return [];
   try {
-    const url = new URL("https://api.themoviedb.org/3/search/movie");
+    const url = new URL("https://api.themoviedb.org/3/search/multi");
     url.searchParams.set("api_key", process.env.TMDB_API_KEY!);
     url.searchParams.set("query", query);
     url.searchParams.set("include_adult", "false");
@@ -24,20 +37,32 @@ export async function searchFilms(query: string): Promise<MediaResult[]> {
     const json = (await res.json()) as {
       results: {
         id: number;
-        title: string;
+        media_type?: string;
+        title?: string;
+        name?: string;
         release_date?: string;
+        first_air_date?: string;
         poster_path?: string | null;
       }[];
     };
-    return json.results.slice(0, 12).map((r) => ({
-      externalId: `tmdb:${r.id}`,
-      title: r.title,
-      subtitle: r.release_date ? r.release_date.slice(0, 4) : null,
-      imageUrl: r.poster_path
-        ? `https://image.tmdb.org/t/p/w342${r.poster_path}`
-        : null,
-      externalUrl: `https://www.themoviedb.org/movie/${r.id}`,
-    }));
+    return json.results
+      .filter((r) => r.media_type === "movie" || r.media_type === "tv")
+      .slice(0, 12)
+      .map((r) => {
+        const isSeries = r.media_type === "tv";
+        const date = isSeries ? r.first_air_date : r.release_date;
+        return {
+          externalId: isSeries ? `tmdb:tv:${r.id}` : `tmdb:${r.id}`,
+          title: (isSeries ? r.name : r.title) ?? "",
+          subtitle: date ? date.slice(0, 4) : null,
+          imageUrl: r.poster_path
+            ? `https://image.tmdb.org/t/p/w342${r.poster_path}`
+            : null,
+          externalUrl: `https://www.themoviedb.org/${isSeries ? "tv" : "movie"}/${r.id}`,
+          isSeries,
+        };
+      })
+      .filter((r) => r.title.length > 0);
   } catch {
     return [];
   }

@@ -56,7 +56,6 @@ export default async function AskInboxPage() {
         <AskInbox
           handle={profile.handle}
           askEnabled={profile.askEnabled}
-          askPrompt={profile.askPrompt}
           messages={{
             new: data.ask.new,
             answered: data.ask.answered,

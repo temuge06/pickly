@@ -78,7 +78,7 @@ export function PromoCard({
   );
 
   const copyClass =
-    "flex h-[18px] shrink-0 items-center justify-center gap-[3px] rounded-[5px] px-[6px] text-[10px] font-medium leading-none transition-transform active:scale-95";
+    "flex h-[17px] shrink-0 items-center justify-center gap-[2px] rounded-[5px] px-[5px] text-[9px] font-medium leading-none transition-transform active:scale-95";
   const copyStyle = {
     background: "var(--t-promo-btn)",
     color: "var(--t-promo-on-btn)",
@@ -109,8 +109,11 @@ export function PromoCard({
       {/* 7px gutters, not 12: the spec gives the code chip 140px and the
           headline ~161px, and 12px squeezed both into truncation. */}
       <div className="flex min-w-0 flex-1 flex-col px-[7px] py-[11px]">
+        {/* 28px, down from 35: the review asked for the ticket's type to come
+            down a couple of steps, and the headline is what pushed a longer
+            offer ("Хямдрал 20%") into an ellipsis at the old size. */}
         <p
-          className="truncate text-center text-[35px] font-bold uppercase leading-[36px] tracking-[-1.75px]"
+          className="truncate text-center text-[28px] font-bold uppercase leading-[30px] tracking-[-1.2px]"
           style={{ color: "var(--t-promo-headline)" }}
         >
           {promo.headline}
@@ -125,17 +128,22 @@ export function PromoCard({
         ) : null}
 
         <p
-          className="mt-auto text-[12px] font-bold uppercase leading-[19px]"
+          className="mt-auto text-[11px] font-bold uppercase leading-[17px]"
           style={{ color: "var(--t-promo-text)" }}
         >
           {codeLabel}
         </p>
+        {/* The code is the one thing on this card a visitor has to be able to
+            READ before they tap Copy, and at 20px only about three characters
+            of a real code cleared the chip before the ellipsis — the review
+            asked for five or six. 14px on a chip with tighter gutters fits
+            eight, so ordinary codes ("ANU10", "SARNAI20") land whole. */}
         <div
-          className="mt-[2px] flex h-[24px] items-center gap-[6px] rounded-[5px] pl-[8px] pr-[3px]"
+          className="mt-[2px] flex h-[22px] items-center gap-[4px] rounded-[5px] pl-[6px] pr-[3px]"
           style={{ background: "var(--t-promo-chip)" }}
         >
           <span
-            className="min-w-0 flex-1 truncate text-[20px] font-semibold uppercase leading-[24px]"
+            className="min-w-0 flex-1 truncate text-[14px] font-semibold uppercase leading-[22px] tracking-[-0.2px]"
             style={{ color: "var(--t-promo-on-chip)" }}
           >
             {promo.code}
@@ -160,7 +168,7 @@ export function PromoCard({
         </div>
         {promo.expiresAt ? (
           <p
-            className="mt-[3px] text-right text-[10px] uppercase leading-[19px]"
+            className="mt-[3px] text-right text-[9px] uppercase leading-[16px]"
             style={{ color: "var(--t-promo-text)" }}
           >
             {formatExpiry(promo.expiresAt)}

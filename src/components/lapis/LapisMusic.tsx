@@ -4,6 +4,7 @@
 import { useState } from "react";
 import type { activityItem } from "@/db/schema";
 import { usePreviewAudio } from "@/lib/audio/preview";
+import { MAX_RATING, isSeriesItem, readRating } from "@/lib/media-meta";
 
 type Item = typeof activityItem.$inferSelect;
 
@@ -38,6 +39,7 @@ export function LapisMusic({
     books: string;
     listen: string;
     stop: string;
+    series: string;
   };
 }) {
   const L = labels ?? {
@@ -46,6 +48,7 @@ export function LapisMusic({
     books: "Ном",
     listen: "сонсох",
     stop: "зогсоох",
+    series: "Цуврал",
   };
   const tabs = [
     { key: "track" as const, label: L.music, items: tracks },
@@ -101,7 +104,7 @@ export function LapisMusic({
       ) : current.key === "film" ? (
         <div className="no-scrollbar flex gap-[7px] overflow-x-auto scroll-pl-[17px] px-[17px] py-[2px]">
           {current.items.map((it) => (
-            <MoviePoster key={it.id} item={it} />
+            <MoviePoster key={it.id} item={it} seriesLabel={L.series} />
           ))}
         </div>
       ) : (
@@ -217,7 +220,9 @@ function MusicBar({
 
 // --- Кино: poster card (Figma 639:2316) ------------------------------------
 
-function MoviePoster({ item }: { item: Item }) {
+function MoviePoster({ item, seriesLabel }: { item: Item; seriesLabel: string }) {
+  const rating = readRating(item.meta);
+  const series = isSeriesItem(item.meta);
   const inner = (
     <>
       {item.imageUrl ? (
@@ -227,13 +232,30 @@ function MoviePoster({ item }: { item: Item }) {
           {item.title}
         </span>
       )}
+      {series ? (
+        <span
+          className="absolute left-[6px] top-[6px] rounded-[4px] px-[5px] py-[1px] text-[9px] font-black uppercase leading-[13px] tracking-[-0.18px]"
+          style={{ background: "var(--t-accent)", color: "var(--t-on-accent)" }}
+        >
+          {seriesLabel}
+        </span>
+      ) : null}
+      {/* Over the poster, not under it: the shelf scrolls horizontally at a
+          fixed height, so a rating below the artwork would either shorten
+          every poster or push the row taller for the rated ones alone. The
+          scrim is what keeps stars legible on a bright still. */}
+      {rating !== null ? (
+        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-[2px] bg-gradient-to-t from-black/80 to-transparent pb-[5px] pt-[14px]">
+          <Stars value={rating} size={11} />
+        </span>
+      ) : null}
     </>
   );
   // Same `media` plate as the music card: both shelves sit in the one MMB
   // strip, and a poster on `card` was a different colour from the album art
   // beside it every time a theme gave `card` a gradient.
   const cls =
-    "h-[161px] w-[110px] shrink-0 snap-start overflow-hidden rounded-[14px] bg-[var(--t-media)] text-[var(--t-on-media)] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)]";
+    "relative h-[161px] w-[110px] shrink-0 snap-start overflow-hidden rounded-[14px] bg-[var(--t-media)] text-[var(--t-on-media)] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)]";
   return item.externalUrl ? (
     <a href={item.externalUrl} target="_blank" rel="noopener noreferrer" className={cls}>
       {inner}
@@ -259,6 +281,7 @@ function Bookshelf({ books }: { books: Item[] }) {
 
 function BookCover({ item }: { item: Item }) {
   const author = item.subtitle ?? "";
+  const rating = readRating(item.meta);
   const cover = (
     <div className="relative mb-[8px] h-[100px] w-[68px] overflow-hidden rounded-[5px] shadow-[3px_3px_2px_0px_rgba(0,0,0,0.25)]">
       {item.imageUrl ? (
@@ -282,6 +305,11 @@ function BookCover({ item }: { item: Item }) {
           ) : null}
         </div>
       )}
+      {rating !== null ? (
+        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-[1px] bg-gradient-to-t from-black/80 to-transparent pb-[3px] pt-[12px]">
+          <Stars value={rating} size={9} />
+        </span>
+      ) : null}
     </div>
   );
 
@@ -309,5 +337,42 @@ function BookCover({ item }: { item: Item }) {
       {shelf}
       {cover}
     </div>
+  );
+}
+
+// --- rating -----------------------------------------------------------------
+
+/**
+ * The creator's rating, drawn as filled/empty stars rather than "4/5".
+ *
+ * Always five glyphs, never just the filled ones: three stars alone reads as
+ * "three out of three" at this size, and the empty pair is what carries the
+ * scale. Amber rather than a theme token — a rating is a rating in both
+ * palettes, and the stars sit on a photographic still or a book cover, not on
+ * a themed surface.
+ */
+function Stars({ value, size }: { value: number; size: number }) {
+  return (
+    <span
+      className="flex items-center"
+      role="img"
+      aria-label={`${value}/${MAX_RATING}`}
+    >
+      {Array.from({ length: MAX_RATING }, (_, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 24 24"
+          width={size}
+          height={size}
+          fill={i < value ? "#ffc53d" : "none"}
+          stroke={i < value ? "#ffc53d" : "rgba(255,255,255,0.75)"}
+          strokeWidth="2"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M12 3.2l2.6 5.6 6 .8-4.4 4.2 1.1 6.1-5.3-3-5.3 3 1.1-6.1L3.4 9.6l6-.8z" />
+        </svg>
+      ))}
+    </span>
   );
 }

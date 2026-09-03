@@ -43,7 +43,7 @@ const STRINGS = {
   myPicks: { mn: "Миний сонголт", en: "My Picks" },
   wishlist: { mn: "Хүслийн жагсаалт", en: "Wishlist" },
   notForMe: { mn: "Надад тохирсонгүй", en: "Not For Me" },
-  askMeAnything: { mn: "Надаас юу ч асуугаарай!", en: "Ask Me Anything!" },
+  askMeAnything: { mn: "Асуултаа үлдээгээрэй!", en: "Ask Me Anything!" },
   picksSuffix: { mn: "-ийн сонголт", en: "'s Picks" },
 
   // Entertainment tabs
@@ -52,6 +52,7 @@ const STRINGS = {
   tabBooks: { mn: "Ном", en: "Books" },
   listen: { mn: "сонсох", en: "listen" },
   stop: { mn: "зогсоох", en: "stop" },
+  series: { mn: "Цуврал", en: "Series" },
 
   // Header
   follow: { mn: "Дагах", en: "Follow" },
@@ -62,7 +63,13 @@ const STRINGS = {
 
   // Ask
   askPlaceholder: { mn: "Асуулт үлдээх", en: "Leave me questions!" },
+  /** The composer's heading. "Q&A" reads as English on a Mongolian page, so
+   *  the Mongolian side spells it out. */
+  qa: { mn: "Асуулт & Хариулт", en: "Q&A" },
   question: { mn: "Асуулт", en: "Question" },
+  answer: { mn: "Хариулт", en: "Answer" },
+  /** Hint on the front of a published card: tapping turns it over. */
+  tapForAnswer: { mn: "Хариулт харах", en: "See answer" },
   today: { mn: "өнөөдөр", en: "today" },
   yesterday: { mn: "өчигдөр", en: "yesterday" },
   daysAgoSuffix: { mn: " өдрийн өмнө", en: " days ago" },

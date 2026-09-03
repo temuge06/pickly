@@ -37,7 +37,7 @@ export const demoProfile: Profile = {
   bio: "skincare, кофе, номтой найз 💛 Улаанбаатар",
   avatarUrl: photo("sarnai-avatar", 200, 200),
   accentColor: "#e8a33d",
-  theme: "on_fire" as const,
+  theme: "dalai_1" as const,
   socials: {
     instagram: "https://instagram.com/sarnai.mn",
     tiktok: "https://tiktok.com/@sarnai.mn",

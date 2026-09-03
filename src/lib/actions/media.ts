@@ -58,6 +58,48 @@ export async function addMediaItem(input: {
     })
     .onConflictDoNothing();
   revalidatePath("/dashboard");
+  revalidatePath(`/${profile.handle}`);
+}
+
+/**
+ * Star rating on a film, series or book, 1–5, or null to clear it.
+ *
+ * Stored in `activity_item.meta` rather than in a column of its own: the column
+ * exists precisely for "provider-specific extras: rating, artist, isbn", the
+ * value is read only alongside the row it belongs to, and adding it needs no
+ * migration against a database the public profile is already serving from.
+ *
+ * Merged into the existing meta, never replacing it — a song's previewUrl and a
+ * series' `tv` marker live in the same object.
+ */
+export async function setMediaRating(id: string, rating: number | null) {
+  const profile = await requireCurrentProfile();
+  const db = getDb();
+
+  // Clamp instead of reject: this arrives from a five-button row, so an
+  // out-of-range value means a bug on our side, not something to tell the
+  // creator about mid-edit.
+  const clean =
+    rating === null ? null : Math.min(5, Math.max(1, Math.round(rating)));
+
+  const rows = await db
+    .select({ meta: activityItem.meta })
+    .from(activityItem)
+    .where(and(eq(activityItem.id, id), eq(activityItem.profileId, profile.id)))
+    .limit(1);
+  const current = rows[0];
+  if (!current) return;
+
+  const meta = { ...(current.meta ?? {}) } as Record<string, unknown>;
+  if (clean === null) delete meta.rating;
+  else meta.rating = clean;
+
+  await db
+    .update(activityItem)
+    .set({ meta })
+    .where(and(eq(activityItem.id, id), eq(activityItem.profileId, profile.id)));
+  revalidatePath("/dashboard");
+  revalidatePath(`/${profile.handle}`);
 }
 
 export async function deleteMediaItem(id: string) {
@@ -67,4 +109,5 @@ export async function deleteMediaItem(id: string) {
     .delete(activityItem)
     .where(and(eq(activityItem.id, id), eq(activityItem.profileId, profile.id)));
   revalidatePath("/dashboard");
+  revalidatePath(`/${profile.handle}`);
 }

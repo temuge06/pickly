@@ -78,6 +78,17 @@ export const interestsSchema = z.array(z.string()).transform((values) => {
   return out;
 });
 
+/**
+ * How long a creator's public answer may be.
+ *
+ * Matched to the question limit in src/lib/ask/submit.ts (500): an answer is a
+ * reply to a question, not an essay, and the published card that carries it is
+ * a 166×222 tile on a horizontal shelf — past this it is clamped to six lines
+ * on the flip side and the rest is written for nobody. Enforced in the action
+ * as well as by the field's maxLength, since maxLength is only a browser hint.
+ */
+export const MAX_ASK_ANSWER = 500;
+
 /** My Picks shows at most three collection boxes. */
 export const MAX_COLLECTIONS = 3;
 

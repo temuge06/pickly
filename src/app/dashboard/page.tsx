@@ -4,6 +4,10 @@ import { LapisSongs } from "@/components/dashboard/lapis/LapisSongs";
 import { LapisLinks } from "@/components/dashboard/lapis/LapisLinks";
 import { LapisMedia } from "@/components/dashboard/lapis/LapisMedia";
 import { LapisProfile } from "@/components/dashboard/lapis/LapisProfile";
+import {
+  ProfileSaveBar,
+  ProfileSaveProvider,
+} from "@/components/dashboard/lapis/ProfileSave";
 import { ThemeShell } from "@/components/dashboard/lapis/ThemeShell";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { getDashboardData } from "@/lib/data/dashboard";
@@ -75,27 +79,40 @@ export default async function DashboardPage() {
           </div>
         ) : null}
 
-        <LapisProfile profile={profile} />
+        {/* One provider around every section: the fields live in the Профайл
+            card, the single Хадгалах button lives at the very bottom, and both
+            need the same action state. */}
+        <ProfileSaveProvider handle={profile.handle}>
+          {/* Quick Links are edited inside the profile card now, right under
+              the social rows — the design review treats them as part of the
+              identity block, not as a separate stop at the end of the page. */}
+          <LapisProfile
+            profile={profile}
+            extraLinks={<LapisLinks links={data.links} embedded />}
+          />
 
-        {/* One flag covers music + film + book: they are a single
-            Entertainment surface, so all three settings areas go together. */}
-        {flags.entertainment ? (
-          <>
-            <LapisSongs items={data.tracks} />
+          {/* One flag covers music + film + book: they are a single
+              Entertainment surface, so all three settings areas go together. */}
+          {flags.entertainment ? (
+            <>
+              <LapisSongs items={data.tracks} />
 
-            <LapisMedia
-              kind="film"
-              icon="🎬"
-              title="Кино"
-              items={data.films}
-              disabledHint={env.hasTmdb ? undefined : "TMDB түлхүүр байхгүй тул хайлт хязгаарлагдмал."}
-            />
+              <LapisMedia
+                kind="film"
+                icon="🎬"
+                title="Кино & Цуврал"
+                items={data.films}
+                disabledHint={env.hasTmdb ? undefined : "TMDB түлхүүр байхгүй тул хайлт хязгаарлагдмал."}
+              />
 
-            <LapisMedia kind="book" icon="📚" title="Ном" items={data.books} />
-          </>
-        ) : null}
+              <LapisMedia kind="book" icon="📚" title="Ном" items={data.books} />
+            </>
+          ) : null}
 
-        <LapisLinks links={data.links} />
+          {/* Last thing on the page, after every section is filled in. A
+              successful save lands the creator on their public profile. */}
+          <ProfileSaveBar />
+        </ProfileSaveProvider>
       </div>
     </ThemeShell>
   );

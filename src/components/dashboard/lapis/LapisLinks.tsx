@@ -19,8 +19,20 @@ type Link = { id: string; label: string; url: string; icon?: string | null };
  *
  * Links show on the public profile as the Quick Links shelf, so order matters
  * — hence the up/down controls on each row.
+ *
+ * `embedded` drops the section chrome so the same editor can sit inside the
+ * Профайл card, directly under the social rows, which is where the design
+ * review asked for "нэмэлт холбоосууд" (e.g. a "My daily life vlog" YouTube
+ * link). Every control is type="button", so living inside the profile <form>
+ * submits nothing of its own.
  */
-export function LapisLinks({ links }: { links: Link[] }) {
+export function LapisLinks({
+  links,
+  embedded = false,
+}: {
+  links: Link[];
+  embedded?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
@@ -68,22 +80,19 @@ export function LapisLinks({ links }: { links: Link[] }) {
     start(async () => void (await reorderLinks(next.map((l) => l.id))));
   }
 
-  return (
-    <LSection
-      icon="🔗"
-      title="Quick Links"
-      action={
-        links.length > 0 && !open ? (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="font-malt text-[12px] font-bold text-[var(--t-accent)]"
-          >
-            + Нэмэх
-          </button>
-        ) : null
-      }
-    >
+  const addButton =
+    links.length > 0 && !open ? (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="font-malt text-[12px] font-bold text-[var(--t-accent)]"
+      >
+        + Нэмэх
+      </button>
+    ) : null;
+
+  const body = (
+    <>
       {open || links.length === 0 ? (
         open ? (
           <Well className="animate-pop flex flex-col gap-3 p-3">
@@ -125,7 +134,7 @@ export function LapisLinks({ links }: { links: Link[] }) {
                   setLabelTouched(true);
                 }}
                 maxLength={40}
-                placeholder="Жишээ: Миний подкаст"
+                placeholder="Жишээ: My daily life vlog"
               />
             </div>
 
@@ -158,7 +167,7 @@ export function LapisLinks({ links }: { links: Link[] }) {
           <>
             <Empty>
               YouTube, TikTok, newsletter — профайл дээрээ харагдах холбоосоо
-              нэмээрэй.
+              нэмээрэй. Жишээ нь: “My daily life vlog”.
             </Empty>
             <LButton type="button" onClick={() => setOpen(true)}>
               + Холбоос нэмэх
@@ -208,6 +217,26 @@ export function LapisLinks({ links }: { links: Link[] }) {
           </button>
         </div>
       ))}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <LLabel>Нэмэлт холбоосууд</LLabel>
+          {/* The label carries its own bottom margin, so the action next to it
+              needs the same nudge to sit on the baseline rather than below it. */}
+          <span className="mb-1.5">{addButton}</span>
+        </div>
+        <div className="flex flex-col gap-2.5">{body}</div>
+      </div>
+    );
+  }
+
+  return (
+    <LSection icon="🔗" title="Нэмэлт холбоосууд" action={addButton}>
+      {body}
     </LSection>
   );
 }

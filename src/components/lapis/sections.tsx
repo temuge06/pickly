@@ -1,5 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import type { ProfileCampaign } from "@/lib/data/campaigns";
 import type {
@@ -17,6 +16,7 @@ import { SOCIAL_PLATFORMS, detectLinkIcon, hostOf as socialHostOf } from "@/lib/
 import { getTheme } from "@/lib/themes";
 import { DEFAULT_LOCALE, translator, type Locale } from "@/lib/i18n";
 import { profileChips } from "@/lib/personality";
+import { AskCard } from "./AskCard";
 import { LangToggle } from "./LangToggle";
 import { FollowButton } from "./FollowButton";
 import { PromoCard, type PublicPromo } from "./PromoCard";
@@ -859,7 +859,7 @@ export function LapisAsk({
                   (displayName ?? handle).trim().charAt(0).toUpperCase()
                 )}
               </span>
-              <span className="text-[18px] font-bold leading-[14px]">Q&amp;A</span>
+              <span className="text-[18px] font-bold leading-[14px]">{t("qa")}</span>
             </span>
             {/* Looks like the input it leads to, but is not one: the real
                 composer lives on /[handle]/ask behind the rate limiter and the
@@ -877,55 +877,22 @@ export function LapisAsk({
         {published.length > 0 ? (
           <div className="no-scrollbar flex gap-[5px] overflow-x-auto scroll-pl-[11px] px-[11px]">
             {published.map((q) => (
-              <AskCard key={q.id} question={q} locale={locale} />
+              <AskCard
+                key={q.id}
+                body={q.body}
+                answer={q.answerBody}
+                // Formatted here, on the server, so the card component never
+                // needs the locale or the string table.
+                age={relativeDays(q.createdAt, locale)}
+                questionLabel={t("question")}
+                answerLabel={t("answer")}
+                hint={t("tapForAnswer")}
+              />
             ))}
           </div>
         ) : null}
       </div>
     </Section>
-  );
-}
-
-/**
- * One published question (Figma 1208:14888). The mock draws it as a two-sided
- * card — question on the front, answer on the back — so the answer is rendered
- * here as a labelled block beneath the quote rather than as a separate tile,
- * which keeps both halves reachable without a flip interaction the section has
- * no room to teach.
- */
-function AskCard({
-  question,
-  locale = DEFAULT_LOCALE,
-}: {
-  question: Ask;
-  locale?: Locale;
-}) {
-  const t = translator(locale);
-  return (
-    <article
-      className="flex h-[222px] w-[166px] shrink-0 flex-col overflow-hidden rounded-[13px] px-[15px] pb-[7px] pt-[16px]"
-      style={{ background: "var(--t-ask)", color: "var(--t-on-ask)" }}
-    >
-      <Sparkle />
-      <p className="mt-[6px] text-[14px] font-bold leading-[1.2] tracking-[-0.28px]">
-        {t("question")}
-      </p>
-      <p className="mt-[6px] line-clamp-4 text-[14px] italic leading-[1.15] tracking-[-0.28px]">
-        “{question.body}”
-      </p>
-      {question.answerBody ? (
-        <p className="mt-[6px] line-clamp-3 text-[12px] leading-[1.15] opacity-75">
-          {question.answerBody}
-        </p>
-      ) : null}
-      {/* The mock puts a "Pinned" chip opposite the timestamp. There is no
-          pinning in the data model and this change is a restyle, not a feature
-          — so the row carries the age alone rather than a chip that would be
-          decorative on every card. */}
-      <p className="mt-auto text-[8.74px] leading-[1.2] tracking-[-0.17px] opacity-70">
-        {relativeDays(question.createdAt, locale)}
-      </p>
-    </article>
   );
 }
 
@@ -1000,8 +967,11 @@ export function LapisSimilar({
 export function LapisFooter({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
   return (
     <footer className="flex h-[75px] flex-col items-center justify-center gap-[6px] bg-[var(--t-bg)]">
-      <Wordmark height={19} className="text-[var(--t-accent)]" title="LinkSpot" />
-      <p className="text-[10px] uppercase leading-none text-[var(--t-accent)]">
+      {/* Lighter than the header lockup on purpose (review: "фонт-ыг нь
+          нарийсгах"). The footer is a sign-off, not a masthead, and at 19px the
+          solid outlines read heavier than the caps line under them. */}
+      <Wordmark height={19} className="text-[var(--t-accent)]" title="LinkSpot" thin />
+      <p className="text-[10px] font-light uppercase leading-none text-[var(--t-accent)]">
         {translator(locale)("since")}
       </p>
     </footer>
@@ -1052,20 +1022,3 @@ function ArrowOut({ className }: { className?: string }) {
     </svg>
   );
 }
-
-const iconStyle: CSSProperties = { width: 21, height: 21 };
-function Sparkle() {
-  return (
-    <svg
-      width="46"
-      height="46"
-      viewBox="0 0 46 46"
-      className="-ml-[4px]"
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M23 0c.8 14 1.5 16 23 23-21.5 7-22.2 9-23 23-.8-14-1.5-16-23-23 21.5-7 22.2-9 23-23Z" />
-    </svg>
-  );
-}
-

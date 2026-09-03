@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import { askBlock, askMessage, profile } from "@/db/schema";
 import { requireCurrentProfile } from "@/lib/auth/session";
+import { MAX_ASK_ANSWER } from "@/lib/validation";
 
 /** Ensures a message belongs to the current creator; returns it. */
 async function ownedMessage(messageId: string) {
@@ -28,6 +29,11 @@ export async function answerAsk(
   const { msg, db } = await ownedMessage(messageId);
   const body = answerBody.trim();
   if (!body) throw new Error("Хариу заавал.");
+  // The composer caps this too, but maxLength is a browser hint — a direct
+  // call to the action is not bound by it.
+  if (body.length > MAX_ASK_ANSWER) {
+    throw new Error(`Хариулт хамгийн ихдээ ${MAX_ASK_ANSWER} тэмдэгт.`);
+  }
   await db
     .update(askMessage)
     .set({
@@ -87,24 +93,6 @@ export async function blockAsker(messageId: string) {
   revalidatePath("/dashboard/ask");
 }
 
-/**
- * Hand a product question to staff (question → pick, without giving creators
- * write access to picks).
- *
- * Creators can no longer turn an answer into a pick themselves — this marks
- * the message instead, and /admin surfaces the flagged ones as a work queue.
- * The creator keeps the part that is genuinely theirs (answering and
- * publishing); the catalogue write stays on the admin side of the boundary.
- */
-export async function setAskFlaggedForPick(messageId: string, flagged: boolean) {
-  const { msg, db } = await ownedMessage(messageId);
-  await db
-    .update(askMessage)
-    .set({ flaggedForPick: flagged })
-    .where(eq(askMessage.id, msg.id));
-  revalidatePath("/dashboard/ask");
-}
-
 export async function setAskEnabled(enabled: boolean) {
   const me = await requireCurrentProfile();
   const db = getDb();
@@ -114,14 +102,4 @@ export async function setAskEnabled(enabled: boolean) {
     .where(eq(profile.id, me.id));
   revalidatePath("/dashboard/ask");
   revalidatePath("/dashboard");
-}
-
-export async function setAskPrompt(prompt: string) {
-  const me = await requireCurrentProfile();
-  const db = getDb();
-  await db
-    .update(profile)
-    .set({ askPrompt: prompt.trim() || null })
-    .where(eq(profile.id, me.id));
-  revalidatePath("/dashboard/ask");
 }

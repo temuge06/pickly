@@ -14,8 +14,14 @@ import { Hint, LLabel } from "@/components/dashboard/lapis/ui";
  *
  * The Figma pins Bumble's "More about me" and "Passions" screens as the
  * pattern to follow (a tap-to-toggle grid with a running count) rather than a
- * LinkSpot design, so these are built in our own language: the auth screens'
- * warm palette, our radii, our type.
+ * LinkSpot design, so these are built in our own language: our radii, our type,
+ * and the surrounding palette's --t-* tokens.
+ *
+ * Those tokens are the fix for a real bug: the chips used to be literal cream
+ * on white-alpha ("text-[#feedd5]/80", "border-white/20"), which is invisible
+ * on Light Mode — the whole Сонирхол grid disappeared in the editor. Reading
+ * the palette instead means one grid works on both variants, and on the auth
+ * screens, which now define the same tokens (see AuthShell).
  *
  * Both are uncontrolled from the form's point of view — they render hidden
  * inputs — so the parent stays a plain <form action={serverAction}> with no
@@ -25,6 +31,18 @@ import { Hint, LLabel } from "@/components/dashboard/lapis/ui";
 
 const chipBase =
   "rounded-[10px] border px-[13px] py-[5px] text-[13px] leading-[20px] transition-colors";
+
+/** Chip appearance, driven entirely by the palette in scope. */
+const chipOn: React.CSSProperties = {
+  borderColor: "var(--t-accent)",
+  background: "var(--t-accent)",
+  color: "var(--t-on-accent)",
+};
+const chipOff: React.CSSProperties = {
+  borderColor: "var(--t-ring)",
+  background: "var(--t-field)",
+  color: "var(--t-text)",
+};
 
 /** Single-select: sixteen types, plus a way out for people who don't know. */
 export function MbtiPicker({ initial = null }: { initial?: string | null }) {
@@ -45,11 +63,8 @@ export function MbtiPicker({ initial = null }: { initial?: string | null }) {
               // there is no empty option to move back to.
               onClick={() => setPicked(on ? null : type)}
               aria-pressed={on}
-              className={`${chipBase} ${
-                on
-                  ? "border-[#fe7f42] bg-[#fe7f42] font-bold text-[#2a1617]"
-                  : "border-white/20 text-[#feedd5]/80 active:bg-white/[0.06]"
-              }`}
+              style={on ? chipOn : chipOff}
+              className={`${chipBase} ${on ? "font-bold" : ""}`}
             >
               {type}
             </button>
@@ -61,11 +76,11 @@ export function MbtiPicker({ initial = null }: { initial?: string | null }) {
         href={MBTI_TEST_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-fit font-malt text-[13px] font-bold text-[#fe7f42] underline underline-offset-2"
+        className="w-fit font-malt text-[13px] font-bold text-[var(--t-accent)] underline underline-offset-2"
       >
         Мэдэхгүй юу? Энд дарж тестээ өг ↗
       </a>
-      <Hint>Профайл дээр чинь өнгөтэй тэмдэг болж харагдана. Алгасаж болно.</Hint>
+      <Hint>Профайлын дээд хэсэгт харагдана. Алгасаж болно.</Hint>
 
       {/* Empty string when nothing is picked, so the action can tell "skipped"
           from "field absent" and clear a previously saved value. */}
@@ -109,12 +124,9 @@ export function InterestsPicker({ initial = [] }: { initial?: string[] }) {
               // Unpicked chips dim once the cap is reached, so the limit is
               // visible before it is hit rather than only when a tap does
               // nothing.
+              style={on ? chipOn : chipOff}
               className={`${chipBase} ${
-                on
-                  ? "border-[#fe7f42] bg-[#fe7f42] font-bold text-[#2a1617]"
-                  : full
-                    ? "border-white/10 text-[#feedd5]/30"
-                    : "border-white/20 text-[#feedd5]/80 active:bg-white/[0.06]"
+                on ? "font-bold" : full ? "opacity-40" : ""
               }`}
             >
               {interest.mn}
@@ -122,7 +134,7 @@ export function InterestsPicker({ initial = [] }: { initial?: string[] }) {
           );
         })}
       </div>
-      <Hint>Эхний хоёр нь профайл дээр чинь харагдана. Алгасаж болно.</Hint>
+      <Hint>Таны профайл хэсэгт эхний 2 хобби харагдана. Алгасаж болно.</Hint>
 
       {picked.map((key) => (
         <input key={key} type="hidden" name="interest" value={key} />

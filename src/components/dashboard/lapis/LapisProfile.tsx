@@ -1,10 +1,10 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useActionState, useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { socialGlyph } from "@/components/social-icons";
 import { removeAvatar, uploadAvatar } from "@/lib/actions/avatar";
-import { setProfileTheme, updateProfile } from "@/lib/actions/profile";
+import { setProfileTheme } from "@/lib/actions/profile";
 import {
   SOCIAL_PLATFORMS,
   displaySocial,
@@ -15,7 +15,8 @@ import {
 import { THEMES, type ThemeKey } from "@/lib/themes";
 import { InterestsPicker, MbtiPicker } from "@/components/onboarding/Pickers";
 import { useDashboardTheme } from "./ThemeShell";
-import { LButton, LInput, LLabel, LTextArea, LSection, Spinner, Well } from "./ui";
+import { useProfileSave } from "./ProfileSave";
+import { LInput, LLabel, LTextArea, LSection, Spinner, Well } from "./ui";
 
 type Profile = {
   displayName: string;
@@ -29,12 +30,24 @@ type Profile = {
   interests: string[] | null;
 };
 
-export function LapisProfile({ profile }: { profile: Profile }) {
+export function LapisProfile({
+  profile,
+  extraLinks,
+}: {
+  profile: Profile;
+  /** The Quick Links editor, rendered directly under the socials rows — the
+   *  design review put "нэмэлт холбоосууд" there rather than in a section of
+   *  its own at the far end of the page. Passed in as a slot so this component
+   *  stays free of link data and its server actions. */
+  extraLinks?: ReactNode;
+}) {
   const [avatar, setAvatar] = useState(profile.avatarUrl);
   const [uploading, startUpload] = useTransition();
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [state, action, saving] = useActionState(updateProfile, null);
+  // Submitting happens from <ProfileSaveBar> at the bottom of the page, so the
+  // action and its pending state come from the provider, not from here.
+  const { formId, action } = useProfileSave();
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -126,7 +139,7 @@ export function LapisProfile({ profile }: { profile: Profile }) {
         </div>
 
         {/* Bio / name / socials form */}
-        <form action={action} className="flex flex-col gap-3">
+        <form id={formId} action={action} className="flex flex-col gap-3">
           <div>
             <LLabel htmlFor="displayName">Харагдах нэр</LLabel>
             <LInput id="displayName" name="displayName" defaultValue={profile.displayName} required />
@@ -151,23 +164,16 @@ export function LapisProfile({ profile }: { profile: Profile }) {
 
           <SocialsEditor socials={profile.socials ?? {}} />
 
+          {extraLinks}
+
           <input type="hidden" name="accentColor" value={profile.accentColor ?? ""} />
 
           {/* Inside the one form on purpose. Splitting it left the submit
               button in a second <form> with no displayName field, so saving
               failed with "Expected string, received null". Every control in
-              ThemePicker is type="button", so nesting it submits nothing. */}
+              ThemePicker and in the links editor is type="button", so nesting
+              them submits nothing. */}
           <ThemePicker current={profile.theme} />
-
-          {state?.error ? (
-            <p className="font-malt text-[13px] text-[var(--t-danger)]">{state.error}</p>
-          ) : null}
-          {state?.ok ? (
-            <p className="font-malt text-[13px] text-[var(--t-success)]">Хадгаллаа ✓</p>
-          ) : null}
-          <LButton type="submit" loading={saving}>
-            {saving ? "Хадгалж байна…" : "Хадгалах"}
-          </LButton>
         </form>
       </Well>
     </LSection>
@@ -316,7 +322,7 @@ function SocialsEditor({ socials }: { socials: Record<string, string> }) {
             onClick={() => setPicking(true)}
             className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-[14px] border border-dashed border-[var(--t-ring)] font-malt text-[13px] font-bold text-[var(--t-accent)] transition-colors active:bg-[var(--t-well)]"
           >
-            <span className="text-[15px] leading-none">+</span> Сүлжээ нэмэх
+            <span className="text-[15px] leading-none">+</span> Сошиал хаяг нэмэх
           </button>
         )
       ) : null}

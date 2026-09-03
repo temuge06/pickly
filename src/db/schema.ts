@@ -95,10 +95,13 @@ export const askStatusEnum = pgEnum("ask_status", [
 
 /**
  * Visual themes a creator can pick for their public profile. Each key maps to a
- * palette in src/lib/themes.ts; the names are the designer's (Figma: Coral
- * Wave / On Fire / Dalai #1 / Dalai #2). `on_fire` is the default because it IS
- * the palette every existing profile already renders with — so adding this
- * column changes nothing visually until a creator chooses otherwise.
+ * palette in src/lib/themes.ts.
+ *
+ * Only `dalai_1` (Dark Mode) and `dalai_2` (Light Mode) are offered — the two
+ * warm palettes were cut in review (migration 0013 moves every row off them).
+ * The values stay listed because dropping one from a Postgres enum means
+ * recreating the type; nothing reads them, and getTheme() maps either onto the
+ * surviving palette of the same brightness if one ever turns up.
  */
 export const profileThemeEnum = pgEnum("profile_theme", [
   "on_fire",
@@ -163,7 +166,7 @@ export const profile = pgTable("profile", {
   avatarUrl: text("avatar_url"),
   accentColor: text("accent_color"),
   /** Public-profile palette. See profileThemeEnum + src/lib/themes.ts. */
-  theme: profileThemeEnum("theme").notNull().default("on_fire"),
+  theme: profileThemeEnum("theme").notNull().default("dalai_1"),
   /** e.g. { instagram: "...", tiktok: "...", youtube: "..." } */
   socials: jsonb("socials").$type<Record<string, string>>().default({}),
   /**

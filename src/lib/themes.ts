@@ -1,25 +1,27 @@
 import type { profile } from "@/db/schema";
 
 /**
- * The four public-profile palettes, transcribed from the designer's Figma spec
- * sheets (file JLqMihd0UwHkxgu9f1TbNX, nodes 962-5637 / 962-5736 / 962-5798 /
- * 962-8119). Client-safe: no database import, so the dashboard's theme picker
- * can render swatches without pulling the postgres driver into the bundle.
+ * The public-profile palettes.
+ *
+ * The product ships TWO of them — a dark one and a light one — transcribed
+ * from the MVP redesign (file JLqMihd0UwHkxgu9f1TbNX, section MVP1, node
+ * 1208-9475), which is drawn only on those two variants. The designer's old
+ * "Dalai #1 / Dalai #2" names are now what they always were to a creator:
+ * Dark Mode and Light Mode.
+ *
+ * The two warm palettes ("On Fire", "Coral Wave") were retired at the
+ * designer's request. Their ENUM VALUES survive in Postgres — dropping a value
+ * from an enum means recreating the type — so `getTheme` maps each legacy key
+ * onto the surviving palette of the same brightness (see THEME_ALIASES). That
+ * keeps a profile saved before the change rendering correctly whether or not
+ * migration 0013 has run against the database in front of it.
+ *
+ * Client-safe: no database import, so the dashboard's theme picker can render
+ * swatches without pulling the postgres driver into the bundle.
  *
  * Each theme fills the SAME token contract, and every themed surface reads a
  * token rather than a literal colour — that is what makes switching a theme a
  * one-line change instead of a rewrite of every section.
- *
- * Two annotation labels in the Figma sheets contradict their own swatches
- * (On Fire's background label reads #FEEDD5, Dalai #2's reads #0B1014). The
- * swatches and the rendered mocks agree with each other, so the values below
- * follow the swatches.
- *
- * The MVP redesign (section MVP1, node 1208-9475) is drawn only on the dark
- * "Dalai #1" and light "Dalai #2" variants. Those two therefore carry the
- * design's literal values; On Fire and Coral Wave fill the same enlarged token
- * contract from their own palettes, which is what lets one set of components
- * render the new layout in all four.
  */
 
 export type ThemeKey = (typeof profile.$inferSelect)["theme"];
@@ -136,12 +138,17 @@ export type ThemeTokens = {
 
 export type Theme = {
   key: ThemeKey;
-  /** Designer's name, shown in the picker. */
+  /** Creator-facing name, shown in the picker. */
   label: string;
   tokens: ThemeTokens;
 };
 
-export const THEMES: Theme[] = [
+/**
+ * Every palette the database can hold, retired ones included. Not exported:
+ * the picker must only ever offer what THEMES lists, and a retired key reaches
+ * a palette through getTheme's alias table instead.
+ */
+const PALETTES: Theme[] = [
   {
     key: "on_fire",
     label: "On Fire",
@@ -240,7 +247,7 @@ export const THEMES: Theme[] = [
   },
   {
     key: "dalai_1",
-    label: "Dalai #1",
+    label: "Dark Mode",
     tokens: {
       bg: "#0b1014",
       border: "#323232",
@@ -288,7 +295,7 @@ export const THEMES: Theme[] = [
   },
   {
     key: "dalai_2",
-    label: "Dalai #2",
+    label: "Light Mode",
     tokens: {
       // The MVP design's light variant ("Tsagaan"/"White") inverts the figure
       // and ground of the black one rather than merely lightening it: the PAGE
@@ -341,10 +348,30 @@ export const THEMES: Theme[] = [
   },
 ];
 
-export const DEFAULT_THEME: ThemeKey = "on_fire";
+/**
+ * What a creator can actually choose, in picker order: the dark variant first,
+ * because it is the default and the one the MVP frames are drawn on.
+ */
+export const THEMES: Theme[] = [
+  PALETTES.find((t) => t.key === "dalai_1")!,
+  PALETTES.find((t) => t.key === "dalai_2")!,
+];
+
+/**
+ * Retired key → the surviving palette of the same brightness. On Fire was the
+ * dark warm theme and Coral Wave the light one, so each lands on the variant
+ * whose figure/ground it already had; a profile that was dark stays dark.
+ */
+const THEME_ALIASES: Partial<Record<string, ThemeKey>> = {
+  on_fire: "dalai_1",
+  coral_wave: "dalai_2",
+};
+
+export const DEFAULT_THEME: ThemeKey = "dalai_1";
 
 export function getTheme(key: string | null | undefined): Theme {
-  return THEMES.find((t) => t.key === key) ?? THEMES[0]!;
+  const resolved = (key && THEME_ALIASES[key]) || key;
+  return THEMES.find((t) => t.key === resolved) ?? THEMES[0]!;
 }
 
 /**

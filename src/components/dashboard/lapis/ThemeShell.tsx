@@ -45,7 +45,10 @@ export function ThemeShell({
   initialTheme: ThemeKey;
   children: ReactNode;
 }) {
-  const [theme, setTheme] = useState<ThemeKey>(initialTheme);
+  // Normalised through getTheme, not stored raw: a profile saved before the
+  // two warm palettes were retired still carries `on_fire`/`coral_wave`, and
+  // an unresolved key would leave the picker with nothing selected.
+  const [theme, setTheme] = useState<ThemeKey>(() => getTheme(initialTheme).key);
   const tokens = getTheme(theme).tokens;
 
   // A light theme on a dark `color-scheme: dark` root gives the browser the

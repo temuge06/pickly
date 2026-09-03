@@ -135,6 +135,7 @@ export default async function ProfilePage({
                 books: t("tabBooks"),
                 listen: t("listen"),
                 stop: t("stop"),
+                series: t("series"),
               }}
             />
           ) : null}
