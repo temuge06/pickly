@@ -15,8 +15,11 @@ import {
   LapisWishlist,
 } from "@/components/lapis/sections";
 import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
-import { isFollowing } from "@/lib/data/follow";
-import { getOtherCreators, getPublicProfile } from "@/lib/data/public-profile";
+import {
+  getOtherCreators,
+  getPendingAsks,
+  getPublicProfile,
+} from "@/lib/data/public-profile";
 import { getUnreadNotificationCount } from "@/lib/data/notifications";
 import { getTheme, themeStyle } from "@/lib/themes";
 import { LOCALE_COOKIE, parseLocale, translator } from "@/lib/i18n";
@@ -52,11 +55,21 @@ export default async function ProfilePage({
   // when I am looking at someone else). Both resolve server-side, so a visitor
   // receives HTML that contains neither.
   const me = viewer ? await getCurrentProfile() : null;
-  const [following, unread] = await Promise.all([
-    !isOwner && me ? isFollowing(profile.id) : Promise.resolve(false),
-    isOwner && me ? getUnreadNotificationCount(me) : Promise.resolve(0),
-  ]);
+  const unread = isOwner && me ? await getUnreadNotificationCount(me) : 0;
   const backTo = me && me.id !== profile.id ? me.handle : null;
+
+  // Private rows, so they are fetched only once ownership is settled — never
+  // as part of the shared profile query every visitor triggers.
+  // Narrowed to what the inline inbox draws: the row also carries the asker's
+  // fingerprint and moderation state, and none of that belongs in a payload
+  // sent to a browser.
+  const pendingAsks =
+    isOwner && flags.ask
+      ? (await getPendingAsks(profile.id)).map((q) => ({
+          id: q.id,
+          body: q.body,
+        }))
+      : null;
 
   // Demo recommenders: profile pictures of other creators, shown as the small
   // avatar stack on each Top Pick. (No per-product recommendation data yet.)
@@ -102,15 +115,10 @@ export default async function ProfilePage({
           <LapisStatusBar
             bell={isOwner ? { unread } : null}
             backTo={backTo}
+            handle={profile.handle}
             locale={locale}
           />
-          <LapisHeader
-            profile={profile}
-            isOwner={isOwner}
-            isFollowing={following}
-            isAuthed={viewer !== null}
-            locale={locale}
-          />
+          <LapisHeader profile={profile} isOwner={isOwner} locale={locale} />
           {/* Section order follows the MVP design (Figma MVP1, 1208:9944):
               Quick Links sit directly under the bio shelf, because they are
               the creator's own destinations and the design treats them as part
@@ -159,6 +167,7 @@ export default async function ProfilePage({
               displayName={profile.displayName}
               askEnabled={profile.askEnabled}
               questions={askMessages}
+              pending={pendingAsks}
               locale={locale}
             />
           ) : null}

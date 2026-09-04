@@ -226,7 +226,17 @@ function SocialsEditor({ socials }: { socials: Record<string, string> }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <LLabel>Сошиал холбоос</LLabel>
+      <div>
+        <LLabel>Сошиал холбоос</LLabel>
+        {/* The catalogue decides which rows ask for a handle and which ask for
+            a pasted link (see SocialPlatform.mode); this line is what tells the
+            creator that up front, so they do not type a username into a field
+            that wants an address. */}
+        <p className="-mt-1 mb-0.5 font-malt text-[11.5px] leading-[1.35] text-[var(--t-muted)]">
+          Instagram-д хэрэглэгчийн нэрээ, бусад сүлжээнд профайлынхаа холбоосыг
+          хуулж тавина уу.
+        </p>
+      </div>
 
       {rows.map(({ key, value }) => {
         const platform = getPlatform(key)!;
@@ -259,6 +269,7 @@ function SocialsEditor({ socials }: { socials: Record<string, string> }) {
                   autoCorrect="off"
                   spellCheck={false}
                   inputMode={platform.key === "email" ? "email" : "url"}
+                  aria-label={platform.label}
                   className="min-w-0 flex-1 bg-transparent font-malt text-[16px] text-[var(--t-text)] outline-none placeholder:text-[var(--t-muted)] placeholder:opacity-55"
                 />
               </div>

@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { getFeatureFlags } from "@/lib/data/features";
+import { sortByPosition } from "@/lib/media-meta";
 import { activityItem, askMessage, connection, link } from "@/db/schema";
 
 type Profile = { id: string };
@@ -47,9 +48,12 @@ export async function getDashboardData(profile: Profile) {
     flags,
     links,
     connections,
-    films: activity.filter((a) => a.kind === "film"),
-    books: activity.filter((a) => a.kind === "book"),
-    tracks: activity.filter((a) => a.kind === "track"),
+    // Newest-first out of the database, then the creator's own arrangement on
+    // top of it — the editor's up/down controls write `meta.position`, and the
+    // public shelf reads it through the same helper.
+    films: sortByPosition(activity.filter((a) => a.kind === "film")),
+    books: sortByPosition(activity.filter((a) => a.kind === "book")),
+    tracks: sortByPosition(activity.filter((a) => a.kind === "track")),
     ask: {
       new: asks.filter((m) => m.status === "new"),
       answered: asks.filter((m) => m.status === "answered"),

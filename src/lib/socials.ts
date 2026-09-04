@@ -33,30 +33,46 @@ export type SocialKey = (typeof SOCIAL_KEYS)[number];
 export type SocialPlatform = {
   key: SocialKey;
   label: string;
-  /** What the creator types — a handle for most, a full address for two. */
+  /** What the creator types — a handle for Instagram, a pasted link elsewhere. */
   placeholder: string;
-  /** Prepended to a bare handle to build the stored URL. */
+  /** Prepended to a bare handle to build the stored URL. Still used by every
+   *  platform as a tolerance: a creator who types just their username into a
+   *  link field gets a working address rather than an error. */
   prefix: string;
   /** Shown as a static affix in the editor field so the creator only types
-   *  the handle. Empty for website/email, which take the whole value. */
+   *  the handle. Empty for every link-mode platform, which takes the whole
+   *  value. */
   display: string;
+  /**
+   * How the editor asks for this platform.
+   *
+   *   "handle" — a username, typed after a fixed `display` affix
+   *   "url"    — the whole link, pasted
+   *
+   * Instagram is the only handle-mode platform left. The design review found
+   * the affix rows confusing everywhere else: a creator has the share link on
+   * their clipboard, not a bare username, and platforms whose share URL is not
+   * simply `prefix + handle` (a YouTube /channel/UC… address, a Facebook page
+   * id, a Telegram invite) could not be expressed at all.
+   */
+  mode: "handle" | "url";
 };
 
 export const SOCIAL_PLATFORMS: SocialPlatform[] = [
-  { key: "instagram", label: "Instagram", placeholder: "username", prefix: "https://instagram.com/", display: "instagram.com/" },
-  { key: "tiktok", label: "TikTok", placeholder: "username", prefix: "https://tiktok.com/@", display: "tiktok.com/@" },
-  { key: "youtube", label: "YouTube", placeholder: "channel", prefix: "https://youtube.com/@", display: "youtube.com/@" },
-  { key: "facebook", label: "Facebook", placeholder: "username", prefix: "https://facebook.com/", display: "facebook.com/" },
-  { key: "threads", label: "Threads", placeholder: "username", prefix: "https://threads.net/@", display: "threads.net/@" },
-  { key: "x", label: "X", placeholder: "username", prefix: "https://x.com/", display: "x.com/" },
-  { key: "telegram", label: "Telegram", placeholder: "username", prefix: "https://t.me/", display: "t.me/" },
-  { key: "linkedin", label: "LinkedIn", placeholder: "username", prefix: "https://linkedin.com/in/", display: "linkedin.com/in/" },
-  { key: "snapchat", label: "Snapchat", placeholder: "username", prefix: "https://snapchat.com/add/", display: "snapchat.com/add/" },
-  { key: "pinterest", label: "Pinterest", placeholder: "username", prefix: "https://pinterest.com/", display: "pinterest.com/" },
-  { key: "twitch", label: "Twitch", placeholder: "username", prefix: "https://twitch.tv/", display: "twitch.tv/" },
-  { key: "spotify", label: "Spotify", placeholder: "user id", prefix: "https://open.spotify.com/user/", display: "open.spotify.com/user/" },
-  { key: "website", label: "Вэбсайт", placeholder: "example.com", prefix: "https://", display: "" },
-  { key: "email", label: "Имэйл", placeholder: "hello@example.com", prefix: "mailto:", display: "" },
+  { key: "instagram", label: "Instagram", placeholder: "username", prefix: "https://instagram.com/", display: "instagram.com/", mode: "handle" },
+  { key: "tiktok", label: "TikTok", placeholder: "tiktok.com/@username", prefix: "https://tiktok.com/@", display: "", mode: "url" },
+  { key: "youtube", label: "YouTube", placeholder: "youtube.com/@channel", prefix: "https://youtube.com/@", display: "", mode: "url" },
+  { key: "facebook", label: "Facebook", placeholder: "facebook.com/page", prefix: "https://facebook.com/", display: "", mode: "url" },
+  { key: "threads", label: "Threads", placeholder: "threads.net/@username", prefix: "https://threads.net/@", display: "", mode: "url" },
+  { key: "x", label: "X", placeholder: "x.com/username", prefix: "https://x.com/", display: "", mode: "url" },
+  { key: "telegram", label: "Telegram", placeholder: "t.me/username", prefix: "https://t.me/", display: "", mode: "url" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/username", prefix: "https://linkedin.com/in/", display: "", mode: "url" },
+  { key: "snapchat", label: "Snapchat", placeholder: "snapchat.com/add/username", prefix: "https://snapchat.com/add/", display: "", mode: "url" },
+  { key: "pinterest", label: "Pinterest", placeholder: "pinterest.com/username", prefix: "https://pinterest.com/", display: "", mode: "url" },
+  { key: "twitch", label: "Twitch", placeholder: "twitch.tv/username", prefix: "https://twitch.tv/", display: "", mode: "url" },
+  { key: "spotify", label: "Spotify", placeholder: "open.spotify.com/user/…", prefix: "https://open.spotify.com/user/", display: "", mode: "url" },
+  { key: "website", label: "Вэбсайт", placeholder: "example.com", prefix: "https://", display: "", mode: "url" },
+  { key: "email", label: "Имэйл", placeholder: "hello@example.com", prefix: "mailto:", display: "", mode: "url" },
 ];
 
 const BY_KEY = new Map(SOCIAL_PLATFORMS.map((p) => [p.key, p]));
@@ -73,7 +89,8 @@ export function isSocialKey(key: string): key is SocialKey {
  * Turn whatever the creator typed into a URL that will actually open.
  *
  * Accepts a bare handle (`sarnai`, `@sarnai`), a bare domain path
- * (`instagram.com/sarnai`), or a full URL. Returns null when there is nothing
+ * (`instagram.com/sarnai`), or a full URL — in every mode, so a link field
+ * that got a username still resolves. Returns null when there is nothing
  * usable left after trimming, so the caller can drop the key entirely rather
  * than store an empty string.
  */
@@ -92,7 +109,7 @@ export function normalizeSocial(key: string, raw: string): string | null {
 
   // A pasted "instagram.com/sarnai" is a URL missing only its scheme; adding
   // the platform prefix on top of it would produce instagram.com/instagram.com/…
-  if (/^[a-z0-9-]+(\.[a-z]{2,})+\//i.test(value) || platform.key === "website") {
+  if (/^[a-z0-9-]+(\.[a-z]{2,})+(\/|$)/i.test(value) || platform.key === "website") {
     return `https://${value.replace(/^\/+/, "")}`;
   }
 
@@ -173,7 +190,11 @@ export function displaySocial(key: string, url: string): string {
   const platform = getPlatform(key);
   if (!platform) return url;
   if (platform.key === "email") return url.replace(/^mailto:/i, "");
-  if (platform.key === "website") return url.replace(/^https?:\/\//i, "");
+  // A link-mode field holds the whole address, so it is shown whole — minus
+  // the scheme, which is noise the creator never has to retype (normalizeSocial
+  // puts it back). Collapsing it to a bare handle here would be a lie: the
+  // field no longer accepts one on its own.
+  if (platform.mode === "url") return url.replace(/^https?:\/\//i, "");
   if (url.toLowerCase().startsWith(platform.prefix.toLowerCase())) {
     return url.slice(platform.prefix.length);
   }

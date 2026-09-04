@@ -4,7 +4,16 @@ import { useState, useTransition } from "react";
 import { socialGlyph } from "@/components/social-icons";
 import { createLink, deleteLink, reorderLinks } from "@/lib/actions/links";
 import { detectLinkIcon, hostOf, suggestLinkLabel } from "@/lib/socials";
-import { LButton, LInput, LLabel, LSection, Empty, Well } from "./ui";
+import {
+  LButton,
+  LInput,
+  LLabel,
+  LSection,
+  Empty,
+  ReorderButtons,
+  Well,
+  moveItem,
+} from "./ui";
 
 type Link = { id: string; label: string; url: string; icon?: string | null };
 
@@ -72,11 +81,9 @@ export function LapisLinks({
     });
   }
 
-  function move(index: number, delta: number) {
-    const next = [...links];
-    const target = index + delta;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target]!, next[index]!];
+  function move(index: number, to: number) {
+    const next = moveItem(links, index, to);
+    if (next === links) return;
     start(async () => void (await reorderLinks(next.map((l) => l.id))));
   }
 
@@ -192,18 +199,12 @@ export function LapisLinks({
               {hostOf(l.url) ?? l.url}
             </p>
           </div>
-          <div className="flex shrink-0 flex-col">
-            <ReorderButton
-              dir="up"
-              disabled={pending || i === 0}
-              onClick={() => move(i, -1)}
-            />
-            <ReorderButton
-              dir="down"
-              disabled={pending || i === links.length - 1}
-              onClick={() => move(i, 1)}
-            />
-          </div>
+          <ReorderButtons
+            index={i}
+            count={links.length}
+            disabled={pending}
+            onMove={(to) => move(i, to)}
+          />
           <button
             type="button"
             disabled={pending}
@@ -238,40 +239,5 @@ export function LapisLinks({
     <LSection icon="🔗" title="Нэмэлт холбоосууд" action={addButton}>
       {body}
     </LSection>
-  );
-}
-
-function ReorderButton({
-  dir,
-  disabled,
-  onClick,
-}: {
-  dir: "up" | "down";
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      aria-label={dir === "up" ? "Дээш" : "Доош"}
-      className="flex h-[19px] w-[24px] items-center justify-center text-[var(--t-muted)] transition-opacity disabled:opacity-25"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        width="13"
-        height="13"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={dir === "up" ? "" : "rotate-180"}
-        aria-hidden
-      >
-        <path d="m6 15 6-6 6 6" />
-      </svg>
-    </button>
   );
 }

@@ -7,6 +7,19 @@ import { askBlock, askMessage, profile } from "@/db/schema";
 import { requireCurrentProfile } from "@/lib/auth/session";
 import { MAX_ASK_ANSWER } from "@/lib/validation";
 
+/**
+ * Every Ask write lands in three places now: the inbox page, the dashboard
+ * tile's counter, and the creator's own profile — which carries both the
+ * inline inbox and the published-answer shelf. Missing the last one is what
+ * would leave an answered question sitting in the on-profile list until a hard
+ * reload, so the paths are revalidated together rather than one per action.
+ */
+function revalidateAsk(handle: string) {
+  revalidatePath("/dashboard/ask");
+  revalidatePath("/dashboard");
+  revalidatePath(`/${handle}`);
+}
+
 /** Ensures a message belongs to the current creator; returns it. */
 async function ownedMessage(messageId: string) {
   const me = await requireCurrentProfile();
@@ -26,7 +39,7 @@ export async function answerAsk(
   answerBody: string,
   makePublic: boolean,
 ) {
-  const { msg, db } = await ownedMessage(messageId);
+  const { me, msg, db } = await ownedMessage(messageId);
   const body = answerBody.trim();
   if (!body) throw new Error("Хариу заавал.");
   // The composer caps this too, but maxLength is a browser hint — a direct
@@ -43,35 +56,34 @@ export async function answerAsk(
       answeredAt: new Date(),
     })
     .where(eq(askMessage.id, msg.id));
-  revalidatePath("/dashboard/ask");
-  revalidatePath("/dashboard");
+  revalidateAsk(me.handle);
 }
 
 export async function toggleAskPublic(messageId: string, isPublic: boolean) {
-  const { msg, db } = await ownedMessage(messageId);
+  const { me, msg, db } = await ownedMessage(messageId);
   await db
     .update(askMessage)
     .set({ isPublic })
     .where(eq(askMessage.id, msg.id));
-  revalidatePath("/dashboard/ask");
+  revalidateAsk(me.handle);
 }
 
 export async function hideAsk(messageId: string) {
-  const { msg, db } = await ownedMessage(messageId);
+  const { me, msg, db } = await ownedMessage(messageId);
   await db
     .update(askMessage)
     .set({ status: "hidden", isPublic: false })
     .where(eq(askMessage.id, msg.id));
-  revalidatePath("/dashboard/ask");
+  revalidateAsk(me.handle);
 }
 
 export async function unhideAsk(messageId: string) {
-  const { msg, db } = await ownedMessage(messageId);
+  const { me, msg, db } = await ownedMessage(messageId);
   await db
     .update(askMessage)
     .set({ status: msg.answerBody ? "answered" : "new" })
     .where(eq(askMessage.id, msg.id));
-  revalidatePath("/dashboard/ask");
+  revalidateAsk(me.handle);
 }
 
 /**
@@ -90,7 +102,7 @@ export async function blockAsker(messageId: string) {
     .update(askMessage)
     .set({ status: "blocked", isPublic: false })
     .where(eq(askMessage.id, msg.id));
-  revalidatePath("/dashboard/ask");
+  revalidateAsk(me.handle);
 }
 
 export async function setAskEnabled(enabled: boolean) {
@@ -100,6 +112,5 @@ export async function setAskEnabled(enabled: boolean) {
     .update(profile)
     .set({ askEnabled: enabled })
     .where(eq(profile.id, me.id));
-  revalidatePath("/dashboard/ask");
-  revalidatePath("/dashboard");
+  revalidateAsk(me.handle);
 }

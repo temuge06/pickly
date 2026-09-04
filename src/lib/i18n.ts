@@ -60,6 +60,8 @@ const STRINGS = {
   editProfile: { mn: "Профайл засах", en: "Edit profile" },
   backToMine: { mn: "Миний профайл руу буцах", en: "Back to my profile" },
   notifications: { mn: "Мэдэгдэл", en: "Notifications" },
+  shareProfile: { mn: "Профайлаа хуваалцах", en: "Share profile" },
+  linkCopied: { mn: "Холбоос хууллаа", en: "Link copied" },
 
   // Ask
   askPlaceholder: { mn: "Асуулт үлдээх", en: "Leave me questions!" },
@@ -70,6 +72,17 @@ const STRINGS = {
   answer: { mn: "Хариулт", en: "Answer" },
   /** Hint on the front of a published card: tapping turns it over. */
   tapForAnswer: { mn: "Хариулт харах", en: "See answer" },
+  /* The owner's own inbox, shown inline on their profile (see LapisAskOwner).
+     It follows the page's locale like everything else here: a creator who has
+     switched their profile to English should not get a Mongolian answer box
+     sitting in the middle of it. */
+  newQuestions: { mn: "Шинэ асуултууд", en: "New questions" },
+  noNewQuestions: { mn: "Одоогоор шинэ асуулт алга.", en: "No new questions yet." },
+  answerPlaceholder: { mn: "Хариултаа бичих…", en: "Write your answer…" },
+  sendAnswer: { mn: "Хариулах", en: "Answer" },
+  publishAnswer: { mn: "Профайл дээр нийтлэх", en: "Publish on my profile" },
+  hideQuestion: { mn: "Нуух", en: "Hide" },
+  allQuestions: { mn: "Бүх асуулт ↗", en: "All questions ↗" },
   today: { mn: "өнөөдөр", en: "today" },
   yesterday: { mn: "өчигдөр", en: "yesterday" },
   daysAgoSuffix: { mn: " өдрийн өмнө", en: " days ago" },

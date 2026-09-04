@@ -17,8 +17,9 @@ import { getTheme } from "@/lib/themes";
 import { DEFAULT_LOCALE, translator, type Locale } from "@/lib/i18n";
 import { profileChips } from "@/lib/personality";
 import { AskCard } from "./AskCard";
+import { AskOwnerInbox, type PendingAsk } from "./AskOwnerInbox";
 import { LangToggle } from "./LangToggle";
-import { FollowButton } from "./FollowButton";
+import { ShareButton } from "./ShareButton";
 import { PromoCard, type PublicPromo } from "./PromoCard";
 
 type Profile = typeof profile.$inferSelect;
@@ -38,6 +39,12 @@ type WishlistItem = typeof wishlistItem.$inferSelect;
  *     signed in
  *   signed out       → wordmark only
  *
+ * Share sits beside the bell for everyone, owner or not. It was asked for as
+ * the creator's own "share my profile" control, but the thing it shares is
+ * whichever profile is on screen — and a visitor passing a creator's link on is
+ * the entire point of the product, so gating it behind ownership would remove
+ * it from the people most likely to press it.
+ *
  * The bell is rendered only for the owner and the count is resolved
  * server-side, so a visitor's HTML contains no trace of it — nothing to reveal
  * by editing the DOM.
@@ -49,14 +56,17 @@ type WishlistItem = typeof wishlistItem.$inferSelect;
 export function LapisStatusBar({
   bell,
   backTo,
+  handle,
   locale = DEFAULT_LOCALE,
 }: {
   /** Owner only. `unread` drives the dot. */
   bell?: { unread: number } | null;
   /** Signed-in viewer's own handle, when they are looking at someone else. */
   backTo?: string | null;
+  /** The profile being viewed — what the share control hands out. */
+  handle: string;
   locale?: Locale;
-} = {}) {
+}) {
   const t = translator(locale);
   return (
     <div className="flex h-[54px] items-center gap-[8px] border-b border-[var(--t-brand)] bg-[var(--t-bg)] px-[15px]">
@@ -79,6 +89,12 @@ export function LapisStatusBar({
           read the current language needs the switch before anything else. */}
       <div className="ml-auto flex items-center gap-[8px]">
         <LangToggle locale={locale} />
+
+        <ShareButton
+          handle={handle}
+          label={t("shareProfile")}
+          copiedLabel={t("linkCopied")}
+        />
 
       {bell ? (
         <Link
@@ -119,8 +135,6 @@ export function LapisStatusBar({
 export function LapisHeader({
   profile,
   isOwner = false,
-  isFollowing = false,
-  isAuthed = false,
   locale = DEFAULT_LOCALE,
 }: {
   locale?: Locale;
@@ -128,10 +142,6 @@ export function LapisHeader({
   /** Resolved on the server by comparing auth.uid() to this profile's owner.
    *  Never derive this client-side — the button must be absent, not hidden. */
   isOwner?: boolean;
-  /** Does the signed-in viewer already follow this profile? */
-  isFollowing?: boolean;
-  /** Signed in at all — decides whether Follow acts or routes to sign-in. */
-  isAuthed?: boolean;
 }) {
   const socials = (profile.socials ?? {}) as Record<string, string>;
   // Catalogue order first (so the row reads the same on every profile), then
@@ -175,45 +185,51 @@ export function LapisHeader({
           </p>
         ) : null}
       </div>
-      <div className="flex items-center gap-[25px]">
-        {isOwner ? (
-          <Link
-            href="/dashboard"
-            className="flex h-[32px] w-[123px] items-center justify-center rounded-[6px] text-[14px] font-bold tracking-[-0.28px]"
-            style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
-          >
-            {t("editProfile")}
-          </Link>
-        ) : (
-          <FollowButton
-            handle={profile.handle}
-            initialFollowing={isFollowing}
-            isAuthed={isAuthed}
-            followLabel={t("follow")}
-            followingLabel={t("following")}
-          />
-        )}
-        {socialKeys.length > 0 ? (
-          <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-[14px] overflow-x-auto">
-            {socialKeys.map((k) => (
-              <a
-                key={k}
-                href={socials[k]}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={k}
-                className="flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-full"
-                style={{ background: "var(--t-social-bg)", color: "var(--t-on-social)" }}
-              >
-                {/* Bare glyphs fill the 25px box; a glyph inside a disc has to
-                    sit back from its edge. Both mocks draw a 25px target, so
-                    the target never changes — only what is inside it. */}
-                {socialGlyph(k, bareSocials ? 24 : 14)}
-              </a>
-            ))}
-          </div>
-        ) : null}
-      </div>
+      {/* Action row. The owner gets "Профайл засах"; a visitor gets the social
+          glyphs, which now start at the left edge.
+
+          Дагах was cut here in the design review (#41). It was the only place
+          a follow could be created, so no NEW follows happen anywhere in the
+          product now — the follow table, the notifications it feeds and every
+          existing row are untouched, and putting the control back is a matter
+          of restoring one component in this slot.
+
+          Rendered only when it has something in it: with Дагах gone the row
+          can be empty (a visitor on a profile with no socials), and an empty
+          flex box still spends the column's gap. */}
+      {isOwner || socialKeys.length > 0 ? (
+        <div className="flex items-center gap-[25px]">
+          {isOwner ? (
+            <Link
+              href="/dashboard"
+              className="flex h-[32px] w-[123px] items-center justify-center rounded-[6px] text-[14px] font-bold tracking-[-0.28px]"
+              style={{ background: "var(--t-btn)", color: "var(--t-on-btn)" }}
+            >
+              {t("editProfile")}
+            </Link>
+          ) : null}
+          {socialKeys.length > 0 ? (
+            <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-[14px] overflow-x-auto">
+              {socialKeys.map((k) => (
+                <a
+                  key={k}
+                  href={socials[k]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={k}
+                  className="flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "var(--t-social-bg)", color: "var(--t-on-social)" }}
+                >
+                  {/* Bare glyphs fill the 25px box; a glyph inside a disc has to
+                      sit back from its edge. Both mocks draw a 25px target, so
+                      the target never changes — only what is inside it. */}
+                  {socialGlyph(k, bareSocials ? 24 : 14)}
+                </a>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -823,6 +839,7 @@ export function LapisAsk({
   displayName,
   askEnabled,
   questions,
+  pending,
   locale = DEFAULT_LOCALE,
 }: {
   locale?: Locale;
@@ -832,6 +849,10 @@ export function LapisAsk({
   displayName?: string;
   askEnabled: boolean;
   questions: Ask[];
+  /** Owner only: unanswered questions, answered inline above the composer.
+   *  Null for everybody else, so a visitor's HTML contains no trace of them —
+   *  same rule as the bell in the status bar. */
+  pending?: PendingAsk[] | null;
 }) {
   if (!askEnabled) return null;
   const t = translator(locale);
@@ -839,6 +860,26 @@ export function LapisAsk({
   return (
     <Section title={t("askMeAnything")} divider bleed>
       <div className="flex flex-col gap-[10px]">
+        {/* Above the composer, not below the answers: the creator opens their
+            own profile to see what came in, and the design review asked for
+            exactly that — the box on the profile, no trip through the editor. */}
+        {pending ? (
+          <div className="px-[11px]">
+            <AskOwnerInbox
+              questions={pending}
+              labels={{
+                title: t("newQuestions"),
+                empty: t("noNewQuestions"),
+                placeholder: t("answerPlaceholder"),
+                send: t("sendAnswer"),
+                publish: t("publishAnswer"),
+                hide: t("hideQuestion"),
+                all: t("allQuestions"),
+              }}
+            />
+          </div>
+        ) : null}
+
         {/* Composer. A full-width card in the design rather than the first tile
             of the shelf — asking is the point of the section, so it does not
             compete for space with the answers and does not scroll away. */}

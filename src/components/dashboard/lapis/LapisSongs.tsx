@@ -2,10 +2,14 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState, useTransition } from "react";
-import { addMediaItem, deleteMediaItem } from "@/lib/actions/media";
+import {
+  addMediaItem,
+  deleteMediaItem,
+  reorderMediaItems,
+} from "@/lib/actions/media";
 import { usePreviewAudio } from "@/lib/audio/preview";
 import type { MusicResult } from "@/lib/metadata/search";
-import { LButton, LInput, LSection, Empty } from "./ui";
+import { LInput, LSection, Empty, ReorderButtons, moveItem } from "./ui";
 
 type Item = {
   id: string;
@@ -35,6 +39,15 @@ export function LapisSongs({ items }: { items: Item[] }) {
   const [pending, start] = useTransition();
   const { playing, toggle } = usePreviewAudio();
   const abortRef = useRef<AbortController | null>(null);
+
+  // The shelf is the creator's own running order on the public page, so it is
+  // arranged here rather than left on "most recently added". Same control and
+  // same write-the-whole-list rule as Quick Links.
+  function move(index: number, to: number) {
+    const next = moveItem(items, index, to);
+    if (next === items) return;
+    start(async () => void (await reorderMediaItems(next.map((i) => i.id))));
+  }
 
   useEffect(() => {
     const q = query.trim();
@@ -141,7 +154,7 @@ export function LapisSongs({ items }: { items: Item[] }) {
 
       {items.length === 0 ? <Empty>Сонсдог дуугаа нэмээрэй.</Empty> : null}
 
-      {items.map((it) => {
+      {items.map((it, i) => {
         const previewUrl =
           typeof it.meta?.previewUrl === "string" ? it.meta.previewUrl : null;
         const isPlaying = previewUrl !== null && playing === previewUrl;
@@ -154,6 +167,12 @@ export function LapisSongs({ items }: { items: Item[] }) {
               <p className="truncate font-malt text-[14px] font-bold text-[var(--t-text)]">{it.title}</p>
               {it.subtitle ? <p className="truncate font-malt text-[11.5px] text-[var(--t-muted)]">{it.subtitle}</p> : null}
             </div>
+            <ReorderButtons
+              index={i}
+              count={items.length}
+              disabled={pending}
+              onMove={(to) => move(i, to)}
+            />
             {previewUrl ? (
               <button
                 onClick={() => toggle(previewUrl)}

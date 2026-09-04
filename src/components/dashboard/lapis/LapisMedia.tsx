@@ -5,13 +5,21 @@ import { useState, useTransition } from "react";
 import {
   addMediaItem,
   deleteMediaItem,
+  reorderMediaItems,
   searchBooksAction,
   searchFilmsAction,
   setMediaRating,
 } from "@/lib/actions/media";
 import type { MediaResult } from "@/lib/metadata/search";
 import { isSeriesItem, readRating } from "@/lib/media-meta";
-import { LButton, LInput, LSection, Empty } from "./ui";
+import {
+  LButton,
+  LInput,
+  LSection,
+  Empty,
+  ReorderButtons,
+  moveItem,
+} from "./ui";
 
 type Item = {
   id: string;
@@ -40,6 +48,14 @@ export function LapisMedia({
   const [searching, setSearching] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  // The shelf order is what the public poster rail renders, so the creator
+  // arranges it here. Whole list per write, same as Quick Links.
+  function move(index: number, to: number) {
+    const next = moveItem(items, index, to);
+    if (next === items) return;
+    start(async () => void (await reorderMediaItems(next.map((i) => i.id))));
+  }
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -134,7 +150,7 @@ export function LapisMedia({
         <Empty>{kind === "film" ? "Үзсэн кино, цувралаа нэмээрэй." : "Уншсан номоо нэмээрэй."}</Empty>
       ) : null}
 
-      {items.map((it) => (
+      {items.map((it, i) => (
         <div key={it.id} className="flex items-center gap-3 rounded-[14px] bg-[var(--t-well)] p-2.5">
           <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-md bg-[var(--t-field)]">
             {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-full w-full object-cover" /> : null}
@@ -161,6 +177,12 @@ export function LapisMedia({
               title={it.title}
             />
           </div>
+          <ReorderButtons
+            index={i}
+            count={items.length}
+            disabled={pending}
+            onMove={(to) => move(i, to)}
+          />
           {it.provider === "manual" ? (
             <button
               disabled={pending}

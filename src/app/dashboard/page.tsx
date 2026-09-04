@@ -45,11 +45,6 @@ export default async function DashboardPage() {
           >
             Профайл ↗
           </Link>
-          <form action="/auth/sign-out" method="post">
-            <button type="submit" className="flex min-h-[40px] items-center rounded-[12px] px-3 font-malt text-[12px] font-semibold text-[var(--t-muted)] transition-colors">
-              Гарах
-            </button>
-          </form>
         </div>
       </header>
 
@@ -113,6 +108,20 @@ export default async function DashboardPage() {
               successful save lands the creator on their public profile. */}
           <ProfileSaveBar />
         </ProfileSaveProvider>
+
+        {/* Sign-out left the header in the design review — it sat beside
+            "Профайл ↗" competing with it, and it is not something a creator
+            reaches for while editing. It is not gone, only demoted: a quiet
+            line under the save button, where a destructive-ish action belongs
+            and where nothing can be hit by accident. */}
+        <form action="/auth/sign-out" method="post" className="px-4 pb-2 pt-1">
+          <button
+            type="submit"
+            className="mx-auto flex min-h-[40px] items-center rounded-[12px] px-3 font-malt text-[12.5px] font-semibold text-[var(--t-muted)] transition-colors"
+          >
+            Гарах
+          </button>
+        </form>
       </div>
     </ThemeShell>
   );

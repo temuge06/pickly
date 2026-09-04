@@ -179,3 +179,84 @@ export function Empty({ children }: { children: React.ReactNode }) {
     </p>
   );
 }
+
+/**
+ * The up/down pair that reorders a row in a shelf.
+ *
+ * It started life inside the Quick Links editor; the design review asked for
+ * the same control on the song, film and book shelves ("quick links deer bsn ^
+ * ene shig"), so it lives here rather than being drawn three more times. Both
+ * halves are type="button" — the profile form wraps some of these lists, and a
+ * bare <button> inside it would submit it.
+ */
+export function ReorderButtons({
+  index,
+  count,
+  disabled,
+  onMove,
+}: {
+  index: number;
+  count: number;
+  disabled?: boolean;
+  /** Called with the row's new index. */
+  onMove: (to: number) => void;
+}) {
+  return (
+    <div className="flex shrink-0 flex-col">
+      <ReorderButton
+        dir="up"
+        disabled={disabled || index === 0}
+        onClick={() => onMove(index - 1)}
+      />
+      <ReorderButton
+        dir="down"
+        disabled={disabled || index === count - 1}
+        onClick={() => onMove(index + 1)}
+      />
+    </div>
+  );
+}
+
+function ReorderButton({
+  dir,
+  disabled,
+  onClick,
+}: {
+  dir: "up" | "down";
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={dir === "up" ? "Дээш" : "Доош"}
+      className="flex h-[19px] w-[24px] items-center justify-center text-[var(--t-muted)] transition-opacity disabled:opacity-25"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="13"
+        height="13"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={dir === "up" ? "" : "rotate-180"}
+        aria-hidden
+      >
+        <path d="m6 15 6-6 6 6" />
+      </svg>
+    </button>
+  );
+}
+
+/** Reorder a list by moving one entry to a new index. */
+export function moveItem<T>(items: T[], from: number, to: number): T[] {
+  if (to < 0 || to >= items.length || from === to) return items;
+  const next = [...items];
+  const [row] = next.splice(from, 1);
+  next.splice(to, 0, row!);
+  return next;
+}

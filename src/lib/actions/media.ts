@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import { activityItem } from "@/db/schema";
@@ -108,6 +108,56 @@ export async function deleteMediaItem(id: string) {
   await db
     .delete(activityItem)
     .where(and(eq(activityItem.id, id), eq(activityItem.profileId, profile.id)));
+  revalidatePath("/dashboard");
+  revalidatePath(`/${profile.handle}`);
+}
+
+/**
+ * Put a shelf in the order the creator arranged it, by writing a `position`
+ * into each row's meta.
+ *
+ * Takes the whole ordered list of ids for ONE shelf rather than a single
+ * move, for the same reason `reorderLinks` does: the client already knows the
+ * final order, and rewriting all of it is what stops a half-applied swap from
+ * leaving two rows sharing a position.
+ *
+ * Merged into the existing meta, never replacing it — the same object carries
+ * a song's previewUrl, a series' `tv` marker and a star rating.
+ */
+export async function reorderMediaItems(orderedIds: string[]) {
+  const profile = await requireCurrentProfile();
+  if (orderedIds.length === 0) return;
+  const db = getDb();
+
+  // Scoped read first: an id belonging to someone else simply is not in the
+  // result, so it can never be written to.
+  const rows = await db
+    .select({ id: activityItem.id, meta: activityItem.meta })
+    .from(activityItem)
+    .where(
+      and(
+        eq(activityItem.profileId, profile.id),
+        inArray(activityItem.id, orderedIds),
+      ),
+    );
+  const metaById = new Map(rows.map((r) => [r.id, r.meta ?? {}]));
+
+  await Promise.all(
+    orderedIds.map((id, i) => {
+      const meta = metaById.get(id);
+      if (!meta) return null;
+      return db
+        .update(activityItem)
+        .set({ meta: { ...meta, position: i } })
+        .where(
+          and(
+            eq(activityItem.id, id),
+            eq(activityItem.profileId, profile.id),
+          ),
+        );
+    }),
+  );
+
   revalidatePath("/dashboard");
   revalidatePath(`/${profile.handle}`);
 }

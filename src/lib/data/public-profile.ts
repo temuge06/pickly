@@ -15,6 +15,7 @@ import { getFeatureFlags } from "@/lib/data/features";
 import { getProfilePromos } from "@/lib/data/promos";
 import type { PublicPromo } from "@/components/lapis/PromoCard";
 import { env } from "@/lib/env";
+import { sortByPosition } from "@/lib/media-meta";
 import { ALL_ENABLED, type FeatureFlags } from "@/lib/features";
 import {
   demoAskMessages,
@@ -179,14 +180,39 @@ export async function getPublicProfile(
     picks: visiblePicks,
     links,
     wishlist,
-    tracks: visibleActivity.filter((a: ActivityItem) => a.kind === "track"),
-    films: visibleActivity.filter((a: ActivityItem) => a.kind === "film"),
-    books: visibleActivity.filter((a: ActivityItem) => a.kind === "book"),
+    // Same ordering the editor shows: newest first, overridden by whatever
+    // the creator arranged with the shelf's up/down controls.
+    tracks: sortByPosition(visibleActivity.filter((a: ActivityItem) => a.kind === "track")),
+    films: sortByPosition(visibleActivity.filter((a: ActivityItem) => a.kind === "film")),
+    books: sortByPosition(visibleActivity.filter((a: ActivityItem) => a.kind === "book")),
     askMessages: asks,
     campaigns,
     promos,
     flags,
   };
+}
+
+/**
+ * The owner's still-unanswered questions, for the inbox that now sits inline on
+ * their own profile.
+ *
+ * Deliberately a separate call rather than another field on getPublicProfile:
+ * these rows are private, and every visitor's render would otherwise pay for a
+ * query whose result only one person is ever allowed to see. The page fetches
+ * it only after the server has established that the viewer owns the profile.
+ */
+export async function getPendingAsks(
+  profileId: string,
+): Promise<AskMessage[]> {
+  if (!env.hasDatabase) return [];
+  const db = getDb();
+  return db
+    .select()
+    .from(askMessage)
+    .where(
+      and(eq(askMessage.profileId, profileId), eq(askMessage.status, "new")),
+    )
+    .orderBy(desc(askMessage.createdAt));
 }
 
 /** Handles for static params / sitemaps. Fixtures when DB-less. */

@@ -28,12 +28,21 @@ function formatExpiry(value: Date | string): string {
  * Promo ticket (Figma 1048:8863). Perforated coupon: artwork on the left, the
  * offer and code on the right, with notches punched at the tear line.
  *
- * The Copy control is an anchor, not a button, on purpose. It has to do two
- * things in one tap — put the code on the clipboard and open the shop so the
- * visitor can paste it. Writing to the clipboard is async, and awaiting it
- * before calling window.open spends the user-gesture budget, which is exactly
- * what popup blockers stop. Letting the browser follow a real link keeps the
- * navigation native and unblockable, and the copy runs alongside it.
+ * THE WHOLE TICKET is the control, not the 17px chip in the corner. The review
+ * asked for the code to be copied "haana ni c darsan" — wherever you press —
+ * and it was right: a coupon is a single object, the chip was the smallest
+ * target on the card, and a visitor who tapped the code itself (the one thing
+ * they were looking at) got nothing. The chip stays as the affordance that
+ * says what the tap will do, and it is now a plain <span>: an interactive
+ * element inside the card's own anchor would be invalid HTML and would give
+ * the same action two conflicting hit areas.
+ *
+ * The card is an anchor, not a button, whenever the promo has a shop URL. It
+ * has to do two things in one tap — put the code on the clipboard and open the
+ * shop so the visitor can paste it. Writing to the clipboard is async, and
+ * awaiting it before calling window.open spends the user-gesture budget, which
+ * is exactly what popup blockers stop. Letting the browser follow a real link
+ * keeps the navigation native and unblockable, and the copy runs alongside it.
  */
 export function PromoCard({
   promo,
@@ -77,18 +86,28 @@ export function PromoCard({
     </>
   );
 
-  const copyClass =
-    "flex h-[17px] shrink-0 items-center justify-center gap-[2px] rounded-[5px] px-[5px] text-[9px] font-medium leading-none transition-transform active:scale-95";
-  const copyStyle = {
-    background: "var(--t-promo-btn)",
-    color: "var(--t-promo-on-btn)",
-  } as const;
-
-  return (
-    <div
-      className="relative flex h-[162px] w-[267px] shrink-0 snap-start overflow-hidden rounded-[15px]"
-      style={{ background: "var(--t-promo-bg)" }}
+  const copyChip = (
+    <span
+      aria-hidden
+      className="flex h-[17px] shrink-0 items-center justify-center gap-[2px] rounded-[5px] px-[5px] text-[9px] font-medium leading-none"
+      style={{
+        background: "var(--t-promo-btn)",
+        color: "var(--t-promo-on-btn)",
+      }}
     >
+      {copyInner}
+    </span>
+  );
+
+  const shellClass =
+    "relative flex h-[162px] w-[267px] shrink-0 snap-start overflow-hidden rounded-[15px] text-left transition-transform active:scale-[0.985]";
+  const shellStyle = { background: "var(--t-promo-bg)" } as const;
+  const shellLabel = promo.url
+    ? `${promo.headline} — ${promo.code} ${copyLabel.toLowerCase()}`
+    : `${promo.code} ${copyLabel.toLowerCase()}`;
+
+  const inner = (
+    <>
       {/* Artwork — 114 of the 267 width, per the spec */}
       <div className="relative h-full w-[114px] shrink-0 overflow-hidden rounded-l-[15px] bg-black/10">
         {promo.imageUrl ? (
@@ -148,23 +167,7 @@ export function PromoCard({
           >
             {promo.code}
           </span>
-          {promo.url ? (
-            <a
-              href={promo.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={copy}
-              className={copyClass}
-              style={copyStyle}
-              aria-label={`${promo.code} хуулж, сайт руу очих`}
-            >
-              {copyInner}
-            </a>
-          ) : (
-            <button type="button" onClick={copy} className={copyClass} style={copyStyle} aria-label={`${promo.code} хуулах`}>
-              {copyInner}
-            </button>
-          )}
+          {copyChip}
         </div>
         {promo.expiresAt ? (
           <p
@@ -175,6 +178,30 @@ export function PromoCard({
           </p>
         ) : null}
       </div>
-    </div>
+    </>
+  );
+
+  return promo.url ? (
+    <a
+      href={promo.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={copy}
+      aria-label={shellLabel}
+      className={shellClass}
+      style={shellStyle}
+    >
+      {inner}
+    </a>
+  ) : (
+    <button
+      type="button"
+      onClick={copy}
+      aria-label={shellLabel}
+      className={shellClass}
+      style={shellStyle}
+    >
+      {inner}
+    </button>
   );
 }
