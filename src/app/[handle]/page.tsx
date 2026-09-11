@@ -9,17 +9,13 @@ import {
   LapisNotForMe,
   LapisPromos,
   LapisQuickLinks,
-  LapisSimilar,
   LapisStatusBar,
   LapisTopPicks,
   LapisWishlist,
 } from "@/components/lapis/sections";
+import { ProfileAnalytics } from "@/components/lapis/ProfileAnalytics";
 import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
-import {
-  getOtherCreators,
-  getPendingAsks,
-  getPublicProfile,
-} from "@/lib/data/public-profile";
+import { getPendingAsks, getPublicProfile } from "@/lib/data/public-profile";
 import { getUnreadNotificationCount } from "@/lib/data/notifications";
 import { getTheme, themeStyle } from "@/lib/themes";
 import { LOCALE_COOKIE, parseLocale, translator } from "@/lib/i18n";
@@ -41,7 +37,6 @@ export default async function ProfilePage({
   if (!data) notFound();
 
   const { profile, collections, picks, tracks, films, books, links, wishlist, askMessages, campaigns, promos, flags } = data;
-  const creators = await getOtherCreators(profile.id);
 
   // Owner check, server-side. A logged-out visitor or a different signed-in
   // creator gets HTML with no Edit button in it at all — not a hidden or
@@ -70,12 +65,6 @@ export default async function ProfilePage({
           body: q.body,
         }))
       : null;
-
-  // Demo recommenders: profile pictures of other creators, shown as the small
-  // avatar stack on each Top Pick. (No per-product recommendation data yet.)
-  const recommenderAvatars = creators
-    .map((c) => c.avatarUrl)
-    .filter((u): u is string => !!u);
 
   // Split picks into the profile's three product sections:
   //   Not For Me = status wont_rebuy
@@ -107,6 +96,9 @@ export default async function ProfilePage({
           __html: `html,body{background-color:${theme.tokens.bg};overscroll-behavior-y:none}`,
         }}
       />
+      {/* Visitor analytics. Owner excluded: their own refreshes are not an
+          audience, and would swamp the numbers staff read. */}
+      {isOwner ? null : <ProfileAnalytics creatorId={profile.id} />}
       {/* Full-bleed on a phone; the 402px "device frame" is a desktop-only
           treatment. Capping the width on mobile left the neutral backdrop
           showing as grey margins down both edges. */}
@@ -123,10 +115,10 @@ export default async function ProfilePage({
               Quick Links sit directly under the bio shelf, because they are
               the creator's own destinations and the design treats them as part
               of the identity block rather than as an exit at the bottom of the
-              page. The three product shelves and Similar are not drawn in the
-              MVP frames; they keep their existing relative order and slot in
-              after the promo tickets, so nothing that used to be on the page
-              has moved past a section it used to precede.
+              page. The three product shelves are not drawn in the MVP frames;
+              they keep their existing relative order and slot in after the
+              promo tickets, so nothing that used to be on the page has moved
+              past a section it used to precede.
 
               Flags are resolved server-side: a disabled section is not
               rendered at all, and getPublicProfile already skipped its query,
@@ -155,7 +147,7 @@ export default async function ProfilePage({
             <LapisMyPicks collections={collections} picksByCollection={picksByCollection} locale={locale} />
           ) : null}
           {flags.wishlist ? (
-            <LapisWishlist items={wishlist} recommenders={recommenderAvatars} locale={locale} />
+            <LapisWishlist items={wishlist} locale={locale} />
           ) : null}
           {flags.not_for_me ? (
             <LapisNotForMe picks={notForMe} locale={locale} />
@@ -171,7 +163,6 @@ export default async function ProfilePage({
               locale={locale}
             />
           ) : null}
-          <LapisSimilar creators={creators} locale={locale} />
         </div>
         <LapisFooter locale={locale} />
       </div>

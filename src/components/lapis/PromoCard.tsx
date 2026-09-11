@@ -43,23 +43,39 @@ function formatExpiry(value: Date | string): string {
  * awaiting it before calling window.open spends the user-gesture budget, which
  * is exactly what popup blockers stop. Letting the browser follow a real link
  * keeps the navigation native and unblockable, and the copy runs alongside it.
+ *
+ * A USED ticket (this visitor already tapped it — see PromoList) stays on the
+ * shelf but stops being a control: greyed out, the chip reads "Used", and a
+ * tap neither copies nor navigates. It is still listened to, because the
+ * click is still worth counting — a visitor who keeps coming back to a code
+ * is a signal staff asked to see.
  */
 export function PromoCard({
   promo,
+  used = false,
+  onUse,
   copyLabel = "Copy",
   copiedLabel = "Copied",
   codeLabel = "promo code",
+  usedLabel = "Used",
 }: {
   promo: PublicPromo;
+  /** This visitor has already taken this code. Owned by PromoList. */
+  used?: boolean;
+  /** Fired on every tap, used or not — the list turns it into analytics. */
+  onUse?: () => void;
   /** Localised on the server and passed down — see FollowButton. */
   copyLabel?: string;
   copiedLabel?: string;
   codeLabel?: string;
+  usedLabel?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function copy() {
+    onUse?.();
+    if (used) return;
     try {
       void navigator.clipboard?.writeText(promo.code);
     } catch {
@@ -70,7 +86,9 @@ export function PromoCard({
     timer.current = setTimeout(() => setCopied(false), 1800);
   }
 
-  const copyInner = (
+  const copyInner = used ? (
+    usedLabel
+  ) : (
     <>
       {copied ? (
         <svg viewBox="0 0 24 24" className="h-[8px] w-[8px]" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -90,21 +108,34 @@ export function PromoCard({
     <span
       aria-hidden
       className="flex h-[17px] shrink-0 items-center justify-center gap-[2px] rounded-[5px] px-[5px] text-[9px] font-medium leading-none"
-      style={{
-        background: "var(--t-promo-btn)",
-        color: "var(--t-promo-on-btn)",
-      }}
+      style={
+        used
+          ? {
+              // The disabled chip: the ticket's own text colour at low
+              // strength, so it reads as "off" in both palettes without
+              // needing a token of its own.
+              background: "color-mix(in srgb, var(--t-promo-text) 18%, transparent)",
+              color: "var(--t-promo-text)",
+            }
+          : {
+              background: "var(--t-promo-btn)",
+              color: "var(--t-promo-on-btn)",
+            }
+      }
     >
       {copyInner}
     </span>
   );
 
   const shellClass =
-    "relative flex h-[162px] w-[267px] shrink-0 snap-start overflow-hidden rounded-[15px] text-left transition-transform active:scale-[0.985]";
+    "relative flex h-[162px] w-[267px] shrink-0 snap-start overflow-hidden rounded-[15px] text-left transition-transform active:scale-[0.985]" +
+    (used ? " opacity-45 grayscale-[35%]" : "");
   const shellStyle = { background: "var(--t-promo-bg)" } as const;
-  const shellLabel = promo.url
-    ? `${promo.headline} — ${promo.code} ${copyLabel.toLowerCase()}`
-    : `${promo.code} ${copyLabel.toLowerCase()}`;
+  const shellLabel = used
+    ? `${promo.code} — ${usedLabel.toLowerCase()}`
+    : promo.url
+      ? `${promo.headline} — ${promo.code} ${copyLabel.toLowerCase()}`
+      : `${promo.code} ${copyLabel.toLowerCase()}`;
 
   const inner = (
     <>
@@ -180,6 +211,33 @@ export function PromoCard({
       </div>
     </>
   );
+
+  // Used: a button that does nothing but count — not an anchor, so there is no
+  // navigation to suppress, and aria-disabled rather than disabled so the tap
+  // still reaches onClick and assistive tech still announces the state.
+  if (used) {
+    return (
+      <button
+        type="button"
+        onClick={copy}
+        aria-disabled
+        aria-label={shellLabel}
+        className={shellClass}
+        style={shellStyle}
+      >
+        {inner}
+        <span
+          className="pointer-events-none absolute right-[7px] top-[7px] rounded-[5px] px-[6px] py-[2px] text-[9px] font-bold uppercase leading-[12px] tracking-[0.3px]"
+          style={{
+            background: "var(--t-promo-text)",
+            color: "var(--t-promo-bg)",
+          }}
+        >
+          {usedLabel}
+        </span>
+      </button>
+    );
+  }
 
   return promo.url ? (
     <a

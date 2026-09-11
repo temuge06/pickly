@@ -20,7 +20,8 @@ import { AskCard } from "./AskCard";
 import { AskOwnerInbox, type PendingAsk } from "./AskOwnerInbox";
 import { LangToggle } from "./LangToggle";
 import { ShareButton } from "./ShareButton";
-import { PromoCard, type PublicPromo } from "./PromoCard";
+import { PromoList } from "./PromoList";
+import type { PublicPromo } from "./PromoCard";
 
 type Profile = typeof profile.$inferSelect;
 type Pick = typeof pick.$inferSelect;
@@ -217,6 +218,8 @@ export function LapisHeader({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={k}
+                  data-track="social"
+                  data-track-label={k}
                   className="flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-full"
                   style={{ background: "var(--t-social-bg)", color: "var(--t-on-social)" }}
                 >
@@ -339,25 +342,6 @@ function Section({
 
 // --- Pick card (shared by Top Picks / My Picks / Not For Me) ---------------
 
-/** Overlapping avatar circles of the people who recommend this product. */
-function Recommenders({ avatars }: { avatars: string[] }) {
-  if (avatars.length === 0) return null;
-  return (
-    <div className="flex items-center">
-      {avatars.slice(0, 3).map((src, i) => (
-        <span
-          key={i}
-          className="relative -ml-[7px] h-[22px] w-[22px] shrink-0 overflow-hidden rounded-full ring-2 ring-white first:ml-0"
-          style={{ background: "var(--t-card)" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="" className="h-full w-full object-cover" />
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function PickCard({
   pick,
   muted = false,
@@ -396,6 +380,8 @@ function PickCard({
             href={pick.outboundUrl}
             target="_blank"
             rel="noopener noreferrer"
+            data-track="pick"
+            data-track-label={pick.title}
             className="flex h-[37px] w-full items-center justify-center gap-[6px] rounded-[10px] border text-[12px] font-semibold tracking-[-0.48px]"
             style={{
               background: "var(--t-card-btn)",
@@ -421,13 +407,6 @@ function PickCard({
       </div>
     </div>
   );
-}
-
-/** Rotate a list by n so different cards lead with different faces. */
-function rotate<T>(arr: T[], n: number): T[] {
-  if (arr.length === 0) return arr;
-  const k = ((n % arr.length) + arr.length) % arr.length;
-  return [...arr.slice(k), ...arr.slice(0, k)];
 }
 
 function PickRow({
@@ -533,6 +512,8 @@ function CampaignCard({ campaign }: { campaign: ProfileCampaign }) {
       href={campaign.destinationUrl}
       target="_blank"
       rel="noopener noreferrer sponsored"
+      data-track="campaign"
+      data-track-label={campaign.title}
       className={cls}
     >
       {inner}
@@ -689,17 +670,15 @@ export function LapisPromos({
   const t = translator(locale);
   return (
     <Section title={t("promoCode")} bleed>
-      <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-[14px] overflow-x-auto scroll-pl-[12px] px-[12px]">
-        {promos.map((p) => (
-          <PromoCard
-            key={p.id}
-            promo={p}
-            copyLabel={t("copy")}
-            copiedLabel={t("copied")}
-            codeLabel={t("promoCodeLabel")}
-          />
-        ))}
-      </div>
+      <PromoList
+        promos={promos}
+        labels={{
+          copy: t("copy"),
+          copied: t("copied"),
+          code: t("promoCodeLabel"),
+          used: t("used"),
+        }}
+      />
     </Section>
   );
 }
@@ -708,22 +687,18 @@ export function LapisPromos({
 
 export function LapisWishlist({
   items,
-  recommenders,
   locale = DEFAULT_LOCALE,
 }: {
   items: WishlistItem[];
-  recommenders?: string[];
   locale?: Locale;
 }) {
   if (items.length === 0) return null;
   const t = translator(locale);
-  const pool = recommenders ?? [];
   return (
     <Section title={t("wishlist")} bleed>
       <div className="no-scrollbar flex gap-[8px] overflow-x-auto scroll-pl-[10px] px-[10px]">
-        {items.map((w, i) => {
+        {items.map((w) => {
           const source = hostOf(w.url);
-          const recs = pool.length ? rotate(pool, i).slice(0, 3) : [];
           return (
             <div
               key={w.id}
@@ -740,11 +715,10 @@ export function LapisWishlist({
                 ) : null}
                 <div className="mt-auto flex items-center gap-[10px]">
                   {w.url ? (
-                    <a href={w.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center rounded-[10px] bg-[var(--t-card-btn)] text-[var(--t-on-card-btn)] px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px]">
+                    <a href={w.url} target="_blank" rel="noopener noreferrer" data-track="wishlist" data-track-label={w.title} className="flex items-center justify-center rounded-[10px] bg-[var(--t-card-btn)] text-[var(--t-on-card-btn)] px-[8px] py-[4px] text-[14px] font-semibold capitalize tracking-[-0.56px]">
                       {t("view")}<span className="ml-0.5 text-[9px]">↗</span>
                     </a>
                   ) : null}
-                  <Recommenders avatars={recs} />
                   {source ? (
                     <span className="flex items-center gap-1 text-[8px] font-light tracking-[-0.16px] text-[var(--t-on-card)]/70">
                       <span className="h-[6px] w-[6px] rounded-full bg-[var(--t-on-card)]/70" />
@@ -793,6 +767,8 @@ export function LapisQuickLinks({
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
+              data-track="quick_link"
+              data-track-label={l.label}
               className="flex min-h-[50px] items-center gap-[13px] rounded-[10px] px-[10px] py-[5px] transition-transform active:scale-[0.99]"
               // Quick Links ride the bright `media` surface, not `card`: the
               // design mounts them on the same white plate as the album art,
@@ -934,67 +910,6 @@ export function LapisAsk({
         ) : null}
       </div>
     </Section>
-  );
-}
-
-// --- Similar creators ------------------------------------------------------
-
-export type Creator = {
-  handle: string;
-  displayName: string;
-  avatarUrl: string | null;
-  bio: string | null;
-};
-
-// Same collapse as Category: one "others" surface per theme.
-const SIMILAR_STYLE = {
-  background: "var(--t-others)",
-  color: "var(--t-on-others)",
-} as const;
-
-export function LapisSimilar({
-  creators,
-  locale = DEFAULT_LOCALE,
-}: {
-  creators: Creator[];
-  locale?: Locale;
-}) {
-  if (creators.length === 0) return null;
-  const t = translator(locale);
-  return (
-    <div className="bg-[var(--t-bg)] p-[10px] font-malt">
-      <div className="overflow-hidden rounded-[16px] bg-[var(--t-panel)] p-[15px]">
-        <div className="no-scrollbar flex gap-[8px] overflow-x-auto">
-          {creators.map((c, i) => (
-            <Link
-              key={c.handle}
-              href={`/${c.handle}`}
-              className="flex h-[210px] w-[160px] shrink-0 flex-col items-center rounded-[16px] pt-[14px]"
-              style={SIMILAR_STYLE}
-            >
-              <div className="h-[88px] w-[88px] overflow-hidden rounded-full bg-black/30">
-                {c.avatarUrl ? (
-                  <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[34px] font-semibold text-[var(--t-on-others)]/80">
-                    {c.displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <p className="mt-[11px] text-[14px] font-semibold text-[var(--t-on-others)]">
-                {c.handle}
-              </p>
-              <p className="mt-[5px] line-clamp-2 w-[132px] px-1 text-center text-[10px] font-light leading-[16px] text-[var(--t-on-others)]/85">
-                {c.bio ?? `${c.displayName} ${t("onLinkspot")}`}
-              </p>
-              <span className="mb-[12px] mt-auto rounded-[8px] bg-black/25 px-[14px] py-[4px] text-[13px] font-semibold text-[var(--t-on-others)]">
-                {t("viewProfile")}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }
 

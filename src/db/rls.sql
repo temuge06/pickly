@@ -59,6 +59,7 @@ ALTER TABLE public.campaign       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaign_assignment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.promo_code     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.follow         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- profile
@@ -362,3 +363,16 @@ DROP POLICY IF EXISTS follow_follower_delete ON public.follow;
 CREATE POLICY follow_follower_delete ON public.follow
   FOR DELETE TO authenticated
   USING (follower_profile_id IN (SELECT public.owned_profile_ids()));
+
+-- ---------------------------------------------------------------------------
+-- analytics_events — visitor behaviour, staff-only. Rows are written by the
+-- beacon endpoint over the trusted server connection (which bypasses RLS and
+-- validates the payload itself), so NO role gets an insert policy here: the
+-- public key must not be able to inflate a creator's numbers. Nobody but staff
+-- reads them either — a creator's own traffic is not exposed to them yet, and
+-- a visitor's events are certainly not theirs to enumerate.
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS analytics_events_admin_read ON public.analytics_events;
+CREATE POLICY analytics_events_admin_read ON public.analytics_events
+  FOR SELECT TO authenticated
+  USING (public.is_admin());

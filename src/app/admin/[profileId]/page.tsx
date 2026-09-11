@@ -3,7 +3,9 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminAddProduct } from "@/components/admin/AdminAddProduct";
+import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminCollections } from "@/components/admin/AdminCollections";
+import { AdminDeleteCreator } from "@/components/admin/AdminDeleteCreator";
 import { AdminPromos } from "@/components/admin/AdminPromos";
 import { CreatorCampaigns } from "@/components/admin/CreatorCampaigns";
 import { AdminFeatureFlags } from "@/components/admin/AdminFeatureFlags";
@@ -12,6 +14,7 @@ import { getDb } from "@/db";
 import { askMessage, campaign, campaignAssignment, collection, pick, profile, wishlistItem } from "@/db/schema";
 import { listCampaigns } from "@/lib/actions/campaigns";
 import { listPromos } from "@/lib/actions/promos";
+import { getCreatorAnalytics } from "@/lib/data/analytics";
 import { getFeatureFlags } from "@/lib/data/features";
 import { formatMnt } from "@/lib/format";
 
@@ -85,7 +88,10 @@ export default async function AdminCreatorPage({
     listCampaigns(),
   ]);
 
-  const promos = await listPromos(creator.id);
+  const [promos, analytics] = await Promise.all([
+    listPromos(creator.id),
+    getCreatorAnalytics(creator.id),
+  ]);
 
   const notForMe = picks.filter((p) => p.status === "wont_rebuy");
   const keep = picks.filter((p) => p.status !== "wont_rebuy");
@@ -199,6 +205,15 @@ export default async function AdminCreatorPage({
         </Panel>
       ) : null}
 
+      {/* Visitor numbers. The creator's own visits are not counted (see
+          ProfileAnalytics), so these are the audience. */}
+      <Panel
+        title="Статистик"
+        subtitle="Профайл дээр зочид юу хийж байна. Бүтээгчийн өөрийнх нь үзэлт тооцогдохгүй."
+      >
+        <AdminAnalytics data={analytics} />
+      </Panel>
+
       {/* Read-only inventory, so staff can see what's already there before
           adding a duplicate. */}
       <Panel title="Одоо байгаа" subtitle="Зөвхөн харах.">
@@ -208,6 +223,16 @@ export default async function AdminCreatorPage({
           <ProductList label="Wishlist" items={wishlist} />
           <ProductList label="Not For Me" items={notForMe} />
         </div>
+      </Panel>
+
+      {/* Last, and visually apart from the working panels above: the one
+          action here that cannot be undone. */}
+      <Panel title="Аюултай бүс" subtitle="Бүтээгчийн бүртгэлийг бүхэлд нь устгана.">
+        <AdminDeleteCreator
+          profileId={creator.id}
+          handle={creator.handle}
+          displayName={creator.displayName}
+        />
       </Panel>
     </div>
   );

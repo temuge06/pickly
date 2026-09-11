@@ -1,4 +1,4 @@
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   activityItem,
@@ -221,33 +221,4 @@ export async function getAllHandles(): Promise<string[]> {
   const db = getDb();
   const rows = await db.select({ handle: profile.handle }).from(profile);
   return rows.map((r: { handle: string }) => r.handle);
-}
-
-export type OtherCreator = {
-  handle: string;
-  displayName: string;
-  avatarUrl: string | null;
-  bio: string | null;
-};
-
-/** Other creators for the "Similar" shelf — everyone except the current
- * profile. Fixture-less when no DB (returns []). */
-export async function getOtherCreators(
-  excludeId: string,
-  limit = 6,
-): Promise<OtherCreator[]> {
-  if (!env.hasDatabase) return [];
-  const db = getDb();
-  const rows = await db
-    .select({
-      handle: profile.handle,
-      displayName: profile.displayName,
-      avatarUrl: profile.avatarUrl,
-      bio: profile.bio,
-    })
-    .from(profile)
-    .where(ne(profile.id, excludeId))
-    .orderBy(desc(profile.createdAt))
-    .limit(limit);
-  return rows;
 }

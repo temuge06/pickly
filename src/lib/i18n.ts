@@ -94,8 +94,8 @@ const STRINGS = {
   copy: { mn: "Хуулах", en: "Copy" },
   copied: { mn: "Хууллаа", en: "Copied" },
   promoCodeLabel: { mn: "Урамшууллын код", en: "Promo code" },
-  viewProfile: { mn: "LinkSpot үзэх", en: "View on LinkSpot" },
-  onLinkspot: { mn: "LinkSpot дээр", en: "on LinkSpot" },
+  /** Badge on a promo ticket this visitor has already taken. */
+  used: { mn: "Ашигласан", en: "Used" },
 
   // Footer / chrome
   since: { mn: "2026 оноос", en: "since 2026" },

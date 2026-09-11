@@ -99,6 +99,13 @@
       "when": 1788700000000,
       "tag": "0013_two_themes",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789300000000,
+      "tag": "0014_analytics_events",
+      "breakpoints": true
     }
   ]
 }

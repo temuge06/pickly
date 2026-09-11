@@ -57,9 +57,6 @@ export type ThemeTokens = {
   /** Ask Me Anything cards. May be a gradient. */
   ask: string;
   onAsk: string;
-  /** "Similar creators" cards. May be a gradient. */
-  others: string;
-  onOthers: string;
   /** My Picks collection boxes. One colour per theme — the spec sheets
    *  replace the old three-colour rotation with a single Category swatch. */
   category: string;
@@ -165,8 +162,6 @@ const PALETTES: Theme[] = [
       onCard: "#feedd5",
       ask: "linear-gradient(135deg, #fe7f42 0%, #b22c20 100%)",
       onAsk: "#feedd5",
-      others: "linear-gradient(135deg, #b22c20 0%, #fffb97 100%)",
-      onOthers: "#ffffff",
       category: "#fffb97",
       onCategory: "#2a1617",
       media: "#feedd5",
@@ -213,8 +208,6 @@ const PALETTES: Theme[] = [
       onCard: "#ffffff",
       ask: "linear-gradient(135deg, #b1193f 0%, #ff5f5f 100%)",
       onAsk: "#ffffff",
-      others: "linear-gradient(135deg, #ff5f5f 0%, #fdd566 100%)",
-      onOthers: "#ffffff",
       category: "#fe5f63",
       onCategory: "#ffffff",
       media: "#ffffff",
@@ -261,8 +254,6 @@ const PALETTES: Theme[] = [
       onCard: "#ffffff",
       ask: "#1e1e1e",
       onAsk: "#ffffff",
-      others: "#ffffff",
-      onOthers: "#0b1014",
       category: "#ffffff",
       onCategory: "#0b1014",
       media: "#ffffff",
@@ -314,8 +305,6 @@ const PALETTES: Theme[] = [
       onCard: "#0b1014",
       ask: "#ffffff",
       onAsk: "#0b1014",
-      others: "#ffffff",
-      onOthers: "#0b1014",
       category: "#0b1014",
       onCategory: "#ffffff",
       media: "#ffffff",
@@ -394,8 +383,6 @@ export function themeStyle(key: string | null | undefined): React.CSSProperties 
     "--t-on-card": t.onCard,
     "--t-ask": t.ask,
     "--t-on-ask": t.onAsk,
-    "--t-others": t.others,
-    "--t-on-others": t.onOthers,
     "--t-category": t.category,
     "--t-on-category": t.onCategory,
     "--t-media": t.media,

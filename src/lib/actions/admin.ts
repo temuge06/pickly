@@ -3,8 +3,10 @@
 import { and, asc, eq, ilike, max, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
-import { collection, featureFlag, pick, profile, wishlistItem } from "@/db/schema";
+import { adminUser, collection, featureFlag, pick, profile, wishlistItem } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
+import { env } from "@/lib/env";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { extractProduct } from "@/lib/extract/product";
 import { FEATURES, type Feature } from "@/lib/features";
 import { MAX_COLLECTIONS } from "@/lib/validation";
@@ -367,4 +369,74 @@ export async function adminDeleteCollection(collectionId: string) {
     .where(eq(collection.id, collectionId))
     .returning({ profileId: collection.profileId });
   if (rows[0]) revalidatePath(`/admin/${rows[0].profileId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Account deletion
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete a creator: the profile row, everything hanging off it, and the login.
+ *
+ * The cascade is the database's, not a list maintained here. Every child table
+ * — pick, wishlist_item, collection, link, promo_code, campaign_assignment,
+ * activity_item, connection, ask_message, ask_block, feature_flag, follow (both
+ * sides), analytics_events — declares ON DELETE CASCADE on its profile foreign
+ * key, so one DELETE takes the lot and a table added later cannot be forgotten
+ * by this function. Campaigns themselves survive: they are platform inventory,
+ * only their placement on this profile goes.
+ *
+ * Order matters. The profile is deleted FIRST over the trusted connection, so
+ * the creator's page is gone the moment this returns even if the auth call
+ * fails; the auth user is removed second, and a failure there is reported
+ * rather than thrown — an orphaned login can only reach onboarding, whereas
+ * throwing after the profile is gone would tell staff nothing happened.
+ *
+ * `handle` is required as a typed confirmation, checked against the row,
+ * so a stale tab pointing at a reused id cannot delete the wrong creator.
+ *
+ * Refuses to delete a staff account. Staff are granted out-of-band and should
+ * be removed the same way — and it also means an admin cannot delete
+ * themselves from a page they are still looking at.
+ */
+export async function adminDeleteCreator(
+  profileId: string,
+  handle: string,
+): Promise<{ warning?: string }> {
+  await requireAdmin();
+  const db = getDb();
+
+  const rows = await db
+    .select({ id: profile.id, userId: profile.userId, handle: profile.handle })
+    .from(profile)
+    .where(eq(profile.id, profileId))
+    .limit(1);
+  const target = rows[0];
+  if (!target) throw new Error("Бүтээгч олдсонгүй.");
+  if (target.handle.toLowerCase() !== handle.trim().toLowerCase()) {
+    throw new Error("Хэрэглэгчийн нэр таарахгүй байна.");
+  }
+
+  const staff = await db
+    .select({ id: adminUser.id })
+    .from(adminUser)
+    .where(eq(adminUser.authUserId, target.userId))
+    .limit(1);
+  if (staff[0]) throw new Error("Ажилтны бүртгэлийг эндээс устгах боломжгүй.");
+
+  await db.delete(profile).where(eq(profile.id, target.id));
+
+  let warning: string | undefined;
+  if (env.hasSupabase && env.hasSupabaseAdmin) {
+    const { error } = await getSupabaseAdmin().auth.admin.deleteUser(target.userId);
+    if (error) {
+      warning = "Профайл устлаа, гэхдээ нэвтрэх бүртгэлийг устгаж чадсангүй.";
+    }
+  } else {
+    warning = "Профайл устлаа. Нэвтрэх бүртгэлийг Supabase-аас гараар устгана уу.";
+  }
+
+  revalidatePath("/admin");
+  revalidatePath(`/${target.handle}`);
+  return warning ? { warning } : {};
 }
