@@ -95,10 +95,15 @@ export type ThemeTokens = {
   btn: string;
   onBtn: string;
   /** Promo ticket: card body, the chip the code sits on, the Copy control,
-   *  the big headline, and the small print. Taken from the four variants of
-   *  the coupon component rather than derived — the designer picked a specific
-   *  pairing per theme (e.g. yellow headline on every dark theme, black on the
-   *  light one). */
+   *  the big headline, and the small print.
+   *
+   *  These are the ONE set of tokens here that do not follow the theme. A
+   *  coupon is advertiser artwork rather than part of the creator's palette —
+   *  the review (ubcab coupon-3) asked for the orange ticket on both Dark and
+   *  Light Mode, so both live themes carry identical values and the ticket
+   *  looks the same wherever it is pasted. They stay tokens rather than
+   *  hardcoded hexes so one theme can still diverge if a future coupon design
+   *  needs it. */
   promoBg: string;
   promoChip: string;
   /** The code itself, which sits ON `promoChip`. */
@@ -267,13 +272,13 @@ const PALETTES: Theme[] = [
       avatarBg: "#1e1e1e",
       btn: "#0a0a0a",
       onBtn: "#ffffff",
-      promoBg: "#222222",
-      promoChip: "#3f3f3f",
-      promoOnChip: "#ffffff",
-      promoBtn: "#ffe500",
-      promoOnBtn: "#1a1a1a",
-      promoHeadline: "#ffe500",
-      promoText: "#9b9b9b",
+      promoBg: "#f58220",
+      promoChip: "#ffffff",
+      promoOnChip: "#f58220",
+      promoBtn: "#f58220",
+      promoOnBtn: "#ffffff",
+      promoHeadline: "#ffffff",
+      promoText: "#ffffff",
       cardBtn: "#2f2f2f",
       onCardBtn: "#ffffff",
       cardBtnBorder: "rgba(255,255,255,0.18)",
@@ -318,13 +323,13 @@ const PALETTES: Theme[] = [
       avatarBg: "#e9e9e9",
       btn: "#0b1014",
       onBtn: "#ffffff",
-      promoBg: "#ffffff",
-      promoChip: "#f6f6f6",
-      promoOnChip: "#222222",
-      promoBtn: "#0ad85b",
-      promoOnBtn: "#0b1014",
-      promoHeadline: "#0ad85b",
-      promoText: "#9b9b9b",
+      promoBg: "#f58220",
+      promoChip: "#ffffff",
+      promoOnChip: "#f58220",
+      promoBtn: "#f58220",
+      promoOnBtn: "#ffffff",
+      promoHeadline: "#ffffff",
+      promoText: "#ffffff",
       cardBtn: "#0b1014",
       onCardBtn: "#ffffff",
       cardBtnBorder: "#0b1014",

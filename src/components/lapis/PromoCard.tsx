@@ -111,11 +111,13 @@ export function PromoCard({
       style={
         used
           ? {
-              // The disabled chip: the ticket's own text colour at low
-              // strength, so it reads as "off" in both palettes without
-              // needing a token of its own.
-              background: "color-mix(in srgb, var(--t-promo-text) 18%, transparent)",
-              color: "var(--t-promo-text)",
+              // The disabled chip: the code's own colour at low strength, so
+              // it reads as "off" without needing a token of its own. Derived
+              // from promoOnChip rather than promoText because it sits ON the
+              // chip — promoText is the colour of the ticket body, which on
+              // the orange coupon is white and would vanish here.
+              background: "color-mix(in srgb, var(--t-promo-on-chip) 15%, transparent)",
+              color: "var(--t-promo-on-chip)",
             }
           : {
               background: "var(--t-promo-btn)",
