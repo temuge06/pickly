@@ -19,6 +19,7 @@ export async function getProfilePromos(profileId: string): Promise<PublicPromo[]
       url: promoCode.url,
       imageUrl: promoCode.imageUrl,
       expiresAt: promoCode.expiresAt,
+      usedAt: promoCode.usedAt,
     })
     .from(promoCode)
     .where(and(eq(promoCode.profileId, profileId), eq(promoCode.isActive, true)))

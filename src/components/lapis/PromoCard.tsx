@@ -11,6 +11,8 @@ export type PublicPromo = {
   url: string | null;
   imageUrl: string | null;
   expiresAt: Date | string | null;
+  /** Set once anyone has claimed the code — see claimPromo. */
+  usedAt: Date | string | null;
 };
 
 /** "EXP. JULY 31, 2026" — the design's uppercase US-style date. */
@@ -44,11 +46,11 @@ function formatExpiry(value: Date | string): string {
  * is exactly what popup blockers stop. Letting the browser follow a real link
  * keeps the navigation native and unblockable, and the copy runs alongside it.
  *
- * A USED ticket (this visitor already tapped it — see PromoList) stays on the
- * shelf but stops being a control: greyed out, the chip reads "Used", and a
- * tap neither copies nor navigates. It is still listened to, because the
- * click is still worth counting — a visitor who keeps coming back to a code
- * is a signal staff asked to see.
+ * A USED ticket (someone — anyone — already claimed it; see PromoList) stays
+ * on the shelf but stops being a control: greyed out, the chip reads "Used",
+ * and a tap neither copies nor navigates. It is still listened to, because
+ * the click is still worth counting — interest in a code that is gone is a
+ * signal staff asked to see.
  */
 export function PromoCard({
   promo,
@@ -60,7 +62,7 @@ export function PromoCard({
   usedLabel = "Used",
 }: {
   promo: PublicPromo;
-  /** This visitor has already taken this code. Owned by PromoList. */
+  /** Someone has already claimed this code. Owned by PromoList. */
   used?: boolean;
   /** Fired on every tap, used or not — the list turns it into analytics. */
   onUse?: () => void;

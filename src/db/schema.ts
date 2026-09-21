@@ -132,8 +132,8 @@ export const featureEnum = pgEnum("feature", [
  *
  *   profile_view      one per page load
  *   promo_click       every tap on a promo ticket, used or not
- *   promo_used        the FIRST tap on a ticket from one viewer — the moment it
- *                     is marked "used" on that device (see PromoCard)
+ *   promo_used        the tap that claimed a ticket — the first by anyone, after
+ *                     which it is greyed out for everybody (see claimPromo)
  *   link_click        any outbound tap: social glyph, quick link, campaign
  *                     banner, product "view" button — `metadata.kind` says which
  *   session_duration  visible time on the page, in seconds, sent when the tab
@@ -540,6 +540,12 @@ export const promoCode = pgTable("promo_code", {
   /** Rendered as "EXP. JULY 31, 2026". Null → no expiry line. */
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   isActive: boolean("is_active").notNull().default(true),
+  /**
+   * When the code was claimed. Single-use across the whole audience: the first
+   * tap by anyone — visitor or owner — sets this, and every viewer then sees
+   * the ticket greyed out. Null → still live. See claimPromo.
+   */
+  usedAt: timestamp("used_at", { withTimezone: true }),
   position: integer("position").notNull().default(0),
   createdBy: uuid("created_by").references(() => adminUser.id, {
     onDelete: "set null",

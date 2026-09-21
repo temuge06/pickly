@@ -7,6 +7,7 @@ import {
   createPromo,
   deletePromo,
   reorderPromos,
+  resetPromoUsed,
   setPromoActive,
   updatePromo,
   uploadPromoImage,
@@ -102,6 +103,7 @@ export function AdminPromos({
               <p className="truncate font-inter text-[11.5px] text-white/35">
                 {p.url ?? "холбоосгүй"}
                 {p.isActive ? "" : " · унтраалттай"}
+                {p.usedAt ? " · ашигласан" : ""}
               </p>
             </div>
             <button type="button" disabled={pending || i === 0} onClick={() => move(i, -1)}
@@ -112,6 +114,10 @@ export function AdminPromos({
               className="shrink-0 rounded-[7px] px-2 py-1 font-malt text-[13px] text-white/45 hover:text-white/85 disabled:opacity-25">↓</button>
             <button type="button" disabled={pending} onClick={() => setEditing(p.id)}
               className="shrink-0 rounded-[8px] px-2 py-1 font-malt text-[12px] font-bold text-white/45 hover:text-white/80 disabled:opacity-40">Засах</button>
+            {p.usedAt ? (
+              <button type="button" disabled={pending} onClick={() => run(() => resetPromoUsed(p.id))}
+                className="shrink-0 rounded-[8px] px-2 py-1 font-malt text-[12px] font-bold text-white/45 hover:text-white/80 disabled:opacity-40">Сэргээх</button>
+            ) : null}
             <button type="button" disabled={pending} onClick={() => run(() => setPromoActive(p.id, !p.isActive))}
               className="shrink-0 rounded-[8px] px-2 py-1 font-malt text-[12px] font-bold text-white/45 hover:text-white/80 disabled:opacity-40">
               {p.isActive ? "Зогсоох" : "Асаах"}

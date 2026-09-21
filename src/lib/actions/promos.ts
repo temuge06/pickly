@@ -1,7 +1,7 @@
 "use server";
 
 import crypto from "node:crypto";
-import { and, asc, eq, max } from "drizzle-orm";
+import { and, asc, eq, isNull, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import sharp from "sharp";
 import { getDb } from "@/db";
@@ -23,6 +23,7 @@ export type PromoRow = {
   imageUrl: string | null;
   expiresAt: Date | null;
   isActive: boolean;
+  usedAt: Date | null;
   position: number;
 };
 
@@ -216,9 +217,50 @@ export async function listPromos(profileId: string): Promise<PromoRow[]> {
       imageUrl: promoCode.imageUrl,
       expiresAt: promoCode.expiresAt,
       isActive: promoCode.isActive,
+      usedAt: promoCode.usedAt,
       position: promoCode.position,
     })
     .from(promoCode)
     .where(eq(promoCode.profileId, profileId))
     .orderBy(asc(promoCode.position), asc(promoCode.createdAt));
+}
+
+/**
+ * Claim a promo code — PUBLIC, no auth: anyone viewing the profile, the owner
+ * included, can be the one who takes it. The code is single-use across the
+ * whole audience, so the guard is in the UPDATE itself (`used_at IS NULL`):
+ * two simultaneous taps race on the row lock and exactly one wins. Returns
+ * whether THIS call was the one that claimed it, so a viewer whose page was
+ * stale can grey the ticket out instead of treating it as theirs.
+ */
+export async function claimPromo(promoId: string): Promise<{ claimed: boolean }> {
+  if (typeof promoId !== "string" || !/^[0-9a-f-]{36}$/i.test(promoId)) {
+    return { claimed: false };
+  }
+  const rows = await getDb()
+    .update(promoCode)
+    .set({ usedAt: new Date() })
+    .where(
+      and(
+        eq(promoCode.id, promoId),
+        eq(promoCode.isActive, true),
+        isNull(promoCode.usedAt),
+      ),
+    )
+    .returning({ id: promoCode.id });
+  // No revalidatePath: the profile page is force-dynamic, so every later load
+  // reads the row fresh — and revalidating here would push a new RSC payload
+  // into the tapper's page and grey the ticket out mid-"Copied" feedback.
+  return { claimed: rows.length > 0 };
+}
+
+/** Staff: put a claimed code back on the shelf as live. */
+export async function resetPromoUsed(promoId: string) {
+  await requireAdmin();
+  const rows = await getDb()
+    .update(promoCode)
+    .set({ usedAt: null, updatedAt: new Date() })
+    .where(eq(promoCode.id, promoId))
+    .returning({ profileId: promoCode.profileId });
+  if (rows[0]) await revalidateFor(rows[0].profileId);
 }
