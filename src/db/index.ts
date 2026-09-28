@@ -10,9 +10,9 @@ import * as schema from "./schema";
  *
  * Pool sizing: `max: 1`, deliberately.
  *
- * DATABASE_URL points at Supabase's pooler on port 5432, which is SESSION
- * mode: every client connection holds a real Postgres connection and the pool
- * caps at 15. Raising this to 3 exhausted it across warm instances and threw
+ * DATABASE_URL points at Supabase's transaction pooler on port 6543. It used
+ * to be the session pooler (5432), where every client held a real Postgres
+ * connection and the pool capped at 15; raising this to 3 there threw
  * `EMAXCONNSESSION: max clients reached in session mode`.
  *
  * One connection per instance does serialise the queries inside Promise.all,
@@ -22,12 +22,11 @@ import * as schema from "./schema";
  *
  * That makes `regions` and DATABASE_URL a COUPLED PAIR, and moving one without
  * the other silently costs ~200ms per query on every page. They are currently
- * Sydney on both sides: `syd1` and Supabase `ap-southeast-2`. If the database
+ * Tokyo on both sides: `hnd1` and Supabase `ap-northeast-1`. If the database
  * ever moves, move `regions` with it.
  *
- * To genuinely parallelise, move DATABASE_URL to the transaction pooler on
- * port 6543 — that mode is built for serverless fan-out — and only then raise
- * `max`. Doing one without the other breaks the site under load.
+ * Now that DATABASE_URL is on the transaction pooler, `max` can be raised to
+ * genuinely parallelise — but that is a separate, load-tested change.
  */
 let _db: PostgresJsDatabase<typeof schema> | null = null;
 
@@ -40,7 +39,15 @@ export function getDb(): PostgresJsDatabase<typeof schema> {
         "The public profile falls back to fixtures; dashboard/features need Postgres.",
     );
   }
-  const client = postgres(url, { max: 1, idle_timeout: 20, connect_timeout: 10 });
+  // prepare: false — the transaction pooler (port 6543) hands each transaction
+  // to a different backend, so named prepared statements don't survive between
+  // queries. Harmless on a session connection too.
+  const client = postgres(url, {
+    max: 1,
+    idle_timeout: 20,
+    connect_timeout: 3,
+    prepare: false,
+  });
   _db = drizzle(client, { schema });
   return _db;
 }

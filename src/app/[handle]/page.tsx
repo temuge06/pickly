@@ -19,6 +19,7 @@ import { getPendingAsks, getPublicProfile } from "@/lib/data/public-profile";
 import { getUnreadNotificationCount } from "@/lib/data/notifications";
 import { getTheme, themeStyle } from "@/lib/themes";
 import { LOCALE_COOKIE, parseLocale, translator } from "@/lib/i18n";
+import { handleSchema } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ export default async function ProfilePage({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
+  // Anything that could never be a handle (favicon.ico, robots.txt, a stray
+  // asset path) is a 404 before we touch the database.
+  if (!handleSchema.safeParse(handle).success) notFound();
   // Locale is a cookie read during the render, not client state: the page is a
   // server component, so this is what puts the right language in the first byte
   // of HTML instead of flashing Mongolian and then swapping.

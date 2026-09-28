@@ -6,11 +6,16 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
+  // Migrations need a session connection (multi-statement DDL, advisory
+  // locks), which the transaction pooler on :6543 can't give. DIRECT_URL is
+  // the session pooler (:5432) or the direct host; the app itself only ever
+  // reads DATABASE_URL.
+  const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+  if (!url) {
     throw new Error("DATABASE_URL is not set. Copy .env.example to .env and fill it in.");
   }
 
-  const sql = postgres(process.env.DATABASE_URL, { max: 1 });
+  const sql = postgres(url, { max: 1 });
   const db = drizzle(sql);
 
   // Extensions first — citext must exist before the generated migrations

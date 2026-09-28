@@ -6,7 +6,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets and image optimizer. Route
+  // Run on pages only. Everything under /_next, the icon/robots/sitemap files
+  // browsers fetch on their own, and any path ending in a static-file
+  // extension skip middleware entirely, so they never wait on Supabase. Route
   // protection for /dashboard lives in updateSession.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|avif)$).*)"],
+  matcher: [
+    "/((?!_next/|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:ico|png|jpe?g|gif|svg|webp|avif|bmp|tiff?|css|js|mjs|map|json|webmanifest|txt|xml|woff2?|ttf|otf|eot|mp3|mp4|webm|wav|ogg|pdf|zip)$).*)",
+  ],
 };
