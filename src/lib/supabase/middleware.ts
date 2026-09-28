@@ -89,6 +89,20 @@ export async function updateSession(request: NextRequest) {
 
   const isAdmin = pathname.startsWith("/admin");
 
+  // /admin has its own staff sign-in form rather than the creator /sign-in.
+  // It is a rewrite, not a redirect, so the URL stays /admin and signing in
+  // simply reloads the page the visitor asked for.
+  const staffLogin = () => {
+    const url = request.nextUrl.clone();
+    url.pathname = "/staff-login";
+    url.search = "";
+    const rewrite = NextResponse.rewrite(url, { request });
+    for (const c of response.cookies.getAll()) rewrite.cookies.set(c);
+    return rewrite;
+  };
+
+  if (isAdmin && !user) return staffLogin();
+
   if (guarded && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
@@ -118,13 +132,9 @@ export async function updateSession(request: NextRequest) {
       error = err;
     }
 
-    // Fail closed: an errored check is a denied check.
-    if (error || !data) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      url.search = "";
-      return NextResponse.redirect(url);
-    }
+    // Fail closed: an errored check is a denied check. A signed-in non-staff
+    // account gets the staff form too, so it can switch to a staff login.
+    if (error || !data) return staffLogin();
   }
 
   return response;
